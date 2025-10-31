@@ -453,7 +453,7 @@ void platformExit(int v)
 
 void platformLoadCursors()
 {
-	const char* path = "../../../sysroot/system/graphics/cursor";
+	const char* path = "../../sysroot/system/graphics/cursor";
 	DIR* dir = opendir(path);
 	if(!dir)
 	{
@@ -462,7 +462,7 @@ void platformLoadCursors()
 	struct dirent* entry;
 	while((entry = readdir(dir)) != NULL)
 	{
-		std::string path = std::string("../../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
+		std::string path = std::string("../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
 		cursor_t::load(path);
 	}
 	cursor_t::set("default");
