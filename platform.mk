@@ -6,7 +6,7 @@ ifeq ($(target),ghost)
 	FREETYPE_INC := $(SYSROOT)/system/include/freetype2
 
 else ifeq ($(target),windows)
-	SYSROOT := ../platform/windows-mingw/sysroot
+	SYSROOT := ../platform/windows-mingw-sim/sysroot
 	CXX := x86_64-w64-mingw32-g++
 	AR := x86_64-w64-mingw32-ar
 
