@@ -1,0 +1,22 @@
+**NOTE: Those are just dummy scripts to set up tools for MinGW. It will be moved to a Docker image**
+
+To build with MinGW within WSL:
+
+- First build all dependencies; use mingw-* scripts, in order:
+
+		zlib
+		pixman
+		libpng
+		freetype
+		cairo
+
+- They should all install to /usr/x86_64-w64-mingw32
+
+- Then, build the libraries, each with `sudo make clean && make target=windows && make target=windows install`
+
+        libwindow
+        libfont
+        libproperties
+        libjson
+
+- Then, build windowserver with `sudo make clean && make target=windows && make target=windows install`

@@ -1,0 +1,8 @@
+obj/**/*.o
+*.a
+*.so
+.idea
+ghost-build.log
+CMakeLists.txt
+fenster.exe
+fenster.bin
