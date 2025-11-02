@@ -15,13 +15,15 @@ obj/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-install: $(LIB)
-	mkdir -p $(SYSROOT)/system/include
+install: install-headers $(LIB)
 	mkdir -p $(SYSROOT)/system/lib
-	cp -r inc/* $(SYSROOT)/system/include/
 	cp $(LIB) $(SYSROOT)/system/lib/
+
+install-headers:
+	mkdir -p $(SYSROOT)/system/include
+	cp -r inc/* $(SYSROOT)/system/include/
 
 clean:
 	rm -rf obj $(LIB)
 
-.PHONY: all install clean
+.PHONY: all install clean install-headers

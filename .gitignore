@@ -6,3 +6,5 @@ ghost-build.log
 CMakeLists.txt
 fenster.exe
 fenster.bin
+platform/windows-mingw-sim/sysroot/**
+!platform/windows-mingw-sim/sysroot/keep.txt
