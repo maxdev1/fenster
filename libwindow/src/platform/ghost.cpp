@@ -85,11 +85,6 @@ void platformReleaseMutex(SYS_MUTEX_T mutex)
 	g_mutex_release(mutex);
 }
 
-char platformCharForKey(g_key_info info)
-{
-	return g_keyboard::charForKey(info);
-}
-
 uint64_t platformMillis()
 {
 	return g_millis();

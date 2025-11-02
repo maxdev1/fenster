@@ -123,8 +123,6 @@ void* platformAllocateMemory(size_t size);
 
 void* platformShareMemory(void* memory, size_t size, SYS_TID_T target);
 
-char platformCharForKey(g_key_info key);
-
 uint64_t platformMillis();
 
 void platformJoin(SYS_TID_T tid);

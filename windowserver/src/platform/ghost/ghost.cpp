@@ -43,4 +43,9 @@ void platformLoadCursors()
 	cursor_t::set("default");
 }
 
+char platformCharForKey(g_key_info info)
+{
+	return g_keyboard::charForKey(info);
+}
+
 #endif

@@ -24,8 +24,20 @@ void platformStartInput();
  */
 g_video_output* platformCreateVideoOutput();
 
+/**
+ * Loads all cursors from the platforms cursor configuration and calls
+ * cursor_t::load on every cursor to be loaded.
+ */
 void platformLoadCursors();
 
-bool platformInitializeKeyboardLayout(std::string layout);
+/**
+ * Initializes the keyboard layout to the specified locale.
+ */
+bool platformInitializeKeyboardLayout(std::string locale);
+
+/**
+ * Converts the key information into a character.
+ */
+char platformCharForKey(g_key_info key);
 
 #endif

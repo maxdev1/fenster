@@ -299,7 +299,6 @@ char platformCharForKey(g_key_info key)
 	return 'A';
 }
 
-
 bool platformInitializeKeyboardLayout(std::string layout)
 {
 	return true;
