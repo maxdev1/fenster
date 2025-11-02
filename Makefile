@@ -1,4 +1,4 @@
-SUBPROJECTS := libjson libproperties libwindow libfont windowserver
+SUBPROJECTS := libjson libproperties libfenster server
 
 .PHONY: all clean install-headers
 
@@ -9,17 +9,17 @@ build:
 	@$(MAKE) -C libjson install
 	@$(MAKE) -C libproperties
 	@$(MAKE) -C libproperties install
-	@$(MAKE) -C libwindow
-	@$(MAKE) -C libwindow install
-	@$(MAKE) -C windowserver
+	@$(MAKE) -C libfenster
+	@$(MAKE) -C libfenster install
+	@$(MAKE) -C server
 
 install:
-	@$(MAKE) -C windowserver install
+	@$(MAKE) -C server install
 
 install-headers:
 	@$(MAKE) -C libjson install-headers
 	@$(MAKE) -C libproperties install-headers
-	@$(MAKE) -C libwindow install-headers
+	@$(MAKE) -C libfenster install-headers
 
 clean:
 	@for dir in $(SUBPROJECTS); do \
