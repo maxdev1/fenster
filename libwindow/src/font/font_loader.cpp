@@ -4,6 +4,7 @@
 
 #include "libwindow/font/font_loader.hpp"
 #include "libwindow/font/font_manager.hpp"
+#include "libwindow/platform/platform.hpp"
 
 g_font* g_font_loader::getFont(std::string path, std::string name)
 {
@@ -24,11 +25,7 @@ g_font* g_font_loader::getFont(std::string path, std::string name)
 
 g_font* g_font_loader::getSystemFont(std::string name)
 {
-#if _WIN32
-	return getFont("../../sysroot/system/graphics/fonts/" + name + ".ttf", name);
-#else
-	return getFont("/system/graphics/fonts/" + name + ".ttf", name);
-#endif
+	return getFont(platformGetFontPath(name), name);
 }
 
 g_font* g_font_loader::get(std::string name)
@@ -41,9 +38,5 @@ g_font* g_font_loader::get(std::string name)
 
 g_font* g_font_loader::getDefault()
 {
-#if _WIN32
-	return getFont("../../sysroot/system/graphics/fonts/default.ttf", "default");
-#else
-	return getFont("/system/graphics/fonts/default.ttf", "default");
-#endif
+	return getSystemFont("default");
 }
