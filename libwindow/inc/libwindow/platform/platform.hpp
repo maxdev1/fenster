@@ -1,3 +1,7 @@
+// fenster — lightweight window server and UI toolkit
+// Copyright (c) 2025 Max Schlüssel
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 #ifndef __LIBWINDOW_PLATFORM__
 #define __LIBWINDOW_PLATFORM__
 
