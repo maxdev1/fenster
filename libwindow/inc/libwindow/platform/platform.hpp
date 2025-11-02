@@ -10,8 +10,6 @@
  */
 #include <stdint.h>
 
-#include "platform-key-info.hpp"
-
 /**
  * Ghost-specific type definitions
  */
@@ -26,11 +24,11 @@
 
 #define SYS_MUTEX_T                               g_user_mutex
 
-#define SYS_TX_T                                  g_message_transaction
-#define SYS_TX_NONE                               G_MESSAGE_TRANSACTION_NONE
-
 #define SYS_PAGE_SIZE                             G_PAGE_SIZE
 #define SYS_PAGE_ALIGN_UP(address)                G_PAGE_ALIGN_UP(address)
+
+#define SYS_TX_T                                  g_message_transaction
+#define SYS_TX_NONE                               G_MESSAGE_TRANSACTION_NONE
 
 #define SYS_MESSAGE_HEADER_SIZE                   sizeof(g_message_header)
 #define SYS_MESSAGE_RECEIVE_SUCCESS               G_MESSAGE_RECEIVE_STATUS_SUCCESSFUL
@@ -47,12 +45,11 @@
 #elif _WIN32
 
 #include <windows.h>
+#include <string>
 
 #define SYS_TID_T                                 HANDLE
 #define SYS_TID_NONE                              NULL
 
-#ifndef __SYS_MUTEX_T_DEFINED__
-#define __SYS_MUTEX_T_DEFINED__
 typedef struct {
  HANDLE handle;
  CRITICAL_SECTION cs;
@@ -60,16 +57,14 @@ typedef struct {
 } win_mutex_t;
 #define SYS_MUTEX_T win_mutex_t*
 
-#endif
-
-#define SYS_TX_T                                  int
-#define SYS_TX_NONE                               -1
-
 #define SYS_PAGE_SIZE                             4096
 #define SYS_PAGE_ALIGN_DOWN(value)	              ((value) & ~(SYS_PAGE_SIZE - 1))
 #define SYS_PAGE_ALIGN_UP(value)	              (((value) & (SYS_PAGE_SIZE - 1)) ? (SYS_PAGE_ALIGN_DOWN((value)) + SYS_PAGE_SIZE) : (value))
 
-#define SYS_MESSAGE_HEADER_SIZE                   0
+#define SYS_TX_T                                  int // TODO
+#define SYS_TX_NONE                               -1 // TODO
+
+#define SYS_MESSAGE_HEADER_SIZE                   0 // TODO
 #define SYS_MESSAGE_RECEIVE_SUCCESS               1 // TODO
 #define SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER  2 // TODO
 

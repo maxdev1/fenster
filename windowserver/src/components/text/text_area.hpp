@@ -98,7 +98,7 @@ public:
 
     g_range getSelectedRange() override;
 
-    void backspace(g_key_info& info);
+    void backspace(key_info_t& info);
 
     void insert(std::string text);
     int viewToPosition(g_point p);

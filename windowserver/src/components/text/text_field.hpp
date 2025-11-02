@@ -8,11 +8,11 @@
 #include "components/text/text_component.hpp"
 #include "components/titled_component.hpp"
 
+#include <libwindow/input/key_info.hpp>
 #include <libwindow/font/font.hpp>
 #include <libwindow/font/text_layouter.hpp>
 #include <libwindow/metrics/insets.hpp>
 #include <libwindow/color_argb.hpp>
-#include <libwindow/platform/platform-key-info.hpp>
 #include <string>
 
 enum class text_field_visual_status_t : uint8_t
@@ -99,7 +99,7 @@ public:
 
     g_range getSelectedRange() override;
 
-    void backspace(g_key_info& info);
+    void backspace(key_info_t& info);
 
     void insert(std::string text);
     int viewToPosition(g_point p);

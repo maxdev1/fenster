@@ -16,7 +16,7 @@ default_caret_move_strategy_t* default_caret_move_strategy_t::getInstance()
     return INSTANCE;
 }
 
-void default_caret_move_strategy_t::moveCaret(text_component_t* component, caret_direction_t direction, g_key_info& info)
+void default_caret_move_strategy_t::moveCaret(text_component_t* component, caret_direction_t direction, key_info_t& info)
 {
 
     int cursor = component->getCursor();

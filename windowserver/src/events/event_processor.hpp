@@ -7,6 +7,7 @@
 
 #include <deque>
 #include "platform/platform.hpp"
+#include "libwindow/input/key_info.hpp"
 
 #define DEFAULT_MULTICLICK_TIMESPAN 250
 
@@ -21,13 +22,13 @@ class event_processor_t
 
 	event_processor_t();
 
-	std::deque<g_key_info> key_info_buffer;
+	std::deque<key_info_t> key_info_buffer;
 	SYS_MUTEX_T key_info_buffer_lock = platformInitializeMutex(false);
-	void bufferKeyEvent(g_key_info keyInfo);
+	void bufferKeyEvent(key_info_t keyInfo);
 
 	void process();
 
-	void translateKeyEvent(g_key_info& info);
+	void translateKeyEvent(key_info_t& info);
 	void processKeyState();
 	void processMouseState();
 };

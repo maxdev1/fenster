@@ -6,14 +6,12 @@
 #define __WINDOWSERVER_EVENTS_KEYEVENT__
 
 #include "events/event.hpp"
-
-#include "platform/platform.hpp"
-#include <stdint.h>
+#include <libwindow/input/key_info.hpp>
 
 class key_event_t : public event_t
 {
   public:
-	g_key_info info;
+	key_info_t info;
 
 	virtual ~key_event_t() {}
 

@@ -17,7 +17,7 @@ event_processor_t::event_processor_t()
 	multiclickTimespan = DEFAULT_MULTICLICK_TIMESPAN;
 }
 
-void event_processor_t::bufferKeyEvent(g_key_info keyInfo)
+void event_processor_t::bufferKeyEvent(key_info_t keyInfo)
 {
 	platformAcquireMutex(key_info_buffer_lock);
 	key_info_buffer.push_back(keyInfo);
@@ -41,7 +41,7 @@ void event_processor_t::processKeyState()
 	platformReleaseMutex(key_info_buffer_lock);
 }
 
-void event_processor_t::translateKeyEvent(g_key_info& info)
+void event_processor_t::translateKeyEvent(key_info_t& info)
 {
 	if(cursor_t::focusedComponent != -1)
 	{

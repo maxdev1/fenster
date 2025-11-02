@@ -5,7 +5,7 @@
 #ifdef _WIN32
 #include <windowserver.hpp>
 #include <components/cursor.hpp>
-#include <libwindow/platform/platform-key-info.hpp>
+#include <libwindow/input/key_info.hpp>
 
 #include <windows.h>
 #include <cairo/cairo.h>
@@ -82,7 +82,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			}
 			printf("KEYDOWN %i, %c%c%c\n", w, shift?'s':' ',ctrl?'c':' ',alt?'a':' ');
 
-			g_key_info info;
+			key_info_t info;
 			info.key = "KEY_B";
 			info.ctrl = ctrl;
 			info.shift = shift;
@@ -114,7 +114,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 
 			printf("KEYUP %i, %c%c%c\n", w, shift?'s':' ',ctrl?'c':' ',alt?'a':' ');
 
-			g_key_info info;
+			key_info_t info;
 			info.scancode = w;
 			info.key = "KEY_B";
 			info.ctrl = ctrl;
@@ -293,7 +293,7 @@ g_video_output* platformCreateVideoOutput()
 	return new windows_video_output_t();
 }
 
-char platformCharForKey(g_key_info key)
+char platformCharForKey(key_info_t key)
 {
 	printf("get char for key %s\n", key.key.c_str());
 	return 'A';

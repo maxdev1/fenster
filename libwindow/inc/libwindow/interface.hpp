@@ -8,6 +8,7 @@
 #include "platform/platform.hpp"
 #include "metrics/dimension.hpp"
 #include "metrics/rectangle.hpp"
+#include "input/key_info.hpp"
 
 /**
  * This UI interface specification defines the messages
@@ -453,7 +454,7 @@ typedef struct
 typedef struct
 {
     g_ui_component_event_header header;
-    g_key_info_basic key_info;
+    key_info_basic_t key_info;
 } __attribute__((packed)) g_ui_component_key_event;
 
 typedef struct

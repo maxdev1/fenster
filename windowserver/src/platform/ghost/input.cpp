@@ -10,6 +10,7 @@
 #include "components/cursor.hpp"
 #include "events/event_processor.hpp"
 
+#include <libwindow/input/key_info.hpp>
 #include <libinput/keyboard/keyboard.hpp>
 #include <libinput/mouse/mouse.hpp>
 #include <libps2driver/ps2driver.hpp>
@@ -32,7 +33,15 @@ void inputReceiverStartReceiveKeyEvents()
 
 	while(true)
 	{
-		g_key_info key = g_keyboard::readKey(keyboardIn);
+		g_key_info ghostKey = g_keyboard::readKey(keyboardIn);
+
+		key_info_t key;
+		key.pressed = ghostKey.pressed;
+		key.ctrl = ghostKey.ctrl;
+		key.alt = ghostKey.alt;
+		key.shift = ghostKey.shift;
+		key.scancode = ghostKey.scancode;
+		key.key = ghostKey.key;
 
 		if(key.ctrl && key.key == "KEY_Q" && key.pressed)
 		{

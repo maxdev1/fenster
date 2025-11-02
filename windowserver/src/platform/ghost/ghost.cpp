@@ -43,9 +43,16 @@ void platformLoadCursors()
 	cursor_t::set("default");
 }
 
-char platformCharForKey(g_key_info info)
+char platformCharForKey(key_info_t info)
 {
-	return g_keyboard::charForKey(info);
+	g_key_info ghostKey;
+	ghostKey.pressed = info.pressed;
+	ghostKey.ctrl = info.ctrl;
+	ghostKey.shift = info.shift;
+	ghostKey.alt = info.alt;
+	ghostKey.scancode = info.scancode;
+	ghostKey.key = info.key;
+	return g_keyboard::charForKey(ghostKey);
 }
 
 #endif

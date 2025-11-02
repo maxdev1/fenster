@@ -5,13 +5,11 @@
 #ifndef __PLATFORM__
 #define __PLATFORM__
 
-#include <libwindow/platform/platform.hpp>
-
-/**
- * Platform specific type definitions
- */
-#include <stdint.h>
 #include <video/video_output.hpp>
+
+#include <libwindow/platform/platform.hpp>
+#include <libwindow/input/key_info.hpp>
+#include <stdint.h>
 
 /**
  * Starts whatever is necessary on the system to receive mouse and keyboard input.
@@ -38,6 +36,6 @@ bool platformInitializeKeyboardLayout(std::string locale);
 /**
  * Converts the key information into a character.
  */
-char platformCharForKey(g_key_info key);
+char platformCharForKey(key_info_t key);
 
 #endif

@@ -6,13 +6,13 @@
 #define LIBWINDOW_KEYLISTENER
 
 #include "listener.hpp"
-#include "../interface.hpp"
-#include "../platform/platform.hpp"
+#include "libwindow/interface.hpp"
+#include "libwindow/input/key_info.hpp"
 #include <bits/std_function.h>
 
 struct g_key_event
 {
-	g_key_info_basic info;
+	key_info_basic_t info;
 };
 
 typedef std::function<void(g_key_event&)> g_key_listener_func;

@@ -257,7 +257,7 @@ void text_area_t::setMarker(int pos)
 	markFor(COMPONENT_REQUIREMENT_PAINT);
 }
 
-void text_area_t::backspace(g_key_info& info)
+void text_area_t::backspace(key_info_t& info)
 {
 
 	if(text.length() > 0)
