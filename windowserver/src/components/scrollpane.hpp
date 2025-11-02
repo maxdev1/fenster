@@ -2,64 +2,67 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_SCROLLPANE__
-#define __WINDOWSERVER_COMPONENTS_SCROLLPANE__
+#ifndef FENSTER_SERVER_COMPONENTS_SCROLLPANE
+#define FENSTER_SERVER_COMPONENTS_SCROLLPANE
 
 #include "components/component.hpp"
 #include "components/scrollbar.hpp"
 
-class scrollpane_t : virtual public component_t, public scroll_handler_t
+namespace fensterserver
 {
-    component_t* content = nullptr;
-    g_point scrollPosition = g_point(0, 0);
-    scrollbar_t verticalScrollbar = scrollbar_t(scrollbar_orientation_t::VERTICAL);
-    scrollbar_t horizontalScrollbar = scrollbar_t(scrollbar_orientation_t::HORIZONTAL);
-
-    bool fixedWidth = false;
-    bool fixedHeight = false;
-
-    bool showHbar = false;
-    bool showVbar = false;
-
-    virtual void updateContent();
-
-protected:
-    bool hasGraphics() const override
+    class ScrollPane : virtual public Component, public ScrollHandler
     {
-        return false;
-    }
+        Component* content = nullptr;
+        fenster::Point scrollPosition = fenster::Point(0, 0);
+        Scrollbar verticalScrollbar = Scrollbar(ScrollbarOrientation::VERTICAL);
+        Scrollbar horizontalScrollbar = Scrollbar(ScrollbarOrientation::HORIZONTAL);
 
-public:
-    scrollpane_t();
+        bool fixedWidth = false;
+        bool fixedHeight = false;
 
-    virtual g_point getPosition() const
-    {
-        return scrollPosition;
-    }
+        bool showHbar = false;
+        bool showVbar = false;
 
-    void layout() override;
+        virtual void updateContent();
 
-    component_t* handleMouseEvent(mouse_event_t& event) override;
-    void handleScroll(scrollbar_t* bar) override;
+    protected:
+        bool hasGraphics() const override
+        {
+            return false;
+        }
 
-    virtual void setContent(component_t* content);
+    public:
+        ScrollPane();
 
-    virtual component_t* getContent() const
-    {
-        return content;
-    }
+        virtual fenster::Point getPosition() const
+        {
+            return scrollPosition;
+        }
 
-    g_dimension calculateViewport(g_dimension contentPrefSize);
+        void layout() override;
 
-    void setFixedWidth(bool fix)
-    {
-        this->fixedWidth = fix;
-    }
+        Component* handleMouseEvent(MouseEvent& event) override;
+        void handleScroll(Scrollbar* bar) override;
 
-    void setFixedHeight(bool fix)
-    {
-        this->fixedHeight = fix;
-    }
-};
+        virtual void setContent(Component* content);
+
+        virtual Component* getContent() const
+        {
+            return content;
+        }
+
+        fenster::Dimension calculateViewport(fenster::Dimension contentPrefSize);
+
+        void setFixedWidth(bool fix)
+        {
+            this->fixedWidth = fix;
+        }
+
+        void setFixedHeight(bool fix)
+        {
+            this->fixedHeight = fix;
+        }
+    };
+}
 
 #endif

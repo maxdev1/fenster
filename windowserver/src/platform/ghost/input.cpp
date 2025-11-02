@@ -6,7 +6,7 @@
 
 #include "platform/platform.hpp"
 #include "platform/ghost/ghost.hpp"
-#include "windowserver.hpp"
+#include "server.hpp"
 #include "components/cursor.hpp"
 #include "events/event_processor.hpp"
 
@@ -27,15 +27,15 @@ void inputReceiverInitialize()
 
 void inputReceiverStartReceiveKeyEvents()
 {
-	platformRegisterTaskIdentifier("windowserver/key-receiver");
+	fenster::platformRegisterTaskIdentifier("windowserver/key-receiver");
 
-	event_processor_t* event_queue = windowserver_t::instance()->eventProcessor;
+	fensterserver::EventProcessor* event_queue = fensterserver::Server::instance()->eventProcessor;
 
 	while(true)
 	{
 		g_key_info ghostKey = g_keyboard::readKey(keyboardIn);
 
-		key_info_t key;
+		fenster::KeyInfo key;
 		key.pressed = ghostKey.pressed;
 		key.ctrl = ghostKey.ctrl;
 		key.alt = ghostKey.alt;
@@ -45,66 +45,65 @@ void inputReceiverStartReceiveKeyEvents()
 
 		if(key.ctrl && key.key == "KEY_Q" && key.pressed)
 		{
-			windowserver_t::setDebug(!windowserver_t::isDebug());
+			fensterserver::Server::setDebug(!fensterserver::Server::isDebug());
 			continue;
 		}
 
 		event_queue->bufferKeyEvent(key);
 
-		windowserver_t::instance()->requestUpdateImmediately();
+		fensterserver::Server::instance()->requestUpdateImmediately();
 	}
 }
 
 void inputReceiverStartReceiveMouseEvents()
 {
-	platformRegisterTaskIdentifier("windowserver/mouse-receiver");
+	fenster::platformRegisterTaskIdentifier("windowserver/mouse-receiver");
 
-	windowserver_t* instance = windowserver_t::instance();
-	g_dimension resolution = instance->videoOutput->getResolution();
+	fensterserver::Server* instance = fensterserver::Server::instance();
+	fenster::Dimension resolution = instance->videoOutput->getResolution();
 
 	while(true)
 	{
 		g_mouse_info info = g_mouse::readMouse(mouseIn);
 
-		cursor_t::nextPosition.x += info.x;
-		cursor_t::nextPosition.y += info.y;
+		fensterserver::Cursor::nextPosition.x += info.x;
+		fensterserver::Cursor::nextPosition.y += info.y;
 
-		if(cursor_t::nextPosition.x < 0)
+		if(fensterserver::Cursor::nextPosition.x < 0)
 		{
-			cursor_t::nextPosition.x = 0;
+			fensterserver::Cursor::nextPosition.x = 0;
 		}
-		if(cursor_t::nextPosition.x > resolution.width - 2)
+		if(fensterserver::Cursor::nextPosition.x > resolution.width - 2)
 		{
-			cursor_t::nextPosition.x = resolution.width - 2;
+			fensterserver::Cursor::nextPosition.x = resolution.width - 2;
 		}
-		if(cursor_t::nextPosition.y < 0)
+		if(fensterserver::Cursor::nextPosition.y < 0)
 		{
-			cursor_t::nextPosition.y = 0;
+			fensterserver::Cursor::nextPosition.y = 0;
 		}
-		if(cursor_t::nextPosition.y > resolution.height - 2)
+		if(fensterserver::Cursor::nextPosition.y > resolution.height - 2)
 		{
-			cursor_t::nextPosition.y = resolution.height - 2;
+			fensterserver::Cursor::nextPosition.y = resolution.height - 2;
 		}
 
-		cursor_t::nextPressedButtons = G_MOUSE_BUTTON_NONE;
+		fensterserver::Cursor::nextPressedButtons = FENSTER_MOUSE_BUTTON_NONE;
 		if(info.button1)
 		{
-			cursor_t::nextPressedButtons |= G_MOUSE_BUTTON_1;
+			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_1;
 		}
 		if(info.button2)
 		{
-			cursor_t::nextPressedButtons |= G_MOUSE_BUTTON_2;
+			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_2;
 		}
 		if(info.button3)
 		{
-			cursor_t::nextPressedButtons |= G_MOUSE_BUTTON_3;
+			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_3;
 		}
 
-		cursor_t::nextScroll += info.scroll;
+		fensterserver::Cursor::nextScroll += info.scroll;
 
-		windowserver_t::instance()->requestUpdateImmediately();
+		fensterserver::Server::instance()->requestUpdateImmediately();
 	}
 }
 
 #endif
-

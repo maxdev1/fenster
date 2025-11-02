@@ -7,14 +7,18 @@
 
 #include "component.hpp"
 
-class g_selection : virtual public g_component
+namespace fenster
 {
-public:
-    explicit g_selection(g_ui_component_id id) : g_component(id)
-    {
-    }
+	class Selection : virtual public Component
+	{
+	public:
+		explicit Selection(ComponentId id) :
+			Component(id)
+		{
+		}
 
-    static g_selection* create();
-};
+		static Selection* create();
+	};
+}
 
 #endif

@@ -2,14 +2,17 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __LIBFONT_TEXT_TEXTALIGNMENT__
-#define __LIBFONT_TEXT_TEXTALIGNMENT__
+#ifndef LIBWINDOW_FONT_TEXTALIGNMENT
+#define LIBWINDOW_FONT_TEXTALIGNMENT
 
-enum class g_text_alignment : uint16_t
+namespace fenster
 {
-    LEFT,
-    CENTER,
-    RIGHT
-};
+	enum class TextAlignment : uint16_t
+	{
+		LEFT,
+		CENTER,
+		RIGHT
+	};
+}
 
 #endif

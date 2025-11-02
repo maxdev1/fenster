@@ -8,45 +8,48 @@
 #include "libwindow/properties.hpp"
 #include "libwindow/window.hpp"
 
-class g_window_close_dispatcher : public g_listener
+namespace fenster
 {
-	std::function<void()> func;
-
-public:
-	explicit g_window_close_dispatcher(std::function<void()> func) :
-		func(std::move(func))
+	class WindowCloseDispatcher : public Listener
 	{
+		std::function<void()> func;
+
+	public:
+		explicit WindowCloseDispatcher(std::function<void()> func) :
+			func(std::move(func))
+		{
+		}
+
+		void process(ComponentEventHeader* header) override
+		{
+			func();
+		}
+	};
+
+	Window* Window::create()
+	{
+		return createComponent<Window, FENSTER_COMPONENT_TYPE_WINDOW>();
 	}
 
-	void process(g_ui_component_event_header* header) override
+	Window* Window::attach(ComponentId id)
 	{
-		func();
+		return attachComponent<Window>(id);
 	}
-};
 
-g_window* g_window::create()
-{
-	return createComponent<g_window, G_UI_COMPONENT_TYPE_WINDOW>();
-}
+	bool Window::isResizable()
+	{
+		uint32_t value;
+		getNumericProperty(FENSTER_UI_PROPERTY_RESIZABLE, &value);
+		return value;
+	}
 
-g_window* g_window::attach(g_ui_component_id id)
-{
-	return attachComponent<g_window>(id);
-}
+	void Window::setResizable(bool resizable)
+	{
+		setNumericProperty(FENSTER_UI_PROPERTY_RESIZABLE, resizable);
+	}
 
-bool g_window::isResizable()
-{
-	uint32_t value;
-	getNumericProperty(G_UI_PROPERTY_RESIZABLE, &value);
-	return value;
-}
-
-void g_window::setResizable(bool resizable)
-{
-	setNumericProperty(G_UI_PROPERTY_RESIZABLE, resizable);
-}
-
-bool g_window::onClose(std::function<void()> func)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_CLOSE, new g_window_close_dispatcher(std::move(func)));
+	bool Window::onClose(std::function<void()> func)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_CLOSE, new WindowCloseDispatcher(std::move(func)));
+	}
 }

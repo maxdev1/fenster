@@ -5,49 +5,49 @@
 #include "layout/flow_layout_manager.hpp"
 #include "components/component.hpp"
 
-/**
- *
- */
-void flow_layout_manager_t::layout()
+namespace fensterserver
 {
-	if(component == nullptr)
-		return;
-
-
-	g_rectangle bounds = component->getBounds();
-	bounds.x = padding.left;
-	bounds.y = padding.top;
-	bounds.width -= padding.left + padding.right;
-	bounds.height -= padding.top + padding.bottom;
-
-	int x = bounds.x;
-	int y = bounds.y;
-	int rowHeight = 0;
-
-	auto& children = component->acquireChildren();
-	for(auto& childRef: children)
+	void FlowLayoutManager::layout()
 	{
-		component_t* child = childRef.component;
-		if(!child->isVisible())
-			continue;
-		g_dimension childSize = child->getEffectivePreferredSize();
+		if(component == nullptr)
+			return;
 
-		// Break when reaching end
-		if(x + childSize.width > bounds.width)
+
+		fenster::Rectangle bounds = component->getBounds();
+		bounds.x = padding.left;
+		bounds.y = padding.top;
+		bounds.width -= padding.left + padding.right;
+		bounds.height -= padding.top + padding.bottom;
+
+		int x = bounds.x;
+		int y = bounds.y;
+		int rowHeight = 0;
+
+		auto& children = component->acquireChildren();
+		for(auto& childRef: children)
 		{
-			x = bounds.x;
-			y += rowHeight;
-			rowHeight = 0;
+			Component* child = childRef.component;
+			if(!child->isVisible())
+				continue;
+			fenster::Dimension childSize = child->getEffectivePreferredSize();
+
+			// Break when reaching end
+			if(x + childSize.width > bounds.width)
+			{
+				x = bounds.x;
+				y += rowHeight;
+				rowHeight = 0;
+			}
+
+			// Set size
+			child->setBounds(fenster::Rectangle(x, y, childSize.width, childSize.height));
+			x += childSize.width;
+
+			if(childSize.height > rowHeight)
+				rowHeight = childSize.height;
 		}
+		component->releaseChildren();
 
-		// Set size
-		child->setBounds(g_rectangle(x, y, childSize.width, childSize.height));
-		x += childSize.width;
-
-		if(childSize.height > rowHeight)
-			rowHeight = childSize.height;
+		component->setPreferredSize(fenster::Dimension(bounds.width == 0 ? x : bounds.width, y + rowHeight));
 	}
-	component->releaseChildren();
-
-	component->setPreferredSize(g_dimension(bounds.width == 0 ? x : bounds.width, y + rowHeight));
 }

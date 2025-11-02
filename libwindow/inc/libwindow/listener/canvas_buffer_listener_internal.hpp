@@ -7,22 +7,26 @@
 
 #include "listener.hpp"
 
-class g_component;
-class g_canvas;
-
-/**
- * Listener that a canvas registers on itself to react when a new buffer is ready.
- */
-class g_canvas_buffer_listener_internal : public g_listener
+namespace fenster
 {
-public:
-    g_canvas* canvas;
+	class Component;
+	class Canvas;
 
-    explicit g_canvas_buffer_listener_internal(g_canvas* canvas) : canvas(canvas)
-    {
-    }
+	/**
+	 * Listener that a canvas registers on itself to react when a new buffer is ready.
+	 */
+	class CanvasBufferListenerInternal : public Listener
+	{
+	public:
+		Canvas* canvas;
 
-    void process(g_ui_component_event_header* header) override;
-};
+		explicit CanvasBufferListenerInternal(Canvas* canvas) :
+			canvas(canvas)
+		{
+		}
+
+		void process(ComponentEventHeader* header) override;
+	};
+}
 
 #endif

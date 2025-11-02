@@ -2,36 +2,39 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_SCREEN__
-#define __WINDOWSERVER_COMPONENTS_SCREEN__
+#ifndef FENSTER_SERVER_COMPONENTS_DESKTOP_SCREEN
+#define FENSTER_SERVER_COMPONENTS_DESKTOP_SCREEN
 
 #include "components/component.hpp"
 
 #include <libwindow/metrics/rectangle.hpp>
 
-class screen_t: virtual public component_t
+namespace fensterserver
 {
-    g_rectangle invalid;
+    class Screen : virtual public Component
+    {
+        fenster::Rectangle invalid;
 
-    bool pressing = false;
-    g_point pressPoint;
+        bool pressing = false;
+        fenster::Point pressPoint;
 
-public:
-    ~screen_t() override = default;
+    public:
+        ~Screen() override = default;
 
-    void addChild(component_t* comp,
-                  component_child_reference_type_t type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
-    void removeChild(component_t* comp) override;
+        void addChild(Component* comp,
+                      ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
+        void removeChild(Component* comp) override;
 
-    void sendWindowEvent(g_ui_component_id observerId, window_t* window, SYS_TID_T observerThread, bool present);
+        void sendWindowEvent(fenster::ComponentId observerId, Window* window, SYS_TID_T observerThread, bool present);
 
-    /**
-     * Overrides the default invalidation method. On the component, this method
-     * just dispatches to the parent, but here we must remember the invalidation.
-     */
-    virtual void markDirty(g_rectangle rect);
+        /**
+         * Overrides the default invalidation method. On the component, this method
+         * just dispatches to the parent, but here we must remember the invalidation.
+         */
+        virtual void markDirty(fenster::Rectangle rect);
 
-    g_rectangle grabInvalid();
-};
+        fenster::Rectangle grabInvalid();
+    };
+}
 
 #endif

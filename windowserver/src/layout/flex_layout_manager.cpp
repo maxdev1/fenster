@@ -5,78 +5,81 @@
 #include "layout/flex_layout_manager.hpp"
 #include "components/component.hpp"
 
-void flex_layout_manager_t::setLayoutInfo(component_t* child, float grow, float shrink, int basis)
+namespace fensterserver
 {
-	flex_info_t info;
-	info.grow = grow;
-	info.shrink = shrink;
-	info.basis = basis;
-	flexInfo[child] = info;
-}
-
-void flex_layout_manager_t::layout()
-{
-	if(component == nullptr)
-		return;
-
-	g_rectangle bounds = component->getBounds();
-	bounds.x = padding.left;
-	bounds.y = padding.top;
-	bounds.width -= padding.left + padding.right;
-	bounds.height -= padding.top + padding.bottom;
-
-	auto& children = component->acquireChildren();
-	int totalSpace = horizontal ? bounds.width : bounds.height;
-	int totalFlexGrow = 0;
-	int totalFixedSpace = 0;
-
-	// Calculate required space for fixed-size
-	for(auto& ref: children)
+	void FlexLayoutManager::setLayoutInfo(Component* child, float grow, float shrink, int basis)
 	{
-		component_t* child = ref.component;
-		flex_info_t flex = flexInfo[child];
-
-		int basis = (flex.basis >= 0)
-			            ? flex.basis
-			            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
-		totalFixedSpace += basis;
-		totalFlexGrow += flex.grow;
+		FlexInfo info;
+		info.grow = grow;
+		info.shrink = shrink;
+		info.basis = basis;
+		flexInfo[child] = info;
 	}
 
-	// Calculate remaining space, considering the gaps
-	int remainingSize = totalSpace - totalFixedSpace - (gap * (children.size() - 1));
-
-	// Distribute space
-	int xOffset = bounds.x;
-	int yOffset = bounds.y;
-
-	for(auto& ref: children)
+	void FlexLayoutManager::layout()
 	{
-		component_t* child = ref.component;
-		flex_info_t flex = flexInfo[child];
+		if(component == nullptr)
+			return;
 
-		int basis = (flex.basis >= 0)
-			            ? flex.basis
-			            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
-		int allocatedSize = basis;
+		fenster::Rectangle bounds = component->getBounds();
+		bounds.x = padding.left;
+		bounds.y = padding.top;
+		bounds.width -= padding.left + padding.right;
+		bounds.height -= padding.top + padding.bottom;
 
-		if(remainingSize > 0 && flex.grow > 0)
+		auto& children = component->acquireChildren();
+		int totalSpace = horizontal ? bounds.width : bounds.height;
+		int totalFlexGrow = 0;
+		int totalFixedSpace = 0;
+
+		// Calculate required space for fixed-size
+		for(auto& ref: children)
 		{
-			float proportion = flex.grow / static_cast<float>(totalFlexGrow);
-			allocatedSize += static_cast<int>(proportion * remainingSize);
+			Component* child = ref.component;
+			FlexInfo flex = flexInfo[child];
+
+			int basis = (flex.basis >= 0)
+				            ? flex.basis
+				            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
+			totalFixedSpace += basis;
+			totalFlexGrow += flex.grow;
 		}
 
-		if(horizontal)
+		// Calculate remaining space, considering the gaps
+		int remainingSize = totalSpace - totalFixedSpace - (gap * (children.size() - 1));
+
+		// Distribute space
+		int xOffset = bounds.x;
+		int yOffset = bounds.y;
+
+		for(auto& ref: children)
 		{
-			child->setBounds(g_rectangle(xOffset, yOffset, allocatedSize, bounds.height));
-			xOffset += allocatedSize + gap; // Add the gap after each component
+			Component* child = ref.component;
+			FlexInfo flex = flexInfo[child];
+
+			int basis = (flex.basis >= 0)
+				            ? flex.basis
+				            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
+			int allocatedSize = basis;
+
+			if(remainingSize > 0 && flex.grow > 0)
+			{
+				float proportion = flex.grow / static_cast<float>(totalFlexGrow);
+				allocatedSize += static_cast<int>(proportion * remainingSize);
+			}
+
+			if(horizontal)
+			{
+				child->setBounds(fenster::Rectangle(xOffset, yOffset, allocatedSize, bounds.height));
+				xOffset += allocatedSize + gap; // Add the gap after each component
+			}
+			else
+			{
+				child->setBounds(fenster::Rectangle(xOffset, yOffset, bounds.width, allocatedSize));
+				yOffset += allocatedSize + gap; // Add the gap after each component
+			}
 		}
-		else
-		{
-			child->setBounds(g_rectangle(xOffset, yOffset, bounds.width, allocatedSize));
-			yOffset += allocatedSize + gap; // Add the gap after each component
-		}
+
+		component->releaseChildren();
 	}
-
-	component->releaseChildren();
 }

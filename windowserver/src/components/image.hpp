@@ -2,27 +2,30 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_IMAGE__
-#define __WINDOWSERVER_COMPONENTS_IMAGE__
+#ifndef FENSTER_SERVER_COMPONENTS_IMAGE
+#define FENSTER_SERVER_COMPONENTS_IMAGE
 
 #include "components/component.hpp"
 #include "components/titled_component.hpp"
 
 #include <libwindow/font/font.hpp>
 
-class image_t : virtual public component_t
+namespace fensterserver
 {
-    cairo_surface_t* image = nullptr;
+    class Image : virtual public Component
+    {
+        cairo_surface_t* image = nullptr;
 
-public:
-    image_t();
-    ~image_t() override = default;
+    public:
+        Image();
+        ~Image() override = default;
 
-    void paint() override;
+        void paint() override;
 
-    void loadImage(std::string path);
+        void loadImage(std::string path);
 
-    bool setStringProperty(int property, std::string text) override;
-};
+        bool setStringProperty(int property, std::string text) override;
+    };
+}
 
 #endif

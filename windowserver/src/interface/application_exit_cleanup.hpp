@@ -2,26 +2,28 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_INTERFACE_APPLICATIONEXITCLEANUP__
-#define __WINDOWSERVER_INTERFACE_APPLICATIONEXITCLEANUP__
+#ifndef FENSTER_SERVER_INTERFACE_APPLICATIONEXITCLEANUPHANDLER
+#define FENSTER_SERVER_INTERFACE_APPLICATIONEXITCLEANUPHANDLER
 
-#include "interface/interface_receiver.hpp"
 #include "platform/platform.hpp"
 
-class application_exit_cleanup_handler_t
+namespace fensterserver
 {
-    SYS_TID_T pid;
-
-public:
-    application_exit_cleanup_handler_t(SYS_TID_T pid) : pid(pid)
+    class ApplicationExitCleanupHandler
     {
-    }
+        SYS_TID_T pid;
 
-    virtual ~application_exit_cleanup_handler_t() = default;
+    public:
+        ApplicationExitCleanupHandler(SYS_TID_T pid) : pid(pid)
+        {
+        }
 
-    virtual void run();
-};
+        virtual ~ApplicationExitCleanupHandler() = default;
 
-void interfaceApplicationExitCleanupThread(application_exit_cleanup_handler_t* handler);
+        virtual void run();
+    };
+
+    void interfaceApplicationExitCleanupThread(ApplicationExitCleanupHandler* handler);
+}
 
 #endif

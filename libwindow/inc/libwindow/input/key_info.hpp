@@ -7,34 +7,37 @@
 
 #include <string>
 
-/**
- * Reduced key info struct that is used for example in events.
- */
-struct key_info_basic_t
+namespace fenster
 {
-	bool pressed : 1;
-	bool ctrl : 1;
-	bool alt : 1;
-	bool shift : 1;
-	uint16_t scancode;
-
-	key_info_basic_t() : pressed(false), ctrl(false), alt(false), shift(false), scancode(0)
+	/**
+	 * Reduced key info struct that is used for example in events.
+	 */
+	struct KeyInfoBasic
 	{
-	}
-} __attribute__((packed));
+		bool pressed : 1;
+		bool ctrl : 1;
+		bool alt : 1;
+		bool shift : 1;
+		uint16_t scancode;
 
-/**
- * Key info struct that must be constructed by the platform based on user input
- * so the window server can use it easily.
- */
-class key_info_t : public key_info_basic_t
-{
-public:
-	std::string key;
+		KeyInfoBasic() : pressed(false), ctrl(false), alt(false), shift(false), scancode(0)
+		{
+		}
+	} __attribute__((packed));
 
-	key_info_t() : key("KEY_NONE")
+	/**
+	 * Key info struct that must be constructed by the platform based on user input
+	 * so the window server can use it easily.
+	 */
+	class KeyInfo : public KeyInfoBasic
 	{
-	}
-};
+	public:
+		std::string key;
+
+		KeyInfo() : key("KEY_NONE")
+		{
+		}
+	};
+}
 
 #endif

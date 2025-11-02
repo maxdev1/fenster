@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_BUTTON__
-#define __WINDOWSERVER_COMPONENTS_BUTTON__
+#ifndef FENSTER_SERVER_COMPONENTS_BUTTON
+#define FENSTER_SERVER_COMPONENTS_BUTTON
 
 #include "components/action_component.hpp"
 #include "components/button_state.hpp"
@@ -15,44 +15,47 @@
 #include <libwindow/metrics/insets.hpp>
 #include <string>
 
-class button_t : virtual public component_t, virtual public titled_component_t, virtual public action_component_t
+namespace fensterserver
 {
-    button_state_t state;
-    label_t label;
-    g_insets insets;
-    bool enabled;
-    g_button_style style = G_BUTTON_STYLE_DEFAULT;
-
-public:
-    button_t();
-    ~button_t() override = default;
-
-    void update() override;
-    void layout() override;
-    void paint() override;
-
-    component_t* handleMouseEvent(mouse_event_t& e) override;
-
-    void setTitleInternal(std::string title) override;
-    std::string getTitle() override;
-
-    bool getNumericProperty(int property, uint32_t* out) override;
-    bool setNumericProperty(int property, uint32_t value) override;
-
-    bool isFocusableDefault() const override;
-    void setFocusedInternal(bool focused) override;
-
-    virtual void setEnabled(bool enabled);
-
-    virtual bool isEnabled() const
+    class Button : virtual public Component, virtual public TitledComponent, virtual public ActionComponent
     {
-        return enabled;
-    }
+        ButtonState state;
+        Label label;
+        fenster::Insets insets;
+        bool enabled;
+        fenster::ButtonStyle style = FENSTER_BUTTON_STYLE_DEFAULT;
 
-    label_t& getLabel()
-    {
-        return label;
-    }
-};
+    public:
+        Button();
+        ~Button() override = default;
+
+        void update() override;
+        void layout() override;
+        void paint() override;
+
+        Component* handleMouseEvent(MouseEvent& e) override;
+
+        void setTitleInternal(std::string title) override;
+        std::string getTitle() override;
+
+        bool getNumericProperty(int property, uint32_t* out) override;
+        bool setNumericProperty(int property, uint32_t value) override;
+
+        bool isFocusableDefault() const override;
+        void setFocusedInternal(bool focused) override;
+
+        virtual void setEnabled(bool enabled);
+
+        virtual bool isEnabled() const
+        {
+            return enabled;
+        }
+
+        Label& getLabel()
+        {
+            return label;
+        }
+    };
+}
 
 #endif

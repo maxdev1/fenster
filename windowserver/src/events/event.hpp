@@ -2,20 +2,25 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_EVENTS_EVENT__
-#define __WINDOWSERVER_EVENTS_EVENT__
+#ifndef FENSTER_SERVER_EVENTS_EVENT
+#define FENSTER_SERVER_EVENTS_EVENT
 
-class component_t;
-
-class event_t
+namespace fensterserver
 {
-  public:
-    virtual ~event_t() {}
+    class Component;
 
-    /**
-     * Lets the event apply on the component.
-     */
-    virtual component_t* visit(component_t* component) = 0;
-};
+    class Event
+    {
+    public:
+        virtual ~Event()
+        {
+        }
+
+        /**
+         * Lets the event apply on the component.
+         */
+        virtual Component* visit(Component* component) = 0;
+    };
+}
 
 #endif

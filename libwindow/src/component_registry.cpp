@@ -6,31 +6,34 @@
 #include "libwindow/component.hpp"
 #include <map>
 
-static SYS_MUTEX_T componentsLock = platformInitializeMutex(false);
-static std::map<g_ui_component_id, g_component*> components;
-
-/**
- *
- */
-void g_component_registry::add(g_component* component)
+namespace fenster
 {
-	platformAcquireMutex(componentsLock);
-	components[component->getId()] = component;
-	platformReleaseMutex(componentsLock);
-}
+	static SYS_MUTEX_T componentsLock = platformInitializeMutex(false);
+	static std::map<ComponentId, Component*> components;
 
-/**
- *
- */
-g_component* g_component_registry::get(g_ui_component_id id)
-{
-	platformAcquireMutex(componentsLock);
+	/**
+	 *
+	 */
+	void ComponentRegistry::add(Component* component)
+	{
+		platformAcquireMutex(componentsLock);
+		components[component->getId()] = component;
+		platformReleaseMutex(componentsLock);
+	}
 
-	g_component* component = nullptr;
-	if(components.count(id) > 0)
-		component = components[id];
+	/**
+	 *
+	 */
+	Component* ComponentRegistry::get(ComponentId id)
+	{
+		platformAcquireMutex(componentsLock);
 
-	platformReleaseMutex(componentsLock);
+		Component* component = nullptr;
+		if(components.count(id) > 0)
+			component = components[id];
 
-	return component;
+		platformReleaseMutex(componentsLock);
+
+		return component;
+	}
 }

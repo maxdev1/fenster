@@ -10,35 +10,38 @@
 
 #include "process_registry.hpp"
 
-void interfaceRegistrationThread()
+namespace fensterserver
 {
-	if(!platformRegisterTaskIdentifier(G_UI_REGISTRY_NAME))
+	void interfaceRegistrationThread()
 	{
-		platformLog("failed to register as \"%s\"", G_UI_REGISTRY_NAME);
-		return;
-	}
-
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_initialize_request);
-	uint8_t buf[buflen];
-
-	SYS_TID_T receiverTid = platformCreateThread((void*) &interfaceReceiverThread);
-	while(true)
-	{
-		if(platformReceiveMessage(buf, buflen, SYS_TX_NONE) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		if(!fenster::platformRegisterTaskIdentifier(G_UI_REGISTRY_NAME))
 		{
-			auto body = (g_ui_initialize_request*) SYS_MESSAGE_CONTENT(buf);
+			fenster::platformLog("failed to register as \"%s\"", G_UI_REGISTRY_NAME);
+			return;
+		}
 
-			process_registry_t::bind(platformGetPidForTid(body->event_dispatcher), body->event_dispatcher);
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(fenster::CommandApplicationInitializeRequest);
+		uint8_t buf[buflen];
 
-			platformCreateThreadWithData((void*) &interfaceApplicationExitCleanupThread,
-			                new application_exit_cleanup_handler_t(platformGetPidForTid(SYS_MESSAGE_SENDER(buf))));
+		SYS_TID_T receiverTid = fenster::platformCreateThread((void*) &interfaceReceiverThread);
+		while(true)
+		{
+			if(fenster::platformReceiveMessage(buf, buflen, SYS_TX_NONE) == SYS_MESSAGE_RECEIVE_SUCCESS)
+			{
+				auto body = (fenster::CommandApplicationInitializeRequest*) SYS_MESSAGE_CONTENT(buf);
 
-			g_ui_initialize_response response;
-			response.header.id = G_UI_PROTOCOL_INITIALIZATION;
-			response.status = G_UI_PROTOCOL_SUCCESS;
-			response.window_server_delegate = receiverTid;
-			platformSendMessage(SYS_MESSAGE_SENDER(buf), &response, sizeof(g_ui_initialize_response),
-			                 SYS_MESSAGE_TRANSACTION(buf));
+				ProcessRegistry::bind(fenster::platformGetPidForTid(body->event_dispatcher), body->event_dispatcher);
+
+				fenster::platformCreateThreadWithData((void*) &interfaceApplicationExitCleanupThread,
+								new ApplicationExitCleanupHandler(fenster::platformGetPidForTid(SYS_MESSAGE_SENDER(buf))));
+
+				fenster::CommandApplicationInitializeResponse response;
+				response.header.id = FENSTER_PROTOCOL_INITIALIZATION;
+				response.status = FENSTER_PROTOCOL_SUCCESS;
+				response.window_server_delegate = receiverTid;
+				platformSendMessage(SYS_MESSAGE_SENDER(buf), &response, sizeof(fenster::CommandApplicationInitializeResponse),
+								 SYS_MESSAGE_TRANSACTION(buf));
+			}
 		}
 	}
 }

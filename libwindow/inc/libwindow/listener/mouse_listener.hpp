@@ -10,34 +10,38 @@
 #include <utility>
 #include <bits/std_function.h>
 
-typedef std::function<void(g_ui_component_mouse_event*)> g_mouse_listener_func;
-
-class g_mouse_listener : public g_listener
+namespace fenster
 {
-public:
-    ~g_mouse_listener() override = default;
+	typedef std::function<void(ComponentMouseEvent*)> MouseListenerFunc;
 
-    void process(g_ui_component_event_header* header) override
-    {
-        handleMouseEvent((g_ui_component_mouse_event*)header);
-    }
+	class MouseListener : public Listener
+	{
+	public:
+		~MouseListener() override = default;
 
-    virtual void handleMouseEvent(g_ui_component_mouse_event* e) = 0;
-};
+		void process(ComponentEventHeader* header) override
+		{
+			handleMouseEvent((ComponentMouseEvent*) header);
+		}
 
-class g_mouse_listener_dispatcher : public g_mouse_listener
-{
-    g_mouse_listener_func func;
+		virtual void handleMouseEvent(ComponentMouseEvent* e) = 0;
+	};
 
-public:
-    explicit g_mouse_listener_dispatcher(g_mouse_listener_func func) : func(std::move(func))
-    {
-    };
+	class MouseListenerDispatcher : public MouseListener
+	{
+		MouseListenerFunc func;
 
-    void handleMouseEvent(g_ui_component_mouse_event* e) override
-    {
-        func(e);
-    }
-};
+	public:
+		explicit MouseListenerDispatcher(MouseListenerFunc func) :
+			func(std::move(func))
+		{
+		};
+
+		void handleMouseEvent(ComponentMouseEvent* e) override
+		{
+			func(e);
+		}
+	};
+}
 
 #endif

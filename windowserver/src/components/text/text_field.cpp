@@ -8,473 +8,478 @@
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
 
-#include <libproperties/parser.hpp>
+#include <libproperties/properties.hpp>
 #include <libwindow/properties.hpp>
 #include <libwindow/font/font_loader.hpp>
 #include <sstream>
 
-text_field_t::text_field_t() :
-	text(""), cursor(0), marker(0), scrollX(0), secure(false),
-	visualStatus(text_field_visual_status_t::NORMAL), fontSize(14),
-	textColor(RGB(0, 0, 0)), insets(g_insets(5, 5, 5, 5))
+namespace fensterserver
 {
-	caretMoveStrategy = default_caret_move_strategy_t::getInstance();
-	viewModel = g_text_layouter::getInstance()->initializeBuffer();
-	font = g_font_loader::getDefault();
-}
-
-void text_field_t::setText(std::string newText)
-{
-	text = newText;
-	markFor(COMPONENT_REQUIREMENT_UPDATE);
-}
-
-std::string text_field_t::getText()
-{
-	return text;
-}
-
-void text_field_t::setSecure(bool newSecure)
-{
-	secure = newSecure;
-	markFor(COMPONENT_REQUIREMENT_UPDATE);
-}
-
-void text_field_t::update()
-{
-	g_rectangle bounds = getBounds();
-
-	std::string visible_text = text;
-	if(secure)
+	TextField::TextField() :
+		text(""), cursor(0), marker(0), scrollX(0), secure(false),
+		visualStatus(TextFieldVisualStatus::NORMAL), fontSize(14),
+		textColor(RGB(0, 0, 0)), insets(fenster::Insets(5, 5, 5, 5))
 	{
-		visible_text = "";
-		for(int i = 0; i < text.length(); i++)
+		caretMoveStrategy = DefaultCaretMoveStrategy::getInstance();
+		viewModel = fenster::TextLayouter::getInstance()->initializeBuffer();
+		font = fenster::FontLoader::getDefault();
+	}
+
+	void TextField::setText(std::string newText)
+	{
+		text = newText;
+		markFor(COMPONENT_REQUIREMENT_UPDATE);
+	}
+
+	std::string TextField::getText()
+	{
+		return text;
+	}
+
+	void TextField::setSecure(bool newSecure)
+	{
+		secure = newSecure;
+		markFor(COMPONENT_REQUIREMENT_UPDATE);
+	}
+
+	void TextField::update()
+	{
+		fenster::Rectangle bounds = getBounds();
+
+		std::string visible_text = text;
+		if(secure)
 		{
-			visible_text += "*";
-		}
-	}
-
-	auto cr = graphics.acquireContext();
-	if(!cr)
-		return;
-
-	g_text_layouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
-	                                       g_rectangle(0, 0, bounds.width, bounds.height), g_text_alignment::LEFT,
-	                                       viewModel, false);
-
-	markFor(COMPONENT_REQUIREMENT_PAINT);
-
-	graphics.releaseContext();
-}
-
-void text_field_t::paint()
-{
-	if(font == nullptr)
-		return;
-
-	auto cr = graphics.acquireContext();
-	if(!cr)
-		return;
-
-	g_rectangle bounds = getBounds();
-
-	// background
-	cairo_set_source_rgb(cr, 1, 1, 1);
-	cairo_rectangle(cr, 0, 0, bounds.width, bounds.height);
-	cairo_fill(cr);
-
-	// border
-	g_color_argb borderColor;
-	if(focused)
-	{
-		borderColor = RGB(55, 155, 255);
-	}
-	else if(visualStatus == text_field_visual_status_t::HOVERED)
-	{
-		borderColor = RGB(150, 150, 150);
-	}
-	else
-	{
-		borderColor = RGB(180, 180, 180);
-	}
-	cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(borderColor));
-	cairo_rectangle(cr, 0.5, 0.5, bounds.width - 1, bounds.height - 1);
-	cairo_set_line_width(cr, 1.0);
-	cairo_stroke(cr);
-
-	// TODO Unfortunately need to do this again because we have a new cairo context otherwise they are lost
-	std::string visible_text = text;
-	if(secure)
-	{
-		visible_text = "";
-		for(int i = 0; i < text.length(); i++)
-		{
-			visible_text += "*";
-		}
-	}
-	g_text_layouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
-	                                       g_rectangle(0, 0, bounds.width, bounds.height), g_text_alignment::LEFT,
-	                                       viewModel, false);
-
-	// Scroll
-	applyScroll();
-
-	int pos = 0;
-	int first = marker < cursor ? marker : cursor;
-	int second = marker > cursor ? marker : cursor;
-
-	// Paint marking
-	if(focused)
-	{
-		pos = 0;
-		for(pos = 0; pos < viewModel->positions.size(); pos++)
-		{
-			g_color_argb color = textColor;
-			if(first != second && pos >= first && pos < second)
+			visible_text = "";
+			for(int i = 0; i < text.length(); i++)
 			{
-				cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(55, 155, 255)));
-				g_rectangle before = positionToCursorBounds(pos);
-				g_rectangle after = positionToCursorBounds(pos + 1);
-				cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
-				cairo_fill(cr);
+				visible_text += "*";
+			}
+		}
 
+		auto cr = graphics.acquireContext();
+		if(!cr)
+			return;
+
+		fenster::TextLayouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
+		                                             fenster::Rectangle(0, 0, bounds.width, bounds.height),
+		                                             fenster::TextAlignment::LEFT,
+		                                             viewModel, false);
+
+		markFor(COMPONENT_REQUIREMENT_PAINT);
+
+		graphics.releaseContext();
+	}
+
+	void TextField::paint()
+	{
+		if(font == nullptr)
+			return;
+
+		auto cr = graphics.acquireContext();
+		if(!cr)
+			return;
+
+		fenster::Rectangle bounds = getBounds();
+
+		// background
+		cairo_set_source_rgb(cr, 1, 1, 1);
+		cairo_rectangle(cr, 0, 0, bounds.width, bounds.height);
+		cairo_fill(cr);
+
+		// border
+		fenster::ColorArgb borderColor;
+		if(focused)
+		{
+			borderColor = RGB(55, 155, 255);
+		}
+		else if(visualStatus == TextFieldVisualStatus::HOVERED)
+		{
+			borderColor = RGB(150, 150, 150);
+		}
+		else
+		{
+			borderColor = RGB(180, 180, 180);
+		}
+		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(borderColor));
+		cairo_rectangle(cr, 0.5, 0.5, bounds.width - 1, bounds.height - 1);
+		cairo_set_line_width(cr, 1.0);
+		cairo_stroke(cr);
+
+		// TODO Unfortunately need to do this again because we have a new cairo context otherwise they are lost
+		std::string visible_text = text;
+		if(secure)
+		{
+			visible_text = "";
+			for(int i = 0; i < text.length(); i++)
+			{
+				visible_text += "*";
+			}
+		}
+		fenster::TextLayouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
+		                                             fenster::Rectangle(0, 0, bounds.width, bounds.height),
+		                                             fenster::TextAlignment::LEFT,
+		                                             viewModel, false);
+
+		// Scroll
+		applyScroll();
+
+		int pos = 0;
+		int first = marker < cursor ? marker : cursor;
+		int second = marker > cursor ? marker : cursor;
+
+		// Paint marking
+		if(focused)
+		{
+			pos = 0;
+			for(pos = 0; pos < viewModel->positions.size(); pos++)
+			{
+				fenster::ColorArgb color = textColor;
+				if(first != second && pos >= first && pos < second)
+				{
+					cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(55, 155, 255)));
+					fenster::Rectangle before = positionToCursorBounds(pos);
+					fenster::Rectangle after = positionToCursorBounds(pos + 1);
+					cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
+					cairo_fill(cr);
+
+					color = RGB(255, 255, 255);
+				}
+			}
+		}
+
+		// Paint glyphs
+		pos = 0;
+		for(fenster::PositionedGlyph& g: viewModel->positions)
+		{
+
+			fenster::Rectangle onView = glyphToView(g);
+			fenster::ColorArgb color = textColor;
+			if(focused && first != second && pos >= first && pos < second)
+			{
 				color = RGB(255, 255, 255);
 			}
+
+			cairo_save(cr);
+			cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(color));
+			cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
+			cairo_glyph_path(cr, g.glyph, g.glyph_count);
+			cairo_fill(cr);
+			cairo_restore(cr);
+			++pos;
 		}
-	}
 
-	// Paint glyphs
-	pos = 0;
-	for(g_positioned_glyph& g: viewModel->positions)
-	{
-
-		g_rectangle onView = glyphToView(g);
-		g_color_argb color = textColor;
-		if(focused && first != second && pos >= first && pos < second)
+		// Paint cursor
+		if(focused)
 		{
-			color = RGB(255, 255, 255);
+			cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(60, 60, 60)));
+			auto cursorBounds = positionToCursorBounds(cursor);
+			cairo_rectangle(cr, cursorBounds.x, cursorBounds.y, cursorBounds.width, cursorBounds.height);
+			cairo_fill(cr);
 		}
 
-		cairo_save(cr);
-		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(color));
-		cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
-		cairo_glyph_path(cr, g.glyph, g.glyph_count);
-		cairo_fill(cr);
-		cairo_restore(cr);
-		++pos;
+		graphics.releaseContext();
 	}
 
-	// Paint cursor
-	if(focused)
+	void TextField::applyScroll()
 	{
-		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(60, 60, 60)));
-		auto cursorBounds = positionToCursorBounds(cursor);
-		cairo_rectangle(cr, cursorBounds.x, cursorBounds.y, cursorBounds.width, cursorBounds.height);
-		cairo_fill(cr);
+		int cursorX = positionToUnscrolledCursorX(cursor);
+		fenster::Rectangle bounds = getBounds();
+
+		int textUsableWidth = bounds.width - insets.left - insets.right;
+
+		if(scrollX + cursorX > textUsableWidth)
+			scrollX = textUsableWidth - cursorX;
+		else if(scrollX + cursorX < insets.left)
+			scrollX = -cursorX + insets.left;
+
+		if(viewModel->textBounds.width > textUsableWidth)
+			scrollX = std::max(textUsableWidth - viewModel->textBounds.width,
+			                   std::min(scrollX, 0));
+		else
+			scrollX = 0;
 	}
 
-	graphics.releaseContext();
-}
-
-void text_field_t::applyScroll()
-{
-	int cursorX = positionToUnscrolledCursorX(cursor);
-	g_rectangle bounds = getBounds();
-
-	int textUsableWidth = bounds.width - insets.left - insets.right;
-
-	if(scrollX + cursorX > textUsableWidth)
-		scrollX = textUsableWidth - cursorX;
-	else if(scrollX + cursorX < insets.left)
-		scrollX = -cursorX + insets.left;
-
-	if(viewModel->textBounds.width > textUsableWidth)
-		scrollX = std::max(textUsableWidth - viewModel->textBounds.width,
-		                   std::min(scrollX, 0));
-	else
-		scrollX = 0;
-}
-
-int text_field_t::positionToUnscrolledCursorX(int pos)
-{
-
-	int cursorX = insets.left;
-	int positionsCount = viewModel->positions.size();
-	for(int i = 0; i < positionsCount; i++)
+	int TextField::positionToUnscrolledCursorX(int pos)
 	{
-		g_positioned_glyph& g = viewModel->positions[i];
-		// After last?
-		if(i == positionsCount - 1 && pos == positionsCount)
+
+		int cursorX = insets.left;
+		int positionsCount = viewModel->positions.size();
+		for(int i = 0; i < positionsCount; i++)
 		{
-			cursorX = g.position.x + insets.left + g.advance.x;
+			fenster::PositionedGlyph& g = viewModel->positions[i];
+			// After last?
+			if(i == positionsCount - 1 && pos == positionsCount)
+			{
+				cursorX = g.position.x + insets.left + g.advance.x;
+			}
+			// Anywhere inside
+			if(i == pos)
+			{
+				cursorX = g.position.x + insets.left - 1;
+			}
 		}
-		// Anywhere inside
-		if(i == pos)
+
+		return cursorX;
+	}
+
+	void TextField::setCursor(int pos)
+	{
+		cursor = pos;
+		if(cursor < 0)
 		{
-			cursorX = g.position.x + insets.left - 1;
+			cursor = 0;
 		}
-	}
-
-	return cursorX;
-}
-
-void text_field_t::setCursor(int pos)
-{
-	cursor = pos;
-	if(cursor < 0)
-	{
-		cursor = 0;
-	}
-	if(cursor > text.length())
-	{
-		cursor = text.length();
-	}
-
-	markFor(COMPONENT_REQUIREMENT_PAINT);
-}
-
-void text_field_t::setMarker(int pos)
-{
-	marker = pos;
-	if(marker < 0)
-	{
-		marker = 0;
-	}
-	if(marker > text.length())
-	{
-		marker = text.length();
-	}
-
-	markFor(COMPONENT_REQUIREMENT_PAINT);
-}
-
-void text_field_t::backspace(key_info_t& info)
-{
-
-	if(text.length() > 0)
-	{
-
-		g_range selected = getSelectedRange();
-
-		int leftcut = selected.getFirst();
-		if(info.alt)
+		if(cursor > text.length())
 		{
-			leftcut = caretMoveStrategy->calculateSkip(text, leftcut, caret_direction_t::LEFT);
-		}
-		else if(info.ctrl)
-		{
-			leftcut = 0;
+			cursor = text.length();
 		}
 
-		int rightcut = selected.getLast();
-
-		if(rightcut - leftcut == 0)
-		{
-			leftcut--;
-		}
-
-		if(leftcut >= 0 && rightcut <= text.length())
-		{
-			std::string beforeCursor = text.substr(0, leftcut);
-			std::string afterCursor = text.substr(rightcut);
-			text = beforeCursor + afterCursor;
-			setCursor(leftcut);
-			setMarker(leftcut);
-
-			markFor(COMPONENT_REQUIREMENT_UPDATE);
-		}
-	}
-}
-
-void text_field_t::insert(std::string ins)
-{
-
-	g_range selected = getSelectedRange();
-
-	int first = selected.getFirst();
-	int last = selected.getLast();
-
-	if(first < 0)
-	{
-		first = 0;
-	}
-	if(last > text.size())
-	{
-		last = text.size();
+		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
-	std::string beforeCursor = text.substr(0, first);
-	std::string afterCursor = text.substr(last);
-
-	text = beforeCursor + ins + afterCursor;
-	setCursor(first + ins.length());
-	setMarker(first + ins.length());
-	markFor(COMPONENT_REQUIREMENT_UPDATE);
-}
-
-component_t* text_field_t::handleKeyEvent(key_event_t& ke)
-{
-	if(ke.info.key == "KEY_SHIFT_L")
+	void TextField::setMarker(int pos)
 	{
-		shiftDown = ke.info.pressed;
-	}
-
-	if(ke.info.pressed)
-	{
-		if(ke.info.key == "KEY_BACKSPACE")
-		{
-			backspace(ke.info);
-		}
-		else if(ke.info.key == "KEY_ARROW_LEFT")
-		{
-			caretMoveStrategy->moveCaret(this, caret_direction_t::LEFT, ke.info);
-		}
-		else if(ke.info.key == "KEY_ARROW_RIGHT")
-		{
-			caretMoveStrategy->moveCaret(this, caret_direction_t::RIGHT, ke.info);
-		}
-		else if(ke.info.key == "KEY_A" && ke.info.ctrl)
+		marker = pos;
+		if(marker < 0)
 		{
 			marker = 0;
-			cursor = text.length();
+		}
+		if(marker > text.length())
+		{
+			marker = text.length();
+		}
+
+		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	void TextField::backspace(fenster::KeyInfo& info)
+	{
+
+		if(text.length() > 0)
+		{
+
+			fenster::Range selected = getSelectedRange();
+
+			int leftcut = selected.getFirst();
+			if(info.alt)
+			{
+				leftcut = caretMoveStrategy->calculateSkip(text, leftcut, CaretDirection::LEFT);
+			}
+			else if(info.ctrl)
+			{
+				leftcut = 0;
+			}
+
+			int rightcut = selected.getLast();
+
+			if(rightcut - leftcut == 0)
+			{
+				leftcut--;
+			}
+
+			if(leftcut >= 0 && rightcut <= text.length())
+			{
+				std::string beforeCursor = text.substr(0, leftcut);
+				std::string afterCursor = text.substr(rightcut);
+				text = beforeCursor + afterCursor;
+				setCursor(leftcut);
+				setMarker(leftcut);
+
+				markFor(COMPONENT_REQUIREMENT_UPDATE);
+			}
+		}
+	}
+
+	void TextField::insert(std::string ins)
+	{
+
+		fenster::Range selected = getSelectedRange();
+
+		int first = selected.getFirst();
+		int last = selected.getLast();
+
+		if(first < 0)
+		{
+			first = 0;
+		}
+		if(last > text.size())
+		{
+			last = text.size();
+		}
+
+		std::string beforeCursor = text.substr(0, first);
+		std::string afterCursor = text.substr(last);
+
+		text = beforeCursor + ins + afterCursor;
+		setCursor(first + ins.length());
+		setMarker(first + ins.length());
+		markFor(COMPONENT_REQUIREMENT_UPDATE);
+	}
+
+	Component* TextField::handleKeyEvent(KeyEvent& ke)
+	{
+		if(ke.info.key == "KEY_SHIFT_L")
+		{
+			shiftDown = ke.info.pressed;
+		}
+
+		if(ke.info.pressed)
+		{
+			if(ke.info.key == "KEY_BACKSPACE")
+			{
+				backspace(ke.info);
+			}
+			else if(ke.info.key == "KEY_ARROW_LEFT")
+			{
+				caretMoveStrategy->moveCaret(this, CaretDirection::LEFT, ke.info);
+			}
+			else if(ke.info.key == "KEY_ARROW_RIGHT")
+			{
+				caretMoveStrategy->moveCaret(this, CaretDirection::RIGHT, ke.info);
+			}
+			else if(ke.info.key == "KEY_A" && ke.info.ctrl)
+			{
+				marker = 0;
+				cursor = text.length();
+				markFor(COMPONENT_REQUIREMENT_PAINT);
+			}
+			else
+			{
+				char c = platformCharForKey(ke.info);
+
+				if(c != -1)
+				{
+					std::stringstream s;
+					s << c;
+					insert(s.str());
+				}
+			}
+		}
+		sendKeyEventToListener(ke);
+		return this;
+	}
+
+	void TextField::setFocusedInternal(bool focused)
+	{
+		FocusableComponent::setFocusedInternal(focused);
+		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	Component* TextField::handleMouseEvent(MouseEvent& me)
+	{
+		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
+		{
+			visualStatus = TextFieldVisualStatus::HOVERED;
+			markFor(COMPONENT_REQUIREMENT_PAINT);
+			Cursor::set("text");
+		}
+		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
+		{
+			visualStatus = TextFieldVisualStatus::NORMAL;
+			markFor(COMPONENT_REQUIREMENT_PAINT);
+			Cursor::set("default");
+		}
+		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		{
+
+			fenster::Point p = me.position;
+			int clickCursor = viewToPosition(p);
+
+			if(me.clickCount > 2)
+			{
+				marker = 0;
+				cursor = text.length();
+			}
+			else if(me.clickCount == 2)
+			{
+				marker = caretMoveStrategy->calculateSkip(text, clickCursor, CaretDirection::LEFT);
+				cursor = caretMoveStrategy->calculateSkip(text, clickCursor, CaretDirection::RIGHT);
+			}
+			else
+			{
+				cursor = clickCursor;
+				if(!shiftDown)
+				{
+					marker = cursor;
+				}
+			}
+
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 		}
-		else
+		else if(me.type == FENSTER_MOUSE_EVENT_DRAG)
 		{
-			char c = platformCharForKey(ke.info);
+			fenster::Point p = me.position;
+			cursor = viewToPosition(p);
+			markFor(COMPONENT_REQUIREMENT_PAINT);
+		}
 
-			if(c != -1)
+		return this;
+	}
+
+	int TextField::viewToPosition(fenster::Point p)
+	{
+		int pos = 0;
+
+		for(int i = 0; i < viewModel->positions.size(); i++)
+		{
+			fenster::PositionedGlyph g = viewModel->positions[i];
+			fenster::Rectangle onView = glyphToView(g);
+
+			if(p.x < onView.x + onView.width / 2)
 			{
-				std::stringstream s;
-				s << c;
-				insert(s.str());
+				break;
 			}
+
+			++pos;
 		}
+		return pos;
 	}
-	sendKeyEventToListener(ke);
-	return this;
-}
 
-void text_field_t::setFocusedInternal(bool focused)
-{
-	focusable_component_t::setFocusedInternal(focused);
-	markFor(COMPONENT_REQUIREMENT_PAINT);
-}
+	fenster::Rectangle TextField::glyphToView(fenster::PositionedGlyph& g)
+	{
+		int yOffset = getBounds().height / 2 - fontSize / 2 - 2;
+		int x = scrollX + g.position.x + insets.left;
+		int y = g.position.y + yOffset;
+		return fenster::Rectangle(x, y, g.size.width, g.size.height);
+	}
 
-component_t* text_field_t::handleMouseEvent(mouse_event_t& me)
-{
-	if(me.type == G_MOUSE_EVENT_ENTER)
-	{
-		visualStatus = text_field_visual_status_t::HOVERED;
-		markFor(COMPONENT_REQUIREMENT_PAINT);
-		cursor_t::set("text");
-	}
-	else if(me.type == G_MOUSE_EVENT_LEAVE)
-	{
-		visualStatus = text_field_visual_status_t::NORMAL;
-		markFor(COMPONENT_REQUIREMENT_PAINT);
-		cursor_t::set("default");
-	}
-	else if(me.type == G_MOUSE_EVENT_PRESS)
+	fenster::Rectangle TextField::positionToCursorBounds(int pos)
 	{
 
-		g_point p = me.position;
-		int clickCursor = viewToPosition(p);
+		int cursorX = positionToUnscrolledCursorX(pos);
+		int caretHeight = fontSize + 4;
+		return fenster::Rectangle(scrollX + cursorX, getBounds().height / 2 - caretHeight / 2, 1, caretHeight);
+	}
 
-		if(me.clickCount > 2)
+	void TextField::setFont(fenster::Font* f)
+	{
+		font = f;
+	}
+
+	fenster::Range TextField::getSelectedRange()
+	{
+		return fenster::Range(marker, cursor);
+	}
+
+	bool TextField::getNumericProperty(int property, uint32_t* out)
+	{
+		if(property == FENSTER_UI_PROPERTY_SECURE)
 		{
-			marker = 0;
-			cursor = text.length();
+			*out = secure;
+			return true;
 		}
-		else if(me.clickCount == 2)
+
+		return false;
+	}
+
+	bool TextField::setNumericProperty(int property, uint32_t value)
+	{
+		if(property == FENSTER_UI_PROPERTY_SECURE)
 		{
-			marker = caretMoveStrategy->calculateSkip(text, clickCursor, caret_direction_t::LEFT);
-			cursor = caretMoveStrategy->calculateSkip(text, clickCursor, caret_direction_t::RIGHT);
-		}
-		else
-		{
-			cursor = clickCursor;
-			if(!shiftDown)
-			{
-				marker = cursor;
-			}
+			secure = value;
+			return true;
 		}
 
-		markFor(COMPONENT_REQUIREMENT_PAINT);
+		return Component::setNumericProperty(property, value);
 	}
-	else if(me.type == G_MOUSE_EVENT_DRAG)
-	{
-		g_point p = me.position;
-		cursor = viewToPosition(p);
-		markFor(COMPONENT_REQUIREMENT_PAINT);
-	}
-
-	return this;
-}
-
-int text_field_t::viewToPosition(g_point p)
-{
-	int pos = 0;
-
-	for(int i = 0; i < viewModel->positions.size(); i++)
-	{
-		g_positioned_glyph g = viewModel->positions[i];
-		g_rectangle onView = glyphToView(g);
-
-		if(p.x < onView.x + onView.width / 2)
-		{
-			break;
-		}
-
-		++pos;
-	}
-	return pos;
-}
-
-g_rectangle text_field_t::glyphToView(g_positioned_glyph& g)
-{
-	int yOffset = getBounds().height / 2 - fontSize / 2 - 2;
-	int x = scrollX + g.position.x + insets.left;
-	int y = g.position.y + yOffset;
-	return g_rectangle(x, y, g.size.width, g.size.height);
-}
-
-g_rectangle text_field_t::positionToCursorBounds(int pos)
-{
-
-	int cursorX = positionToUnscrolledCursorX(pos);
-	int caretHeight = fontSize + 4;
-	return g_rectangle(scrollX + cursorX, getBounds().height / 2 - caretHeight / 2, 1, caretHeight);
-}
-
-void text_field_t::setFont(g_font* f)
-{
-	font = f;
-}
-
-g_range text_field_t::getSelectedRange()
-{
-	return g_range(marker, cursor);
-}
-
-bool text_field_t::getNumericProperty(int property, uint32_t* out)
-{
-	if(property == G_UI_PROPERTY_SECURE)
-	{
-		*out = secure;
-		return true;
-	}
-
-	return false;
-}
-
-bool text_field_t::setNumericProperty(int property, uint32_t value)
-{
-	if(property == G_UI_PROPERTY_SECURE)
-	{
-		secure = value;
-		return true;
-	}
-
-	return component_t::setNumericProperty(property, value);
 }

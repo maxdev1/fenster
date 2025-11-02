@@ -8,14 +8,17 @@
 
 #include <libwindow/interface.hpp>
 
-void interfaceApplicationExitCleanupThread(application_exit_cleanup_handler_t* handler)
+namespace fensterserver
 {
-	handler->run();
-}
+	void interfaceApplicationExitCleanupThread(ApplicationExitCleanupHandler* handler)
+	{
+		handler->run();
+	}
 
-void application_exit_cleanup_handler_t::run()
-{
-	platformJoin(pid);
-	component_registry_t::cleanupProcess(pid);
-	process_registry_t::cleanup_process(pid);
+	void ApplicationExitCleanupHandler::run()
+	{
+		fenster::platformJoin(pid);
+		ComponentRegistry::cleanupProcess(pid);
+		ProcessRegistry::cleanup_process(pid);
+	}
 }

@@ -9,24 +9,27 @@
 #include "component.hpp"
 #include "titled_component.hpp"
 
-typedef uint8_t g_button_style;
-#define G_BUTTON_STYLE_DEFAULT  0
-#define G_BUTTON_STYLE_GHOST    1
-
-class g_button : virtual public g_component, virtual public g_titled_component, virtual public g_action_component
+namespace fenster
 {
-public:
-    explicit g_button(g_ui_component_id id) : g_component(id), g_titled_component(id), g_action_component(id)
-    {
-    }
+	typedef uint8_t ButtonStyle;
+#define FENSTER_BUTTON_STYLE_DEFAULT  0
+#define FENSTER_BUTTON_STYLE_GHOST    1
 
-    static g_button* create();
+	class Button : virtual public Component, virtual public TitledComponent, virtual public ActionComponent
+	{
+	public:
+		explicit Button(ComponentId id) : Component(id), TitledComponent(id), ActionComponent(id)
+		{
+		}
 
-    void setEnabled(bool enabled);
-    bool isEnabled();
+		static Button* create();
 
-    void setStyle(g_button_style style);
-    g_button_style getStyle();
-};
+		void setEnabled(bool enabled);
+		bool isEnabled();
+
+		void setStyle(ButtonStyle style);
+		ButtonStyle getStyle();
+	};
+}
 
 #endif

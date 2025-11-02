@@ -2,65 +2,69 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_FOCUSABLECOMPONENT__
-#define __WINDOWSERVER_COMPONENTS_FOCUSABLECOMPONENT__
-#include <stdint-gcc.h>
+#ifndef FENSTER_SERVER_COMPONENTS_FOCUSABLECOMPONENT
+#define FENSTER_SERVER_COMPONENTS_FOCUSABLECOMPONENT
 
-class component_t;
+#include <cstdint>
 
-/**
- *
- */
-class focusable_component_t
+namespace fensterserver
 {
-    component_t* self;
+    class Component;
 
-protected:
-    bool focused = false;
-    bool focusable = true;
-    bool dispatchesFocus = true;
-
-public:
-    explicit focusable_component_t(component_t* self) : self(self)
+    /**
+     *
+     */
+    class FocusableComponent
     {
-    }
+        Component* self;
 
-    virtual ~focusable_component_t() = default;
+    protected:
+        bool focused = false;
+        bool focusable = true;
+        bool dispatchesFocus = true;
 
-    virtual bool isFocused() const
-    {
-        return focused;
-    }
+    public:
+        explicit FocusableComponent(Component* self) : self(self)
+        {
+        }
 
-    virtual void setFocusedInternal(bool focused)
-    {
-        this->focused = focused;
-    }
+        virtual ~FocusableComponent() = default;
 
-    virtual bool isFocusable() const
-    {
-        return isFocusableDefault() && focusable;
-    }
+        virtual bool isFocused() const
+        {
+            return focused;
+        }
 
-    virtual bool isFocusableDefault() const
-    {
-        return false;
-    }
+        virtual void setFocusedInternal(bool focused)
+        {
+            this->focused = focused;
+        }
 
-    void setDispatchesFocus(bool dispatches)
-    {
-        this->dispatchesFocus = dispatchesFocus;
-    }
+        virtual bool isFocusable() const
+        {
+            return isFocusableDefault() && focusable;
+        }
 
-    bool isDispatchesFocus()
-    {
-        return this->dispatchesFocus;
-    }
+        virtual bool isFocusableDefault() const
+        {
+            return false;
+        }
 
-    component_t* setFocused(bool focused);
+        void setDispatchesFocus(bool dispatches)
+        {
+            this->dispatchesFocus = dispatchesFocus;
+        }
 
-    bool getNumericProperty(int property, uint32_t* out);
-    bool setNumericProperty(int property, uint32_t value);
-};
+        bool isDispatchesFocus()
+        {
+            return this->dispatchesFocus;
+        }
+
+        Component* setFocused(bool focused);
+
+        bool getNumericProperty(int property, uint32_t* out);
+        bool setNumericProperty(int property, uint32_t value);
+    };
+}
 
 #endif

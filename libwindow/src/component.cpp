@@ -9,484 +9,487 @@
 #include <cstring>
 #include <malloc.h>
 
-g_component::~g_component()
+namespace fenster
 {
-	destroy();
-}
-
-void g_component::destroy()
-{
-	if(destroyed)
-		return;
-	destroyed = true;
-
-	g_ui_destroy_component_request request;
-	request.header.id = G_UI_PROTOCOL_DESTROY_COMPONENT;
-	request.id = this->id;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_destroy_component_request), SYS_TX_NONE);
-	platformYieldTo(g_ui_delegate_tid);
-}
-
-bool g_component::addChild(g_component* child)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	// send initialization request
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_add_child_request request;
-	request.header.id = G_UI_PROTOCOL_ADD_COMPONENT;
-	request.parent = this->id;
-	request.child = child->id;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_add_child_request), tx);
-
-	// read response
-	size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_add_child_response);
-	uint8_t buffer[bufferSize];
-
-	if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+	Component::~Component()
 	{
-		auto response = (g_ui_component_add_child_response*) SYS_MESSAGE_CONTENT(buffer);
-		if(response->status == G_UI_PROTOCOL_SUCCESS)
+		destroy();
+	}
+
+	void Component::destroy()
+	{
+		if(destroyed)
+			return;
+		destroyed = true;
+
+		CommandDestroyComponentRequest request;
+		request.header.id = FENSTER_PROTOCOL_DESTROY_COMPONENT;
+		request.id = this->id;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandDestroyComponentRequest), SYS_TX_NONE);
+		platformYieldTo(DelegateTaskId);
+	}
+
+	bool Component::addChild(Component* child)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		// send initialization request
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandAddChildRequest request;
+		request.header.id = FENSTER_PROTOCOL_ADD_COMPONENT;
+		request.parent = this->id;
+		request.child = child->id;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandAddChildRequest), tx);
+
+		// read response
+		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandAddChildResponse);
+		uint8_t buffer[bufferSize];
+
+		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool g_component::setBounds(const g_rectangle& rect)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	// send initialization request
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_set_bounds_request request;
-	request.header.id = G_UI_PROTOCOL_SET_BOUNDS;
-	request.id = this->id;
-	request.bounds = rect;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_set_bounds_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	// read response
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t buffer[buflen];
-	if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(buffer);
-		return response->status == G_UI_PROTOCOL_SUCCESS;
-	}
-	return false;
-}
-
-g_rectangle g_component::getBounds()
-{
-	if(!g_ui_initialized)
-		return g_rectangle();
-
-	// send initialization request
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_get_bounds_request request;
-	request.header.id = G_UI_PROTOCOL_GET_BOUNDS;
-	request.id = this->id;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_get_bounds_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	// read response
-	size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_get_bounds_response);
-	uint8_t buffer[bufferSize];
-
-	g_rectangle result;
-	if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_component_get_bounds_response*) SYS_MESSAGE_CONTENT(buffer);
-		if(response->status == G_UI_PROTOCOL_SUCCESS)
-			result = response->bounds;
-	}
-
-	return result;
-}
-
-bool g_component::setNumericProperty(int property, uint32_t value)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	// send initialization request
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_set_numeric_property_request request;
-	request.header.id = G_UI_PROTOCOL_SET_NUMERIC_PROPERTY;
-	request.id = this->id;
-	request.property = property;
-	request.value = value;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_set_numeric_property_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	// read response
-	size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_set_numeric_property_response);
-	uint8_t buffer[bufferSize];
-
-	bool success = false;
-	if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_component_set_numeric_property_response*)
-				SYS_MESSAGE_CONTENT(buffer);
-		success = (response->status == G_UI_PROTOCOL_SUCCESS);
-	}
-
-	return success;
-}
-
-bool g_component::getNumericProperty(int property, uint32_t* out)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	// send initialization request
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_get_numeric_property_request request;
-	request.header.id = G_UI_PROTOCOL_GET_NUMERIC_PROPERTY;
-	request.id = this->id;
-	request.property = property;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_get_numeric_property_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	// read response
-	size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_get_numeric_property_response);
-	uint8_t buffer[bufferSize];
-
-	bool success = false;
-	if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_component_get_numeric_property_response*)
-				SYS_MESSAGE_CONTENT(buffer);
-
-		if(response->status == G_UI_PROTOCOL_SUCCESS)
-		{
-			*out = response->value;
-			success = true;
-		}
-	}
-
-	return success;
-}
-
-
-bool g_component::setStringProperty(int property, std::string value)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	auto requestSize = sizeof(g_ui_component_set_string_property_request) + value.length() + 1;
-	auto request = static_cast<g_ui_component_set_string_property_request*>(
-		operator new(sizeof(g_ui_component_set_string_property_request) + value.length() + 1)
-	);
-	request->header.id = G_UI_PROTOCOL_SET_STRING_PROPERTY;
-	request->id = this->id;
-	request->property = property;
-	strcpy(request->value, value.c_str());
-
-	platformSendMessage(g_ui_delegate_tid, request, requestSize, tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t responseBufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t responseBuffer[responseBufferSize];
-	bool success = false;
-	if(platformReceiveMessage(responseBuffer, responseBufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(responseBuffer);
-		success = (response->status == G_UI_PROTOCOL_SUCCESS);
-	}
-
-	delete request;
-	return success;
-}
-
-bool g_component::getStringProperty(int property, std::string& out)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_get_string_property_request request;
-	request.header.id = G_UI_PROTOCOL_GET_STRING_PROPERTY;
-	request.id = this->id;
-	request.property = property;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_get_string_property_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	bool success = false;
-	for(int size = 128; size <= 1024; size *= 2)
-	{
-		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_get_string_property_response) + size;
-		auto buffer = new uint8_t[bufferSize];
-		auto receiveStatus = platformReceiveMessage(buffer, bufferSize, tx);
-		if(receiveStatus == SYS_MESSAGE_RECEIVE_SUCCESS)
-		{
-			auto response = (g_ui_component_get_string_property_response*) SYS_MESSAGE_CONTENT(buffer);
-			if(response->status == G_UI_PROTOCOL_SUCCESS)
+			auto response = (CommandAddChildResponse*) SYS_MESSAGE_CONTENT(buffer);
+			if(response->status == FENSTER_PROTOCOL_SUCCESS)
 			{
-				success = true;
-				out = std::string(response->value);
+				return true;
 			}
 		}
-		delete buffer;
 
-		if(success || receiveStatus != SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER)
-			break;
+		return false;
 	}
-	return success;
-}
 
-bool g_component::addListener(g_ui_component_event_type eventType, g_listener* newListener)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	if(newListener == nullptr)
-		return false;
-
-	platformAcquireMutex(listenersLock);
-	listeners[eventType].push_back(newListener);
-	platformReleaseMutex(listenersLock);
-
-	return g_ui::addListener(this->id, eventType);
-}
-
-void g_component::handle(g_ui_component_event_header* header)
-{
-	auto eventType = header->type;
-
-	platformAcquireMutex(listenersLock);
-	auto it = listeners.find(eventType);
-	if(it != listeners.end())
+	bool Component::setBounds(const Rectangle& rect)
 	{
-		for(auto& listener: it->second)
+		if(!ApplicationInitialized)
+			return false;
+
+		// send initialization request
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandSetBoundsRequest request;
+		request.header.id = FENSTER_PROTOCOL_SET_BOUNDS;
+		request.id = this->id;
+		request.bounds = rect;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandSetBoundsRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		// read response
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t buffer[buflen];
+		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
-			listener->process(header);
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
+			return response->status == FENSTER_PROTOCOL_SUCCESS;
 		}
-	}
-	else
-	{
-		platformLog("incoming event (%i) but no one to handle", eventType);
-	}
-	platformReleaseMutex(listenersLock);
-}
-
-bool g_component::addMouseListener(g_mouse_listener* listener)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_MOUSE, listener);
-}
-
-bool g_component::addMouseListener(g_mouse_listener_func func)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_MOUSE, new g_mouse_listener_dispatcher(std::move(func)));
-}
-
-bool g_component::addKeyListener(g_key_listener* listener)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_KEY, listener);
-}
-
-bool g_component::addKeyListener(g_key_listener_func func)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_KEY, new g_key_listener_dispatcher(std::move(func)));
-}
-
-bool g_component::addVisibleListener(g_visible_listener* listener)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_VISIBLE, listener);
-}
-
-bool g_component::addVisibleListener(g_visible_listener_func func)
-{
-	return addListener(G_UI_COMPONENT_EVENT_TYPE_VISIBLE, new g_visible_listener_dispatcher(std::move(func)));
-}
-
-bool g_component::setLayout(g_ui_layout_manager layout)
-{
-	return setNumericProperty(G_UI_PROPERTY_LAYOUT_MANAGER, layout);
-}
-
-bool g_component::setBackground(g_color_argb argb)
-{
-	return setNumericProperty(G_UI_PROPERTY_BACKGROUND, argb);
-}
-
-bool g_component::isVisible()
-{
-	uint32_t visible;
-	if(getNumericProperty(G_UI_PROPERTY_VISIBLE, &visible))
-	{
-		return visible == 1;
-	}
-	return false;
-}
-
-bool g_component::setVisible(bool visible)
-{
-	return setNumericProperty(G_UI_PROPERTY_VISIBLE, visible ? 1 : 0);
-}
-
-
-bool g_component::isFocusable()
-{
-	uint32_t focusable;
-	if(getNumericProperty(G_UI_PROPERTY_FOCUSABLE, &focusable))
-	{
-		return focusable == 1;
-	}
-	return false;
-}
-
-bool g_component::setFocusable(bool focusable)
-{
-	return setNumericProperty(G_UI_PROPERTY_FOCUSABLE, focusable ? 1 : 0);
-}
-
-
-bool g_component::isDispatchesFocus()
-{
-	uint32_t d;
-	if(getNumericProperty(G_UI_PROPERTY_DISPATCHES_FOCUS, &d))
-	{
-		return d == 1;
-	}
-	return false;
-}
-
-bool g_component::setDispatchesFocus(bool d)
-{
-	return setNumericProperty(G_UI_PROPERTY_DISPATCHES_FOCUS, d ? 1 : 0);
-}
-
-bool g_component::setPreferredSize(const g_dimension& size)
-{
-	return setSize(G_UI_PROTOCOL_SET_PREFERRED_SIZE, size);
-}
-
-bool g_component::setMinimumSize(const g_dimension& size)
-{
-	return setSize(G_UI_PROTOCOL_SET_MINIMUM_SIZE, size);
-}
-
-bool g_component::setMaximumSize(const g_dimension& size)
-{
-	return setSize(G_UI_PROTOCOL_SET_MAXIMUM_SIZE, size);
-}
-
-bool g_component::setSize(g_ui_protocol_command_id command, const g_dimension& size)
-{
-	if(!g_ui_initialized)
 		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_set_size_request request;
-	request.header.id = command;
-	request.id = this->id;
-	request.size = size;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t buffer[buflen];
-	if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(buffer);
-		return response->status == G_UI_PROTOCOL_SUCCESS;
 	}
-	return false;
-}
 
-bool g_component::setFlexOrientation(bool horizontal)
-{
-	if(!g_ui_initialized)
+	Rectangle Component::getBounds()
+	{
+		if(!ApplicationInitialized)
+			return Rectangle();
+
+		// send initialization request
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandGetBoundsRequest request;
+		request.header.id = FENSTER_PROTOCOL_GET_BOUNDS;
+		request.id = this->id;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetBoundsRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		// read response
+		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandGetBoundsResponse);
+		uint8_t buffer[bufferSize];
+
+		Rectangle result;
+		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandGetBoundsResponse*) SYS_MESSAGE_CONTENT(buffer);
+			if(response->status == FENSTER_PROTOCOL_SUCCESS)
+				result = response->bounds;
+		}
+
+		return result;
+	}
+
+	bool Component::setNumericProperty(int property, uint32_t value)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		// send initialization request
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandSetNumericPropertyRequest request;
+		request.header.id = FENSTER_PROTOCOL_SET_NUMERIC_PROPERTY;
+		request.id = this->id;
+		request.property = property;
+		request.value = value;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandSetNumericPropertyRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		// read response
+		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSetStringPropertyResponse);
+		uint8_t buffer[bufferSize];
+
+		bool success = false;
+		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSetStringPropertyResponse*)
+					SYS_MESSAGE_CONTENT(buffer);
+			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+		}
+
+		return success;
+	}
+
+	bool Component::getNumericProperty(int property, uint32_t* out)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		// send initialization request
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandGetNumericPropertyRequest request;
+		request.header.id = FENSTER_PROTOCOL_GET_NUMERIC_PROPERTY;
+		request.id = this->id;
+		request.property = property;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetNumericPropertyRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		// read response
+		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandGetNumericPropertyResponse);
+		uint8_t buffer[bufferSize];
+
+		bool success = false;
+		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandGetNumericPropertyResponse*)
+					SYS_MESSAGE_CONTENT(buffer);
+
+			if(response->status == FENSTER_PROTOCOL_SUCCESS)
+			{
+				*out = response->value;
+				success = true;
+			}
+		}
+
+		return success;
+	}
+
+
+	bool Component::setStringProperty(int property, std::string value)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		auto requestSize = sizeof(CommandSetStringPropertyRequest) + value.length() + 1;
+		auto request = static_cast<CommandSetStringPropertyRequest*>(
+			operator new(sizeof(CommandSetStringPropertyRequest) + value.length() + 1)
+		);
+		request->header.id = FENSTER_PROTOCOL_SET_STRING_PROPERTY;
+		request->id = this->id;
+		request->property = property;
+		strcpy(request->value, value.c_str());
+
+		platformSendMessage(DelegateTaskId, request, requestSize, tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t responseBufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t responseBuffer[responseBufferSize];
+		bool success = false;
+		if(platformReceiveMessage(responseBuffer, responseBufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(responseBuffer);
+			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+		}
+
+		delete request;
+		return success;
+	}
+
+	bool Component::getStringProperty(int property, std::string& out)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandGetStringPropertyRequest request;
+		request.header.id = FENSTER_PROTOCOL_GET_STRING_PROPERTY;
+		request.id = this->id;
+		request.property = property;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetStringPropertyRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		bool success = false;
+		for(int size = 128; size <= 1024; size *= 2)
+		{
+			size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandGetStringPropertyResponse) + size;
+			auto buffer = new uint8_t[bufferSize];
+			auto receiveStatus = platformReceiveMessage(buffer, bufferSize, tx);
+			if(receiveStatus == SYS_MESSAGE_RECEIVE_SUCCESS)
+			{
+				auto response = (CommandGetStringPropertyResponse*) SYS_MESSAGE_CONTENT(buffer);
+				if(response->status == FENSTER_PROTOCOL_SUCCESS)
+				{
+					success = true;
+					out = std::string(response->value);
+				}
+			}
+			delete buffer;
+
+			if(success || receiveStatus != SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER)
+				break;
+		}
+		return success;
+	}
+
+	bool Component::addListener(ComponentEventType eventType, Listener* newListener)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		if(newListener == nullptr)
+			return false;
+
+		platformAcquireMutex(listenersLock);
+		listeners[eventType].push_back(newListener);
+		platformReleaseMutex(listenersLock);
+
+		return Application::addListener(this->id, eventType);
+	}
+
+	void Component::handle(ComponentEventHeader* header)
+	{
+		auto eventType = header->type;
+
+		platformAcquireMutex(listenersLock);
+		auto it = listeners.find(eventType);
+		if(it != listeners.end())
+		{
+			for(auto& listener: it->second)
+			{
+				listener->process(header);
+			}
+		}
+		else
+		{
+			platformLog("incoming event (%i) but no one to handle", eventType);
+		}
+		platformReleaseMutex(listenersLock);
+	}
+
+	bool Component::addMouseListener(MouseListener* listener)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_MOUSE, listener);
+	}
+
+	bool Component::addMouseListener(MouseListenerFunc func)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_MOUSE, new MouseListenerDispatcher(std::move(func)));
+	}
+
+	bool Component::addKeyListener(KeyListener* listener)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_KEY, listener);
+	}
+
+	bool Component::addKeyListener(KeyListenerFunc func)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_KEY, new KeyListenerDispatcher(std::move(func)));
+	}
+
+	bool Component::addVisibleListener(VisibleListener* listener)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, listener);
+	}
+
+	bool Component::addVisibleListener(VisibleListenerFunc func)
+	{
+		return addListener(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, new VisibleListenerDispatcher(std::move(func)));
+	}
+
+	bool Component::setLayout(LayoutManagerType layout)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_MANAGER, layout);
+	}
+
+	bool Component::setBackground(ColorArgb argb)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_BACKGROUND, argb);
+	}
+
+	bool Component::isVisible()
+	{
+		uint32_t visible;
+		if(getNumericProperty(FENSTER_UI_PROPERTY_VISIBLE, &visible))
+		{
+			return visible == 1;
+		}
 		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_flex_set_orientation_request request;
-	request.header.id = G_UI_PROTOCOL_FLEX_SET_ORIENTATION;
-	request.id = this->id;
-	request.horizontal = horizontal;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_flex_set_orientation_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t buffer[buflen];
-	if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(buffer);
-		return response->status == G_UI_PROTOCOL_SUCCESS;
 	}
-	return false;
-}
 
-bool g_component::setFlexComponentInfo(g_component* child, float grow, float shrink, int basis)
-{
-	if(!g_ui_initialized)
+	bool Component::setVisible(bool visible)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_VISIBLE, visible ? 1 : 0);
+	}
+
+
+	bool Component::isFocusable()
+	{
+		uint32_t focusable;
+		if(getNumericProperty(FENSTER_UI_PROPERTY_FOCUSABLE, &focusable))
+		{
+			return focusable == 1;
+		}
 		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_flex_set_component_info request;
-	request.header.id = G_UI_PROTOCOL_FLEX_SET_COMPONENT_INFO;
-	request.parent = this->id;
-	request.child = child->id;
-	request.grow = grow;
-	request.shrink = shrink;
-	request.basis = basis;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_flex_set_component_info), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t buffer[buflen];
-	if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(buffer);
-		return response->status == G_UI_PROTOCOL_SUCCESS;
 	}
-	return false;
-}
+
+	bool Component::setFocusable(bool focusable)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_FOCUSABLE, focusable ? 1 : 0);
+	}
 
 
-bool g_component::setLayoutPadding(g_insets padding)
-{
-	if(!g_ui_initialized)
+	bool Component::isDispatchesFocus()
+	{
+		uint32_t d;
+		if(getNumericProperty(FENSTER_UI_PROPERTY_DISPATCHES_FOCUS, &d))
+		{
+			return d == 1;
+		}
 		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_layout_set_padding request;
-	request.header.id = G_UI_PROTOCOL_LAYOUT_SET_PADDING;
-	request.id = this->id;
-	request.insets = padding;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_layout_set_padding), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_simple_response);
-	uint8_t buffer[buflen];
-	if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-	{
-		auto response = (g_ui_simple_response*) SYS_MESSAGE_CONTENT(buffer);
-		return response->status == G_UI_PROTOCOL_SUCCESS;
 	}
-	return false;
-}
+
+	bool Component::setDispatchesFocus(bool d)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_DISPATCHES_FOCUS, d ? 1 : 0);
+	}
+
+	bool Component::setPreferredSize(const Dimension& size)
+	{
+		return setSize(FENSTER_PROTOCOL_SET_PREFERRED_SIZE, size);
+	}
+
+	bool Component::setMinimumSize(const Dimension& size)
+	{
+		return setSize(FENSTER_PROTOCOL_SET_MINIMUM_SIZE, size);
+	}
+
+	bool Component::setMaximumSize(const Dimension& size)
+	{
+		return setSize(FENSTER_PROTOCOL_SET_MAXIMUM_SIZE, size);
+	}
+
+	bool Component::setSize(ProtocolCommandId command, const Dimension& size)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandSetSizeRequest request;
+		request.header.id = command;
+		request.id = this->id;
+		request.size = size;
+		platformSendMessage(DelegateTaskId, &request, sizeof(request), tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t buffer[buflen];
+		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
+			return response->status == FENSTER_PROTOCOL_SUCCESS;
+		}
+		return false;
+	}
+
+	bool Component::setFlexOrientation(bool horizontal)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandFlexSetOrientationRequest request;
+		request.header.id = FENSTER_PROTOCOL_FLEX_SET_ORIENTATION;
+		request.id = this->id;
+		request.horizontal = horizontal;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFlexSetOrientationRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t buffer[buflen];
+		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
+			return response->status == FENSTER_PROTOCOL_SUCCESS;
+		}
+		return false;
+	}
+
+	bool Component::setFlexComponentInfo(Component* child, float grow, float shrink, int basis)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandFlexSetComponentInfo request;
+		request.header.id = FENSTER_PROTOCOL_FLEX_SET_COMPONENT_INFO;
+		request.parent = this->id;
+		request.child = child->id;
+		request.grow = grow;
+		request.shrink = shrink;
+		request.basis = basis;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFlexSetComponentInfo), tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t buffer[buflen];
+		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
+			return response->status == FENSTER_PROTOCOL_SUCCESS;
+		}
+		return false;
+	}
 
 
-bool g_component::setFlexGap(int gap)
-{
-	return setNumericProperty(G_UI_PROPERTY_FLEX_GAP, gap);
+	bool Component::setLayoutPadding(Insets padding)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandLayoutSetPadding request;
+		request.header.id = FENSTER_PROTOCOL_LAYOUT_SET_PADDING;
+		request.id = this->id;
+		request.insets = padding;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandLayoutSetPadding), tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
+		uint8_t buffer[buflen];
+		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
+			return response->status == FENSTER_PROTOCOL_SUCCESS;
+		}
+		return false;
+	}
+
+
+	bool Component::setFlexGap(int gap)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_FLEX_GAP, gap);
+	}
 }

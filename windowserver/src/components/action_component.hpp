@@ -2,36 +2,37 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_ACTIONCOMPONENT__
-#define __WINDOWSERVER_COMPONENTS_ACTIONCOMPONENT__
+#ifndef FENSTER_SERVER_COMPONENTS_ACTIONCOMPONENT
+#define FENSTER_SERVER_COMPONENTS_ACTIONCOMPONENT
 #include "component.hpp"
 
-class action_component_t;
-
-typedef std::function<void()> g_internal_action_handler_func;
-
-/**
- * An action component is capable of being observed by an action listener.
- * The component may fire actions which are dispatched to the registered
- * listener for processing.
- */
-class action_component_t : virtual public component_t
+namespace fensterserver
 {
-    g_internal_action_handler_func internalHandler;
+    typedef std::function<void()> InternalActionHandlerFunc;
 
-public:
-    explicit action_component_t() : internalHandler(nullptr)
+    /**
+     * An action component is capable of being observed by an action listener.
+     * The component may fire actions which are dispatched to the registered
+     * listener for processing.
+     */
+    class ActionComponent : virtual public Component
     {
-    }
+        InternalActionHandlerFunc internalHandler;
 
-    ~action_component_t() override = default;
+    public:
+        explicit ActionComponent() : internalHandler(nullptr)
+        {
+        }
 
-    virtual void fireAction();
+        ~ActionComponent() override = default;
 
-    void setInternalActionHandler(g_internal_action_handler_func handler)
-    {
-        this->internalHandler = std::move(handler);
-    }
-};
+        virtual void fireAction();
+
+        void setInternalActionHandler(InternalActionHandlerFunc handler)
+        {
+            this->internalHandler = std::move(handler);
+        }
+    };
+}
 
 #endif

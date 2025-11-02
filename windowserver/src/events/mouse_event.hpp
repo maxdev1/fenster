@@ -2,28 +2,33 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_EVENTS_MOUSEEVENT__
-#define __WINDOWSERVER_EVENTS_MOUSEEVENT__
+#ifndef FENSTER_SERVER_EVENTS_MOUSEEVENT
+#define FENSTER_SERVER_EVENTS_MOUSEEVENT
 
 #include "events/event.hpp"
 #include "events/locatable.hpp"
 #include <libwindow/interface.hpp>
 
-class mouse_event_t : public event_t, public locatable_t
+namespace fensterserver
 {
-  public:
-    mouse_event_t() : type(G_MOUSE_EVENT_NONE), buttons(G_MOUSE_BUTTON_NONE), clickCount(1)
+    class MouseEvent : public Event, public Locatable
     {
-    }
+    public:
+        MouseEvent() : type(FENSTER_MOUSE_EVENT_NONE), buttons(FENSTER_MOUSE_BUTTON_NONE), clickCount(1)
+        {
+        }
 
-    virtual ~mouse_event_t() {}
+        virtual ~MouseEvent()
+        {
+        }
 
-    g_mouse_event_type type;
-    g_mouse_button buttons;
-    int clickCount;
-    int scroll;
+        fenster::MouseEventType type;
+        fenster::MouseButton buttons;
+        int clickCount;
+        int scroll;
 
-    virtual component_t* visit(component_t* component);
-};
+        virtual Component* visit(Component* component);
+    };
+}
 
 #endif

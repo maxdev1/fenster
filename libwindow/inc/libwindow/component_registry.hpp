@@ -7,14 +7,17 @@
 
 #include "libwindow/interface.hpp"
 
-// forward declaration
-class g_component;
-
-class g_component_registry
+namespace fenster
 {
-  public:
-	static void add(g_component *component);
-	static g_component *get(g_ui_component_id id);
-};
+	// forward declaration
+	class Component;
+
+	class ComponentRegistry
+	{
+	public:
+		static void add(Component *component);
+		static Component *get(ComponentId id);
+	};
+}
 
 #endif

@@ -9,32 +9,36 @@
 #include <bits/std_function.h>
 #include <utility>
 
-typedef std::function<void(g_ui_windows_event*)> g_desktop_canvas_listener_func;
-
-class g_desktop_canvas_listener : public g_listener
+namespace fenster
 {
-public:
-    void process(g_ui_component_event_header* header) override
-    {
-        handleEvent((g_ui_windows_event*)header);
-    }
+	typedef std::function<void(WindowsEvent*)> DesktopCanvasListenerFunc;
 
-    virtual void handleEvent(g_ui_windows_event* event) = 0;
-};
+	class DesktopCanvasListener : public Listener
+	{
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			handleEvent((WindowsEvent*) header);
+		}
 
-class g_desktop_canvas_listener_dispatcher : public g_desktop_canvas_listener
-{
-    g_desktop_canvas_listener_func func;
+		virtual void handleEvent(WindowsEvent* event) = 0;
+	};
 
-public:
-    explicit g_desktop_canvas_listener_dispatcher(g_desktop_canvas_listener_func func): func(std::move(func))
-    {
-    }
+	class DesktopCanvasListenerDispatcher : public DesktopCanvasListener
+	{
+		DesktopCanvasListenerFunc func;
 
-    void handleEvent(g_ui_windows_event* event) override
-    {
-        func(event);
-    }
-};
+	public:
+		explicit DesktopCanvasListenerDispatcher(DesktopCanvasListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleEvent(WindowsEvent* event) override
+		{
+			func(event);
+		}
+	};
+}
 
 #endif

@@ -9,24 +9,27 @@
 #include "focusable_component.hpp"
 #include "titled_component.hpp"
 
-class g_window :
-    virtual public g_component,
-    virtual public g_titled_component,
-    virtual public g_focusable_component
+namespace fenster
 {
-public:
-    explicit g_window(g_ui_component_id id):
-        g_component(id), g_titled_component(id), g_focusable_component(id)
-    {
-    }
+	class Window :
+		virtual public Component,
+		virtual public TitledComponent,
+		virtual public FocusableComponent
+	{
+	public:
+		explicit Window(ComponentId id):
+			Component(id), TitledComponent(id), FocusableComponent(id)
+		{
+		}
 
-    static g_window* create();
-    static g_window* attach(g_ui_component_id id);
+		static Window* create();
+		static Window* attach(ComponentId id);
 
-    bool isResizable();
-    void setResizable(bool resizable);
+		bool isResizable();
+		void setResizable(bool resizable);
 
-    bool onClose(std::function<void()> func);
-};
+		bool onClose(std::function<void()> func);
+	};
+}
 
 #endif

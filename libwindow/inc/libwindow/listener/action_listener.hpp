@@ -9,34 +9,37 @@
 #include <utility>
 #include <bits/std_function.h>
 
-class g_component;
-
-typedef std::function<void()> g_action_listener_func;
-
-class g_action_listener : public g_listener
+namespace fenster
 {
-public:
-    void process(g_ui_component_event_header* header) override
-    {
-        handleAction();
-    }
+	class Component;
 
-    virtual void handleAction() = 0;
-};
+	typedef std::function<void()> ActionListenerFunc;
 
-class g_action_listener_dispatcher : public g_action_listener
-{
-    g_action_listener_func func;
+	class ActionListener : public Listener
+	{
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			handleAction();
+		}
 
-public:
-    explicit g_action_listener_dispatcher(g_action_listener_func func): func(std::move(func))
-    {
-    }
+		virtual void handleAction() = 0;
+	};
 
-    void handleAction() override
-    {
-        func();
-    }
-};
+	class ActionListenerDispatcher : public ActionListener
+	{
+		ActionListenerFunc func;
+
+	public:
+		explicit ActionListenerDispatcher(ActionListenerFunc func): func(std::move(func))
+		{
+		}
+
+		void handleAction() override
+		{
+			func();
+		}
+	};
+}
 
 #endif

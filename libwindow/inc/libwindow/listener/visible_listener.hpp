@@ -9,36 +9,40 @@
 #include <utility>
 #include <bits/std_function.h>
 
-class g_component;
-
-typedef std::function<void(bool)> g_visible_listener_func;
-
-class g_visible_listener : public g_listener
+namespace fenster
 {
-public:
-    void process(g_ui_component_event_header* header) override
-    {
-        auto e = (g_ui_component_visible_event*)header;
-        handleVisibleChanged(e->visible);
-    }
+	class Component;
 
-    virtual void handleVisibleChanged(bool visible) = 0;
-};
+	typedef std::function<void(bool)> VisibleListenerFunc;
 
-class g_visible_listener_dispatcher : public g_visible_listener
-{
-    g_visible_listener_func func;
+	class VisibleListener : public Listener
+	{
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			auto e = (ComponentVisibleEvent*) header;
+			handleVisibleChanged(e->visible);
+		}
 
-public:
-    explicit g_visible_listener_dispatcher(g_visible_listener_func func): func(std::move(func))
-    {
-    }
+		virtual void handleVisibleChanged(bool visible) = 0;
+	};
 
-    void handleVisibleChanged(bool visible) override
-    {
-        func(visible);
-    }
-};
+	class VisibleListenerDispatcher : public VisibleListener
+	{
+		VisibleListenerFunc func;
+
+	public:
+		explicit VisibleListenerDispatcher(VisibleListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleVisibleChanged(bool visible) override
+		{
+			func(visible);
+		}
+	};
+}
 
 
 #endif

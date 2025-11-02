@@ -7,17 +7,20 @@
 
 #include "component.hpp"
 
-class g_image : virtual public g_component
+namespace fenster
 {
-public:
-    explicit g_image(g_ui_component_id id) :
-        g_component(id)
-    {
-    }
+	class Image : virtual public Component
+	{
+	public:
+		explicit Image(ComponentId id) :
+			Component(id)
+		{
+		}
 
-    static g_image* create();
+		static Image* create();
 
-	bool loadImage(std::string path);
-};
+		bool loadImage(std::string path);
+	};
+}
 
 #endif

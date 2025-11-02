@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_COMPONENT__
-#define __WINDOWSERVER_COMPONENTS_COMPONENT__
+#ifndef FENSTER_SERVER_COMPONENTS_COMPONENT
+#define FENSTER_SERVER_COMPONENTS_COMPONENT
 
 #include "components/bounding_component.hpp"
 #include "components/event_listener_info.hpp"
@@ -19,325 +19,329 @@
 #include <bits/std_function.h>
 
 
-// forward declarations
-class window_t;
+namespace fensterserver
+{
+    // forward declarations
+    class Window;
 
-/**
- * A component requirement is a flag that is put on the component
- * to mark that one specific action or multiple actions are required
- * for the component.
- *
- * For example, when a component has changed model data in an update
- * cycle, the component may also want to repaint its content, therefore
- * marks itself as paint-required.
- */
+    /**
+     * A component requirement is a flag that is put on the component
+     * to mark that one specific action or multiple actions are required
+     * for the component.
+     *
+     * For example, when a component has changed model data in an update
+     * cycle, the component may also want to repaint its content, therefore
+     * marks itself as paint-required.
+     */
 #define COMPONENT_REQUIREMENT_NONE 0
 #define COMPONENT_REQUIREMENT_PAINT 1
 #define COMPONENT_REQUIREMENT_LAYOUT 2
 #define COMPONENT_REQUIREMENT_UPDATE 4
-#define COMPONENT_REQUIREMENT_ALL 0xFFFFFFFF
+#define COMPONENT_REQUIREMENT_ALL UINT8_MAX
 
-typedef uint32_t component_requirement_t;
+    typedef uint8_t ComponentRequirement;
 
-/**
- * Type used to differentiate how a child component relates to the parent
- * component. If it is an internal component that may not be deleted
- * separately, it is referenced with the internal type.
- */
-typedef uint32_t component_child_reference_type_t;
+    /**
+     * Type used to differentiate how a child component relates to the parent
+     * component. If it is an internal component that may not be deleted
+     * separately, it is referenced with the internal type.
+     */
+    typedef uint8_t ComponentChildReferenceType;
 #define COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT 0
 #define COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL 1
 
-class component_t;
+    class Component;
 
-class component_child_reference_t
-{
-public:
-    component_t* component;
-    component_child_reference_type_t type;
-};
-
-struct component_listener_entry_t
-{
-    g_ui_component_event_type type;
-    event_listener_info_t info;
-};
-
-/**
- *
- */
-class component_t : public bounding_component_t, public focusable_component_t
-{
-protected:
-    SYS_MUTEX_T lock = platformInitializeMutex(true);
-    g_rectangle bounds;
-    component_t* parent;
-    std::vector<component_child_reference_t> children;
-    SYS_MUTEX_T childrenLock = platformInitializeMutex(true);
-
-    g_dimension minimumSize;
-    g_dimension preferredSize;
-    g_dimension maximumSize;
-
-    component_requirement_t requirements;
-    component_requirement_t childRequirements;
-
-    std::vector<component_listener_entry_t*> listeners;
-
-    int zIndex = 1000;
-
-    layout_manager_t* layoutManager;
-    graphics_t graphics;
-
-    bool visible;
-
-    /**
-     * If a component that extends this class does not need to paint anything, it should return false here.
-     */
-    virtual bool hasGraphics() const
+    class ComponentChildReference
     {
-        return true;
-    }
+    public:
+        Component* component;
+        ComponentChildReferenceType type;
+    };
 
-public:
-    g_ui_component_id id;
-
-    component_t();
-    ~component_t() override;
-
-    bool isVisible() const
+    struct ComponentListenerEntry
     {
-        return this->visible;
-    }
+        fenster::ComponentEventType type;
+        EventListenerInfo info;
+    };
 
     /**
-     * Sets the z-index of this component on its parent. When new children are added,
-     * all children are sorted based on this z-index.
+     *
      */
-    void setZIndex(int zIndex)
+    class Component : public BoundingComponent, public FocusableComponent
     {
-        this->zIndex = zIndex;
-    }
+    protected:
+        SYS_MUTEX_T lock = fenster::platformInitializeMutex(true);
+        fenster::Rectangle bounds;
+        Component* parent;
+        std::vector<ComponentChildReference> children;
+        SYS_MUTEX_T childrenLock = fenster::platformInitializeMutex(true);
 
-    /**
-     * Returns the components parent
-     *
-     * @return the components parent
-     */
-    component_t* getParent()
-    {
-        return parent;
-    }
+        fenster::Dimension minimumSize;
+        fenster::Dimension preferredSize;
+        fenster::Dimension maximumSize;
 
-    std::vector<component_child_reference_t>& acquireChildren();
+        ComponentRequirement requirements;
+        ComponentRequirement childRequirements;
 
-    void releaseChildren() const;
+        std::vector<ComponentListenerEntry*> listeners;
 
-    bool canHandleEvents() const;
+        int zIndex = 1000;
 
-    void setVisible(bool visible);
+        LayoutManager* layoutManager;
+        Graphics graphics;
 
-    /**
-     * Sets the bounds of the component and recreates its graphics buffer.
-     *
-     * @param bounds	the new bounds of the component
-     */
-    void setBoundsInternal(const g_rectangle& bounds) override;
+        bool visible;
 
-    /**
-     * Returns the bounds of the component.
-     *
-     * @return the bounds
-     */
-    g_rectangle getBounds() const;
+        /**
+         * If a component that extends this class does not need to paint anything, it should return false here.
+         */
+        virtual bool hasGraphics() const
+        {
+            return true;
+        }
 
-    void setPreferredSize(const g_dimension& size);
+    public:
+        fenster::ComponentId id;
 
-    virtual g_dimension getPreferredSize()
-    {
-        return preferredSize;
-    }
+        Component();
+        ~Component() override;
 
-    virtual g_dimension getEffectivePreferredSize();
+        bool isVisible() const
+        {
+            return this->visible;
+        }
 
-    void setMinimumSize(const g_dimension& size);
+        /**
+         * Sets the z-index of this component on its parent. When new children are added,
+         * all children are sorted based on this z-index.
+         */
+        void setZIndex(int zIndex)
+        {
+            this->zIndex = zIndex;
+        }
 
-    g_dimension getMinimumSize() const
-    {
-        return minimumSize;
-    }
+        /**
+         * Returns the components parent
+         *
+         * @return the components parent
+         */
+        Component* getParent()
+        {
+            return parent;
+        }
 
-    void setMaximumSize(const g_dimension& size);
+        std::vector<ComponentChildReference>& acquireChildren();
 
-    g_dimension getMaximumSize() const
-    {
-        return maximumSize;
-    }
+        void releaseChildren() const;
 
-    /**
-     * This method is used to blit the component and all of its children
-     * to the out buffer
-     *
-     * @param clip	absolute bounds that may not be exceeded
-     * @param screenPosition	absolute screen position to blit to
-     */
-    virtual void blit(graphics_t* out, const g_rectangle& clip, const g_point& screenPosition);
+        bool canHandleEvents() const;
 
-    virtual void blitChildren(graphics_t* out, const g_rectangle& clip, const g_point& screenPosition);
+        void setVisible(bool visible);
 
-    /**
-     * Adds the given component as a child to this component
-     *
-     * @param comp	the component to add
-     */
-    virtual void addChild(component_t* comp,
-                          component_child_reference_type_t type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT);
+        /**
+         * Sets the bounds of the component and recreates its graphics buffer.
+         *
+         * @param bounds	the new bounds of the component
+         */
+        void setBoundsInternal(const fenster::Rectangle& bounds) override;
 
-    /**
-     * Removes the given component from this component
-     *
-     * @param comp	the component to remove
-     */
-    virtual void removeChild(component_t* comp);
+        /**
+         * Returns the bounds of the component.
+         *
+         * @return the bounds
+         */
+        fenster::Rectangle getBounds() const;
 
-    /**
-     * Returns the component at the given Point
-     *
-     * @param p		the Point
-     */
-    virtual component_t* getComponentAt(g_point p);
+        void setPreferredSize(const fenster::Dimension& size);
 
-    /**
-     * Returns the first in the hierarchy that is a Window
-     *
-     * @return the window
-     */
-    virtual window_t* getWindow();
+        virtual fenster::Dimension getPreferredSize()
+        {
+            return preferredSize;
+        }
 
-    /**
-     * @return whether this type of component is a window.
-     */
-    virtual bool isWindow()
-    {
-        return false;
-    }
+        virtual fenster::Dimension getEffectivePreferredSize();
 
-    /**
-     * Brings this component to the front
-     */
-    virtual void bringToFront();
+        void setMinimumSize(const fenster::Dimension& size);
 
-    /**
-     * Brings the given child component to the front
-     *
-     * @param comp	the child component
-     */
-    virtual void bringChildToFront(component_t* comp);
+        fenster::Dimension getMinimumSize() const
+        {
+            return minimumSize;
+        }
 
-    /**
-     * Returns the location of the component on screen
-     *
-     * @return the location
-     */
-    virtual g_point getLocationOnScreen();
+        void setMaximumSize(const fenster::Dimension& size);
 
-    virtual component_t* handleMouseEvent(mouse_event_t& event);
+        fenster::Dimension getMaximumSize() const
+        {
+            return maximumSize;
+        }
 
-    virtual component_t* handleKeyEvent(key_event_t& event);
-    bool sendKeyEventToListener(key_event_t& event);
+        /**
+         * This method is used to blit the component and all of its children
+         * to the out buffer
+         *
+         * @param clip	absolute bounds that may not be exceeded
+         * @param screenPosition	absolute screen position to blit to
+         */
+        virtual void blit(Graphics* out, const fenster::Rectangle& clip, const fenster::Point& screenPosition);
 
-    virtual void handleBoundChanged(const g_rectangle& oldBounds)
-    {
-        // May be implemented by subtypes
-    }
+        virtual void blitChildren(Graphics* out, const fenster::Rectangle& clip, const fenster::Point& screenPosition);
 
-    virtual void setLayoutManager(layout_manager_t* layoutManager);
+        /**
+         * Adds the given component as a child to this component
+         *
+         * @param comp	the component to add
+         */
+        virtual void addChild(Component* comp,
+                              ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT);
 
-    virtual layout_manager_t* getLayoutManager() const
-    {
-        return layoutManager;
-    }
+        /**
+         * Removes the given component from this component
+         *
+         * @param comp	the component to remove
+         */
+        virtual void removeChild(Component* comp);
 
-    /**
-     * Marks the given area as dirty so it is copied to the framebuffer
-     *
-     * @param rect	the g_rectangle to mark dirty
-     */
-    virtual void markDirty(g_rectangle rect);
+        /**
+         * Returns the component at the given Point
+         *
+         * @param p		the Point
+         */
+        virtual Component* getComponentAt(fenster::Point p);
 
-    /**
-     * Marks the entire component as dirty
-     */
-    virtual void markDirty()
-    {
-        markDirty(g_rectangle(0, 0, bounds.width, bounds.height));
-    }
+        /**
+         * Returns the first in the hierarchy that is a Window
+         *
+         * @return the window
+         */
+        virtual Window* getWindow();
 
-    /**
-     * Places the flag for the given requirement on the parent component (if non-null).
-     */
-    void markParentFor(component_requirement_t req);
+        /**
+         * @return whether this type of component is a window.
+         */
+        virtual bool isWindow()
+        {
+            return false;
+        }
 
-    /**
-     * Places the flag for the given requirement on this component.
-     */
-    void markFor(component_requirement_t req);
+        /**
+         * Brings this component to the front
+         */
+        virtual void bringToFront();
 
-    /**
-     * Places the flag for the given requirement in the list of child-requirements.
-     */
-    void markChildsFor(component_requirement_t req);
+        /**
+         * Brings the given child component to the front
+         *
+         * @param comp	the child component
+         */
+        virtual void bringChildToFront(Component* comp);
 
-    /**
-     * Resolves the given requirement
-     */
-    void resolveRequirement(component_requirement_t req, int lvl);
+        /**
+         * Returns the location of the component on screen
+         *
+         * @return the location
+         */
+        virtual fenster::Point getLocationOnScreen();
 
-    bool hasChildRequirements() const
-    {
-        return childRequirements != COMPONENT_REQUIREMENT_NONE;
-    }
+        virtual Component* handleMouseEvent(MouseEvent& event);
 
-    bool isChildOf(component_t* c);
+        virtual Component* handleKeyEvent(KeyEvent& event);
+        bool sendKeyEventToListener(KeyEvent& event);
 
-    /**
-     * Returns the reference to the given component (if the given component is a child of this component).
-     *
-     * @return true if the component was found
-     */
-    bool getChildReference(component_t* child, component_child_reference_t& out);
+        virtual void handleBoundChanged(const fenster::Rectangle& oldBounds)
+        {
+            // May be implemented by subtypes
+        }
 
-    /**
-     * This method is called by the window manager if the update requirement flag is set.
-     * The component may here change the contents of it's model.
-     */
-    virtual void update();
+        virtual void setLayoutManager(LayoutManager* layoutManager);
 
-    /**
-     * This method is called by the window manager if the layout requirement flag is set.
-     * The component may here change the bounds of each child component and also change its
-     * own preferred size.
-     */
-    virtual void layout();
+        virtual LayoutManager* getLayoutManager() const
+        {
+            return layoutManager;
+        }
 
-    /**
-     * This method is called by the window manager if the paint requirement flag is set.
-     * The component may here repaint itself.
-     */
-    virtual void paint();
+        /**
+         * Marks the given area as dirty so it is copied to the framebuffer
+         *
+         * @param rect	the Rectangle to mark dirty
+         */
+        virtual void markDirty(fenster::Rectangle rect);
 
-    void clearSurface();
+        /**
+         * Marks the entire component as dirty
+         */
+        virtual void markDirty()
+        {
+            markDirty(fenster::Rectangle(0, 0, bounds.width, bounds.height));
+        }
 
-    virtual bool getNumericProperty(int property, uint32_t* out);
-    virtual bool setNumericProperty(int property, uint32_t value);
+        /**
+         * Places the flag for the given requirement on the parent component (if non-null).
+         */
+        void markParentFor(ComponentRequirement req);
 
-    virtual bool getStringProperty(int property, std::string& out);
-    virtual bool setStringProperty(int property, std::string value);
+        /**
+         * Places the flag for the given requirement on this component.
+         */
+        void markFor(ComponentRequirement req);
 
-    void addListener(g_ui_component_event_type eventType, SYS_TID_T target_thread, g_ui_component_id id);
-    bool callForListeners(g_ui_component_event_type eventType, const std::function<void(event_listener_info_t&)>& func);
+        /**
+         * Places the flag for the given requirement in the list of child-requirements.
+         */
+        void markChildsFor(ComponentRequirement req);
 
-    void recheckGraphics();
-};
+        /**
+         * Resolves the given requirement
+         */
+        void resolveRequirement(ComponentRequirement req, int lvl);
+
+        bool hasChildRequirements() const
+        {
+            return childRequirements != COMPONENT_REQUIREMENT_NONE;
+        }
+
+        bool isChildOf(Component* c);
+
+        /**
+         * Returns the reference to the given component (if the given component is a child of this component).
+         *
+         * @return true if the component was found
+         */
+        bool getChildReference(Component* child, ComponentChildReference& out);
+
+        /**
+         * This method is called by the window manager if the update requirement flag is set.
+         * The component may here change the contents of it's model.
+         */
+        virtual void update();
+
+        /**
+         * This method is called by the window manager if the layout requirement flag is set.
+         * The component may here change the bounds of each child component and also change its
+         * own preferred size.
+         */
+        virtual void layout();
+
+        /**
+         * This method is called by the window manager if the paint requirement flag is set.
+         * The component may here repaint itself.
+         */
+        virtual void paint();
+
+        void clearSurface();
+
+        virtual bool getNumericProperty(int property, uint32_t* out);
+        virtual bool setNumericProperty(int property, uint32_t value);
+
+        virtual bool getStringProperty(int property, std::string& out);
+        virtual bool setStringProperty(int property, std::string value);
+
+        void addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id);
+        bool callForListeners(fenster::ComponentEventType eventType,
+                              const std::function<void(EventListenerInfo&)>& func);
+
+        void recheckGraphics();
+    };
+}
 
 #endif

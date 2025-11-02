@@ -5,19 +5,23 @@
 #include "libwindow/textfield.hpp"
 #include "libwindow/properties.hpp"
 
-g_textfield* g_textfield::create()
+namespace fenster
 {
-	return createComponent<g_textfield, G_UI_COMPONENT_TYPE_TEXTFIELD>();
+	TextField* TextField::create()
+	{
+		return createComponent<TextField, FENSTER_COMPONENT_TYPE_TEXTFIELD>();
+	}
+
+	void TextField::setSecure(bool secure)
+	{
+		Component::setNumericProperty(FENSTER_UI_PROPERTY_SECURE, secure);
+	}
+
+	bool TextField::isSecure()
+	{
+		uint32_t value;
+		Component::getNumericProperty(FENSTER_UI_PROPERTY_SECURE, &value);
+		return value;
+	}
 }
 
-void g_textfield::setSecure(bool secure)
-{
-	g_component::setNumericProperty(G_UI_PROPERTY_SECURE, secure);
-}
-
-bool g_textfield::isSecure()
-{
-	uint32_t value;
-	g_component::getNumericProperty(G_UI_PROPERTY_SECURE, &value);
-	return value;
-}

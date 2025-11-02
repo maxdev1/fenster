@@ -2,10 +2,13 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __INTERFACE_COMMAND_MESSAGE_RECEIVER__
-#define __INTERFACE_COMMAND_MESSAGE_RECEIVER__
+#ifndef FENSTER_SERVER_INTERFACE_INTERFACERECEIVER
+#define FENSTER_SERVER_INTERFACE_INTERFACERECEIVER
 
-void interfaceReceiverThread();
-void interfaceReceiverProcessCommand(void* requestMessage);
+namespace fensterserver
+{
+    void interfaceReceiverThread();
+    void interfaceReceiverProcessCommand(void* requestMessage);
+}
 
 #endif

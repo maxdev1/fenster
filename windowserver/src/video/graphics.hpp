@@ -2,50 +2,53 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_VIDEO_GRAPHICS__
-#define __WINDOWSERVER_VIDEO_GRAPHICS__
+#ifndef FENSTER_SERVER_VIDEO_GRAPHICS
+#define FENSTER_SERVER_VIDEO_GRAPHICS
 
 #include <cairo/cairo.h>
 #include <libwindow/metrics/dimension.hpp>
 #include <libwindow/metrics/rectangle.hpp>
 #include "platform/platform.hpp"
 
-/**
- * The graphics class is a utility that internally holds a cairo surface and has
- * the ability to resize it when required.
- */
-class graphics_t
+namespace fensterserver
 {
-    cairo_t* context = nullptr;
-    cairo_surface_t* surface = nullptr;
-    SYS_MUTEX_T lock = platformInitializeMutex(true);
-
-    int contextRefCount = 0;
-    int averageFactor = 10;
-
-public:
-    int width;
-    int height;
-
-    explicit graphics_t(uint16_t width = 0, uint16_t height = 0);
-
-    void resize(int width, int height, bool averaged = true);
-
-    cairo_surface_t* getSurface() const
+    /**
+     * The graphics class is a utility that internally holds a cairo surface and has
+     * the ability to resize it when required.
+     */
+    class Graphics
     {
-        return surface;
-    }
+        cairo_t* context = nullptr;
+        cairo_surface_t* surface = nullptr;
+        SYS_MUTEX_T lock = fenster::platformInitializeMutex(true);
 
-    void setAverageFactor(int factor)
-    {
-        this->averageFactor = factor;
-    }
+        int contextRefCount = 0;
+        int averageFactor = 10;
 
-    cairo_t* acquireContext();
+    public:
+        int width;
+        int height;
 
-    void releaseContext();
+        explicit Graphics(uint16_t width = 0, uint16_t height = 0);
 
-    void blitTo(graphics_t* target, const g_rectangle& clip, const g_point& position);
-};
+        void resize(int width, int height, bool averaged = true);
+
+        cairo_surface_t* getSurface() const
+        {
+            return surface;
+        }
+
+        void setAverageFactor(int factor)
+        {
+            this->averageFactor = factor;
+        }
+
+        cairo_t* acquireContext();
+
+        void releaseContext();
+
+        void blitTo(Graphics* target, const fenster::Rectangle& clip, const fenster::Point& position);
+    };
+}
 
 #endif

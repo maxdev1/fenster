@@ -2,31 +2,34 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_TEXT_TEXTCOMPONENT__
-#define __WINDOWSERVER_COMPONENTS_TEXT_TEXTCOMPONENT__
+#ifndef FENSTER_SERVER_COMPONENTS_TEXTCOMPONENT
+#define FENSTER_SERVER_COMPONENTS_TEXTCOMPONENT
 
 #include "components/component.hpp"
 #include "components/text/move/caret_move_strategy.hpp"
 #include <libwindow/metrics/range.hpp>
 
-class text_component_t : virtual public component_t
+namespace fensterserver
 {
-protected:
-    caret_move_strategy_t* caretMoveStrategy = nullptr;
+    class TextComponent : virtual public Component
+    {
+    protected:
+        CaretMoveStrategy* caretMoveStrategy = nullptr;
 
-public:
-    ~text_component_t() override = default;
+    public:
+        ~TextComponent() override = default;
 
-    virtual void setCursor(int position) = 0;
-    virtual int getCursor() = 0;
+        virtual void setCursor(int position) = 0;
+        virtual int getCursor() = 0;
 
-    virtual void setMarker(int position) = 0;
-    virtual int getMarker() = 0;
+        virtual void setMarker(int position) = 0;
+        virtual int getMarker() = 0;
 
-    virtual void setText(std::string text) = 0;
-    virtual std::string getText() = 0;
+        virtual void setText(std::string text) = 0;
+        virtual std::string getText() = 0;
 
-    virtual g_range getSelectedRange() = 0;
-};
+        virtual fenster::Range getSelectedRange() = 0;
+    };
+}
 
 #endif

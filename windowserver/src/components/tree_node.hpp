@@ -2,29 +2,32 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_TREE_NODE__
-#define __WINDOWSERVER_COMPONENTS_TREE_NODE__
+#ifndef FENSTER_SERVER_COMPONENTS_TREENODE
+#define FENSTER_SERVER_COMPONENTS_TREENODE
 
 #include "components/component.hpp"
 #include "components/label.hpp"
 
-class tree_node_t : virtual public component_t, virtual public titled_component_t
+namespace fensterserver
 {
-    label_t label;
-    bool open = false;
+    class TreeNode : virtual public Component, virtual public TitledComponent
+    {
+        Label label;
+        bool open = false;
 
-public:
-    tree_node_t();
-    ~tree_node_t() override = default;
+    public:
+        TreeNode();
+        ~TreeNode() override = default;
 
-    void update() override;
-    void layout() override;
+        void update() override;
+        void layout() override;
 
-    void setTitleInternal(std::string title) override;
-    std::string getTitle() override;
+        void setTitleInternal(std::string title) override;
+        std::string getTitle() override;
 
-    component_t* handleMouseEvent(mouse_event_t& event) override;
-};
+        Component* handleMouseEvent(MouseEvent& event) override;
+    };
+}
 
 
 #endif

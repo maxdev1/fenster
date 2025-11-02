@@ -9,36 +9,39 @@
 #include <utility>
 #include <bits/std_function.h>
 
-class g_component;
-
-typedef std::function<void(g_rectangle)> g_bounds_listener_func;
-
-class g_bounds_listener : public g_listener
+namespace fenster
 {
-public:
-    void process(g_ui_component_event_header* header) override
-    {
-        auto boundsEvent = (g_ui_component_bounds_event*)header;
-        handleBoundsChanged(boundsEvent->bounds);
-    }
+	class Component;
 
-    virtual void handleBoundsChanged(g_rectangle bounds) = 0;
-};
+	typedef std::function<void(Rectangle)> BoundsListenerFunc;
 
-class g_bounds_listener_dispatcher : public g_bounds_listener
-{
-    g_bounds_listener_func func;
+	class BoundsListener : public Listener
+	{
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			auto boundsEvent = (ComponentBoundsEvent*) header;
+			handleBoundsChanged(boundsEvent->bounds);
+		}
 
-public:
-    explicit g_bounds_listener_dispatcher(g_bounds_listener_func func): func(std::move(func))
-    {
-    }
+		virtual void handleBoundsChanged(Rectangle bounds) = 0;
+	};
 
-    void handleBoundsChanged(g_rectangle bounds) override
-    {
-        func(bounds);
-    }
-};
+	class BoundsListenerDispatcher : public BoundsListener
+	{
+		BoundsListenerFunc func;
 
+	public:
+		explicit BoundsListenerDispatcher(BoundsListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleBoundsChanged(Rectangle bounds) override
+		{
+			func(bounds);
+		}
+	};
+}
 
 #endif

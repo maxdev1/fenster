@@ -10,20 +10,24 @@
 #include "interface.hpp"
 #include "component.hpp"
 
-class g_titled_component : virtual public g_component
+namespace fenster
 {
-protected:
-    explicit g_titled_component(g_ui_component_id id) : g_component(id)
-    {
-    }
+	class TitledComponent : virtual public Component
+	{
+	protected:
+		explicit TitledComponent(ComponentId id) :
+			Component(id)
+		{
+		}
 
-public:
-    ~g_titled_component() override = default;
+	public:
+		~TitledComponent() override = default;
 
-    virtual bool setTitle(std::string title);
-    virtual std::string getTitle();
+		virtual bool setTitle(std::string title);
+		virtual std::string getTitle();
 
-    virtual void addTitleListener(std::function<void(std::string)> callback);
-};
+		virtual void addTitleListener(std::function<void(std::string)> callback);
+	};
+}
 
 #endif

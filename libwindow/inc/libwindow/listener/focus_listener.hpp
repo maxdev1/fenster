@@ -9,36 +9,39 @@
 #include "../interface.hpp"
 #include <bits/std_function.h>
 
-class g_component;
-
-typedef std::function<void(bool)> g_focus_listener_func;
-
-class g_focus_listener : public g_listener
+namespace fenster
 {
-public:
-	void process(g_ui_component_event_header* header) override
+	class Component;
+
+	typedef std::function<void(bool)> FocusListenerFunc;
+
+	class FocusListener : public Listener
 	{
-		auto event = (g_ui_component_focus_event*) header;
-		handleFocusChanged(event->now_focused);
-	}
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			auto event = (ComponentFocusEvent*) header;
+			handleFocusChanged(event->now_focused);
+		}
 
-	virtual void handleFocusChanged(bool nowFocused) = 0;
-};
+		virtual void handleFocusChanged(bool nowFocused) = 0;
+	};
 
-class g_focus_listener_dispatcher : public g_focus_listener
-{
-	g_focus_listener_func func;
-
-public:
-	explicit g_focus_listener_dispatcher(g_focus_listener_func func):
-		func(std::move(func))
+	class FocusListener_dispatcher : public FocusListener
 	{
-	}
+		FocusListenerFunc func;
 
-	void handleFocusChanged(bool nowFocused) override
-	{
-		func(nowFocused);
-	}
-};
+	public:
+		explicit FocusListener_dispatcher(FocusListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleFocusChanged(bool nowFocused) override
+		{
+			func(nowFocused);
+		}
+	};
+}
 
 #endif

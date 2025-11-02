@@ -2,57 +2,59 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __LIBFONT_TEXT_FONTMANAGER__
-#define __LIBFONT_TEXT_FONTMANAGER__
+#ifndef LIBWINDOW_FONT_FONTMANAGER
+#define LIBWINDOW_FONT_FONTMANAGER
 
 #include "libwindow/font/font.hpp"
 #include "libwindow/font/freetype.hpp"
 #include <map>
 #include <string>
 
-class g_font_manager
+namespace fenster
 {
-  private:
-    FT_Library library;
-    std::map<std::string, g_font*> fontRegistry;
+	class FontManager
+	{
+		FT_Library library;
+		std::map<std::string, Font*> fontRegistry;
 
-    g_font_manager();
-    ~g_font_manager();
+		FontManager();
+		~FontManager();
 
-    void initializeEngine();
-    void destroyEngine();
+		void initializeEngine();
+		void destroyEngine();
 
-  public:
-    /**
-     * @return the instance of the font manager singleton
-     */
-    static g_font_manager* getInstance();
+	public:
+		/**
+		 * @return the instance of the font manager singleton
+		 */
+		static FontManager* getInstance();
 
-    /**
-     * Registers the font.
-     *
-     * @param name			name to which the font shall be registered
-     */
-    bool registerFont(std::string name, g_font* font);
+		/**
+		 * Registers the font.
+		 *
+		 * @param name			name to which the font shall be registered
+		 */
+		bool registerFont(std::string name, Font* font);
 
-    /**
-     * Looks for an existing font with the "name".
-     *
-     * @param name	the name to which the font is registered
-     */
-    g_font* getFont(std::string name);
+		/**
+		 * Looks for an existing font with the "name".
+		 *
+		 * @param name	the name to which the font is registered
+		 */
+		Font* getFont(std::string name);
 
-    /**
-     * Deletes the font and removes it from the font registry.
-     *
-     * @param font	the font to destroy
-     */
-    void destroyFont(g_font* font);
+		/**
+		 * Deletes the font and removes it from the font registry.
+		 *
+		 * @param font	the font to destroy
+		 */
+		void destroyFont(Font* font);
 
-    /**
-     * @return the freetype library handle
-     */
-    FT_Library getLibraryHandle();
-};
+		/**
+		 * @return the freetype library handle
+		 */
+		FT_Library getLibraryHandle();
+	};
+}
 
 #endif

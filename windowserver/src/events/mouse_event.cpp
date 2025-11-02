@@ -5,7 +5,10 @@
 #include "events/mouse_event.hpp"
 #include "components/component.hpp"
 
-component_t* mouse_event_t::visit(component_t* component)
+namespace fensterserver
 {
-    return component->handleMouseEvent(*this);
+	Component* MouseEvent::visit(Component* component)
+	{
+		return component->handleMouseEvent(*this);
+	}
 }

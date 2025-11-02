@@ -2,15 +2,18 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_TEXT_CARETDIRECTION__
-#define __WINDOWSERVER_COMPONENTS_TEXT_CARETDIRECTION__
+#ifndef FENSTER_SERVER_COMPONENTS_TEXT_CARETDIRECTION
+#define FENSTER_SERVER_COMPONENTS_TEXT_CARETDIRECTION
 
 #include <stdint.h>
 
-enum class caret_direction_t : uint8_t
+namespace fensterserver
 {
-    LEFT,
-    RIGHT
-};
+    enum class CaretDirection : uint8_t
+    {
+        LEFT,
+        RIGHT
+    };
+}
 
 #endif

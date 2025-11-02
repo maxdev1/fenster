@@ -8,29 +8,33 @@
 #include <bits/std_function.h>
 #include <utility>
 
-typedef std::function<void()> g_canvas_buffer_listener_func;
-
-class g_canvas_buffer_listener
+namespace fenster
 {
-public:
-    virtual ~g_canvas_buffer_listener() = default;
+	typedef std::function<void()> CanvasBufferListenerFunc;
 
-    virtual void handleBufferChanged() = 0;
-};
+	class CanvasBufferListener
+	{
+	public:
+		virtual ~CanvasBufferListener() = default;
 
-class g_canvas_buffer_listener_dispatcher : public g_canvas_buffer_listener
-{
-    g_canvas_buffer_listener_func func;
+		virtual void handleBufferChanged() = 0;
+	};
 
-public:
-    explicit g_canvas_buffer_listener_dispatcher(g_canvas_buffer_listener_func func): func(std::move(func))
-    {
-    }
+	class CanvasBufferListenerDispatcher : public CanvasBufferListener
+	{
+		CanvasBufferListenerFunc func;
 
-    void handleBufferChanged() override
-    {
-        func();
-    }
-};
+	public:
+		explicit CanvasBufferListenerDispatcher(CanvasBufferListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleBufferChanged() override
+		{
+			func();
+		}
+	};
+}
 
 #endif

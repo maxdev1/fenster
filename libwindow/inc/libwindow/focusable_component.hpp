@@ -10,20 +10,24 @@
 #include "interface.hpp"
 #include "component.hpp"
 
-class g_focusable_component : virtual public g_component
+namespace fenster
 {
-protected:
-    explicit g_focusable_component(g_ui_component_id id) : g_component(id)
-    {
-    }
+	class FocusableComponent : virtual public Component
+	{
+	protected:
+		explicit FocusableComponent(ComponentId id) :
+			Component(id)
+		{
+		}
 
-public:
-    ~g_focusable_component() override = default;
+	public:
+		~FocusableComponent() override = default;
 
-    virtual bool setFocused(bool focused);
-    virtual bool isFocused();
+		virtual bool setFocused(bool focused);
+		virtual bool isFocused();
 
-    virtual void addFocusListener(std::function<void(bool)> callback);
-};
+		virtual void addFocusListener(std::function<void(bool)> callback);
+	};
+}
 
 #endif

@@ -6,33 +6,34 @@
 #include "libwindow/component.hpp"
 #include "libwindow/properties.hpp"
 
-g_button* g_button::create()
+namespace fenster
 {
-	return createComponent<g_button, G_UI_COMPONENT_TYPE_BUTTON>();
+	Button* Button::create()
+	{
+		return createComponent<Button, FENSTER_COMPONENT_TYPE_BUTTON>();
+	}
+
+	void Button::setEnabled(bool enabled)
+	{
+		setNumericProperty(FENSTER_UI_PROPERTY_ENABLED, enabled);
+	}
+
+	bool Button::isEnabled()
+	{
+		uint32_t value;
+		getNumericProperty(FENSTER_UI_PROPERTY_ENABLED, &value);
+		return value;
+	}
+
+	void Button::setStyle(ButtonStyle style)
+	{
+		setNumericProperty(FENSTER_UI_PROPERTY_STYLE, style);
+	}
+
+	ButtonStyle Button::getStyle()
+	{
+		uint32_t value;
+		getNumericProperty(FENSTER_UI_PROPERTY_STYLE, &value);
+		return value;
+	}
 }
-
-void g_button::setEnabled(bool enabled)
-{
-	setNumericProperty(G_UI_PROPERTY_ENABLED, enabled);
-}
-
-bool g_button::isEnabled()
-{
-	uint32_t value;
-	getNumericProperty(G_UI_PROPERTY_ENABLED, &value);
-	return value;
-}
-
-void g_button::setStyle(g_button_style style)
-{
-	setNumericProperty(G_UI_PROPERTY_STYLE, style);
-}
-
-g_button_style g_button::getStyle()
-{
-	uint32_t value;
-	getNumericProperty(G_UI_PROPERTY_STYLE, &value);
-	return value;
-}
-
-

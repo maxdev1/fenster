@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __LIBFONT_TEXT_FREETYPE__
-#define __LIBFONT_TEXT_FREETYPE__
+#ifndef LIBWINDOW_FONT_FREETYPE
+#define LIBWINDOW_FONT_FREETYPE
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

@@ -10,42 +10,45 @@
 #include "libwindow/input/key_info.hpp"
 #include <bits/std_function.h>
 
-struct g_key_event
+namespace fenster
 {
-	key_info_basic_t info;
-};
-
-typedef std::function<void(g_key_event&)> g_key_listener_func;
-
-class g_key_listener : public g_listener
-{
-public:
-	void process(g_ui_component_event_header* header) override
+	struct KeyEvent
 	{
-		auto event = (g_ui_component_key_event*) header;
+		KeyInfoBasic info;
+	};
 
-		g_key_event e;
-		e.info = event->key_info;
-		handleKeyEvent(e);
-	}
+	typedef std::function<void(KeyEvent&)> KeyListenerFunc;
 
-	virtual void handleKeyEvent(g_key_event& e) = 0;
-};
-
-class g_key_listener_dispatcher : public g_key_listener
-{
-	g_key_listener_func func;
-
-public:
-	explicit g_key_listener_dispatcher(g_key_listener_func func):
-		func(std::move(func))
+	class KeyListener : public Listener
 	{
-	}
+	public:
+		void process(ComponentEventHeader* header) override
+		{
+			auto event = (ComponentKeyEvent*) header;
 
-	void handleKeyEvent(g_key_event& e) override
+			KeyEvent e;
+			e.info = event->key_info;
+			handleKeyEvent(e);
+		}
+
+		virtual void handleKeyEvent(KeyEvent& e) = 0;
+	};
+
+	class KeyListenerDispatcher : public KeyListener
 	{
-		func(e);
-	}
-};
+		KeyListenerFunc func;
+
+	public:
+		explicit KeyListenerDispatcher(KeyListenerFunc func):
+			func(std::move(func))
+		{
+		}
+
+		void handleKeyEvent(KeyEvent& e) override
+		{
+			func(e);
+		}
+	};
+}
 
 #endif

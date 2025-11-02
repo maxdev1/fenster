@@ -8,40 +8,44 @@
 #include "libwindow/properties.hpp"
 #include "libwindow/listener/focus_listener.hpp"
 
-bool g_focusable_component::isFocused()
+namespace fenster
 {
-	uint32_t out;
-	getNumericProperty(G_UI_PROPERTY_FOCUSED, &out);
-	return out == 1;
-}
-
-bool g_focusable_component::setFocused(bool focused)
-{
-	if(!g_ui_initialized)
-		return false;
-
-	SYS_TX_T tx = platformCreateMessageTransaction();
-
-	g_ui_component_focus_request request;
-	request.header.id = G_UI_PROTOCOL_FOCUS;
-	request.id = this->id;
-	platformSendMessage(g_ui_delegate_tid, &request, sizeof(g_ui_component_focus_request), tx);
-	platformYieldTo(g_ui_delegate_tid);
-
-	size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(g_ui_component_focus_response);
-	uint8_t buffer[bufferSize];
-
-	bool success = false;
-	if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+	bool FocusableComponent::isFocused()
 	{
-		auto response = (g_ui_component_focus_response*) SYS_MESSAGE_CONTENT(buffer);
-		success = (response->status == G_UI_PROTOCOL_SUCCESS);
+		uint32_t out;
+		getNumericProperty(FENSTER_UI_PROPERTY_FOCUSED, &out);
+		return out == 1;
 	}
 
-	return success;
+	bool FocusableComponent::setFocused(bool focused)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		SYS_TX_T tx = platformCreateMessageTransaction();
+
+		CommandFocusRequest request;
+		request.header.id = FENSTER_PROTOCOL_FOCUS;
+		request.id = this->id;
+		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFocusRequest), tx);
+		platformYieldTo(DelegateTaskId);
+
+		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandFocusResponse);
+		uint8_t buffer[bufferSize];
+
+		bool success = false;
+		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
+		{
+			auto response = (CommandFocusResponse*) SYS_MESSAGE_CONTENT(buffer);
+			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+		}
+
+		return success;
+	}
+
+	void FocusableComponent::addFocusListener(std::function<void(bool)> func)
+	{
+		this->addListener(FENSTER_COMPONENT_EVENT_TYPE_FOCUS, new FocusListener_dispatcher(std::move(func)));
+	}
 }
 
-void g_focusable_component::addFocusListener(std::function<void(bool)> func)
-{
-	this->addListener(G_UI_COMPONENT_EVENT_TYPE_FOCUS, new g_focus_listener_dispatcher(std::move(func)));
-}

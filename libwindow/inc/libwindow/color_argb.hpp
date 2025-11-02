@@ -22,6 +22,9 @@
 
 #define G_COLOR_ARGB_TO_FPARAMS(argb) ARGB_FR_FROM(argb), ARGB_FG_FROM(argb), ARGB_FB_FROM(argb), ARGB_FA_FROM(argb)
 
-typedef uint32_t g_color_argb;
+namespace fenster
+{
+	typedef uint32_t ColorArgb;
+}
 
 #endif

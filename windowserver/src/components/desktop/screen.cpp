@@ -7,85 +7,89 @@
 
 #include <cstring>
 
-void screen_t::addChild(component_t* comp, component_child_reference_type_t type)
+namespace fensterserver
 {
-	component_t::addChild(comp, type);
-
-	if(comp->isWindow())
+	void Screen::addChild(Component* comp, ComponentChildReferenceType type)
 	{
-		this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](event_listener_info_t& info)
+		Component::addChild(comp, type);
+
+		if(comp->isWindow())
 		{
-			auto window = dynamic_cast<window_t*>(comp);
-			sendWindowEvent(info.component_id, window, info.target_thread, true);
-		});
+			this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](EventListenerInfo& info)
+			{
+				auto window = dynamic_cast<Window*>(comp);
+				sendWindowEvent(info.component_id, window, info.target_thread, true);
+			});
+		}
 	}
-}
 
-void screen_t::removeChild(component_t* comp)
-{
-	if(comp->isWindow())
+	void Screen::removeChild(Component* comp)
 	{
-		this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](event_listener_info_t& info)
+		if(comp->isWindow())
 		{
-			sendWindowEvent(info.component_id, dynamic_cast<window_t*>(comp), info.target_thread,
-			                false);
-		});
+			this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](EventListenerInfo& info)
+			{
+				sendWindowEvent(info.component_id, dynamic_cast<Window*>(comp), info.target_thread,
+				                false);
+			});
+		}
+
+		Component::removeChild(comp);
 	}
 
-	component_t::removeChild(comp);
-}
-
-void screen_t::sendWindowEvent(g_ui_component_id observerId, window_t* window, SYS_TID_T observerThread, bool present)
-{
-	g_ui_windows_event windowEvent;
-	windowEvent.header.type = G_UI_COMPONENT_EVENT_TYPE_WINDOWS;
-	windowEvent.header.component_id = observerId;
-	windowEvent.window_id = window->id;
-	windowEvent.present = present;
-	platformSendMessage(observerThread, &windowEvent, sizeof(g_ui_windows_event), SYS_TX_NONE);
-}
-
-void screen_t::markDirty(g_rectangle rect)
-{
-	platformAcquireMutex(lock);
-
-	if(invalid.width == 0 && invalid.height == 0)
+	void Screen::sendWindowEvent(fenster::ComponentId observerId, Window* window, SYS_TID_T observerThread,
+	                             bool present)
 	{
-		invalid = rect;
-	}
-	else
-	{
-		invalid.extend(rect.getStart());
-		invalid.extend(rect.getEnd());
+		fenster::WindowsEvent windowEvent;
+		windowEvent.header.type = FENSTER_COMPONENT_EVENT_TYPE_WINDOWS;
+		windowEvent.header.component_id = observerId;
+		windowEvent.window_id = window->id;
+		windowEvent.present = present;
+		fenster::platformSendMessage(observerThread, &windowEvent, sizeof(fenster::WindowsEvent), SYS_TX_NONE);
 	}
 
-	// Fix invalid area
-	if(invalid.x < 0)
+	void Screen::markDirty(fenster::Rectangle rect)
 	{
-		invalid.width += invalid.x;
-		invalid.x = 0;
-	}
-	if(invalid.y < 0)
-	{
-		invalid.height += invalid.y;
-		invalid.y = 0;
-	}
-	if(invalid.x + invalid.width > getBounds().width)
-	{
-		invalid.width = getBounds().width - invalid.x;
-	}
-	if(invalid.y + invalid.height > getBounds().height)
-	{
-		invalid.height = getBounds().height - invalid.y;
-	}
-	platformReleaseMutex(lock);
-}
+		fenster::platformAcquireMutex(lock);
 
-g_rectangle screen_t::grabInvalid()
-{
-	platformAcquireMutex(lock);
-	g_rectangle ret = invalid;
-	invalid = g_rectangle();
-	platformReleaseMutex(lock);
-	return ret;
+		if(invalid.width == 0 && invalid.height == 0)
+		{
+			invalid = rect;
+		}
+		else
+		{
+			invalid.extend(rect.getStart());
+			invalid.extend(rect.getEnd());
+		}
+
+		// Fix invalid area
+		if(invalid.x < 0)
+		{
+			invalid.width += invalid.x;
+			invalid.x = 0;
+		}
+		if(invalid.y < 0)
+		{
+			invalid.height += invalid.y;
+			invalid.y = 0;
+		}
+		if(invalid.x + invalid.width > getBounds().width)
+		{
+			invalid.width = getBounds().width - invalid.x;
+		}
+		if(invalid.y + invalid.height > getBounds().height)
+		{
+			invalid.height = getBounds().height - invalid.y;
+		}
+		fenster::platformReleaseMutex(lock);
+	}
+
+	fenster::Rectangle Screen::grabInvalid()
+	{
+		fenster::platformAcquireMutex(lock);
+		fenster::Rectangle ret = invalid;
+		invalid = fenster::Rectangle();
+		fenster::platformReleaseMutex(lock);
+		return ret;
+	}
 }

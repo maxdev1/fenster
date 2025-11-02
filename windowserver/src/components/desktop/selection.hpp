@@ -2,15 +2,18 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_DESKTOP_SELECTION__
-#define __WINDOWSERVER_COMPONENTS_DESKTOP_SELECTION__
+#ifndef FENSTER_SERVER_COMPONENTS_DESKTOP_SELECTION
+#define FENSTER_SERVER_COMPONENTS_DESKTOP_SELECTION
 
 #include "components/component.hpp"
 
-class selection_t : virtual public component_t
+namespace fensterserver
 {
-  public:
-	virtual void paint();
-};
+	class Selection : virtual public Component
+	{
+	public:
+		virtual void paint();
+	};
+}
 
 #endif

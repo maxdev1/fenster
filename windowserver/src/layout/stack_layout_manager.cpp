@@ -5,56 +5,59 @@
 #include "layout/stack_layout_manager.hpp"
 #include "components/component.hpp"
 
-/**
- *
- */
-void stack_layout_manager_t::layout()
+namespace fensterserver
 {
-	if(component == nullptr)
-		return;
-
-	if(horizontal)
+	/**
+	 *
+	 */
+	void StackLayoutManager::layout()
 	{
-		int x = 0;
-		int highestHeight = 0;
+		if(component == nullptr)
+			return;
 
-		auto& children = component->acquireChildren();
-		for(auto& childRef: children)
+		if(horizontal)
 		{
-			component_t* child = childRef.component;
-			if(!child->isVisible())
-				continue;
-			g_dimension childSize = child->getEffectivePreferredSize();
+			int x = 0;
+			int highestHeight = 0;
 
-			child->setBounds(g_rectangle(x, 0, childSize.width, childSize.height));
-			x += childSize.width;
+			auto& children = component->acquireChildren();
+			for(auto& childRef: children)
+			{
+				Component* child = childRef.component;
+				if(!child->isVisible())
+					continue;
+				fenster::Dimension childSize = child->getEffectivePreferredSize();
 
-			highestHeight = childSize.height > highestHeight ? childSize.height : highestHeight;
+				child->setBounds(fenster::Rectangle(x, 0, childSize.width, childSize.height));
+				x += childSize.width;
+
+				highestHeight = childSize.height > highestHeight ? childSize.height : highestHeight;
+			}
+			component->releaseChildren();
+
+			component->setPreferredSize(fenster::Dimension(x, highestHeight));
 		}
-		component->releaseChildren();
-
-		component->setPreferredSize(g_dimension(x, highestHeight));
-	}
-	else
-	{
-		int y = 0;
-		int widestWidth = 0;
-
-		auto& children = component->acquireChildren();
-		for(auto& childRef: children)
+		else
 		{
-			component_t* child = childRef.component;
-			if(!child->isVisible())
-				continue;
-			g_dimension childSize = child->getEffectivePreferredSize();
+			int y = 0;
+			int widestWidth = 0;
 
-			child->setBounds(g_rectangle(0, y, childSize.width, childSize.height));
-			y += childSize.height;
+			auto& children = component->acquireChildren();
+			for(auto& childRef: children)
+			{
+				Component* child = childRef.component;
+				if(!child->isVisible())
+					continue;
+				fenster::Dimension childSize = child->getEffectivePreferredSize();
 
-			widestWidth = childSize.width > widestWidth ? childSize.width : widestWidth;
+				child->setBounds(fenster::Rectangle(0, y, childSize.width, childSize.height));
+				y += childSize.height;
+
+				widestWidth = childSize.width > widestWidth ? childSize.width : widestWidth;
+			}
+			component->releaseChildren();
+
+			component->setPreferredSize(fenster::Dimension(widestWidth, y));
 		}
-		component->releaseChildren();
-
-		component->setPreferredSize(g_dimension(widestWidth, y));
 	}
 }

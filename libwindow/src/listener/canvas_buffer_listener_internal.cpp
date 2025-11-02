@@ -5,11 +5,14 @@
 #include "libwindow/listener/canvas_buffer_listener_internal.hpp"
 #include "libwindow/canvas.hpp"
 
-void g_canvas_buffer_listener_internal::process(g_ui_component_event_header* header)
+namespace fenster
 {
-	if(header->type == G_UI_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER)
+	void CanvasBufferListenerInternal::process(ComponentEventHeader* header)
 	{
-		auto event = (g_ui_component_canvas_wfa_event*) header;
-		canvas->acknowledgeNewBuffer(event->newBufferAddress, event->width, event->height);
+		if(header->type == FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER)
+		{
+			auto event = (ComponentCanvasWaitForAcknowledgeEvent*) header;
+			canvas->acknowledgeNewBuffer(event->newBufferAddress, event->width, event->height);
+		}
 	}
 }

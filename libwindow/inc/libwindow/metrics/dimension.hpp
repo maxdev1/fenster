@@ -8,51 +8,57 @@
 #include "point.hpp"
 #include <cstdint>
 
-class g_dimension
+namespace fenster
 {
-  public:
-	int32_t width;
-	int32_t height;
-
-	g_dimension() : width(0), height(0)
+	class Dimension
 	{
-	}
+	public:
+		int32_t width;
+		int32_t height;
 
-	g_dimension(int32_t width, int32_t height) : width(width), height(height)
-	{
-	}
+		Dimension() :
+			width(0), height(0)
+		{
+		}
 
-	g_dimension(const g_dimension& p) : width(p.width), height(p.height)
-	{
-	}
+		Dimension(int32_t width, int32_t height) :
+			width(width), height(height)
+		{
+		}
 
-	g_dimension& operator=(const g_dimension& rhs)
-	{
-		width = rhs.width;
-		height = rhs.height;
-		return *this;
-	}
+		Dimension(const Dimension& p) :
+			width(p.width), height(p.height)
+		{
+		}
 
-	bool operator==(const g_dimension& p) const
-	{
-		return width == p.width && height == p.height;
-	}
+		Dimension& operator=(const Dimension& rhs)
+		{
+			width = rhs.width;
+			height = rhs.height;
+			return *this;
+		}
 
-	bool operator!=(const g_dimension& p) const
-	{
-		return !(*this == p);
-	}
+		bool operator==(const Dimension& p) const
+		{
+			return width == p.width && height == p.height;
+		}
 
-	g_point operator-(const g_dimension& p) const
-	{
-		return g_point(width - p.width, height - p.height);
-	}
+		bool operator!=(const Dimension& p) const
+		{
+			return !(*this == p);
+		}
 
-	g_point operator+(const g_dimension& p) const
-	{
-		return g_point(width + p.width, height + p.height);
-	}
+		Point operator-(const Dimension& p) const
+		{
+			return Point(width - p.width, height - p.height);
+		}
 
-} __attribute__((packed));
+		Point operator+(const Dimension& p) const
+		{
+			return Point(width + p.width, height + p.height);
+		}
+
+	} __attribute__((packed));
+}
 
 #endif

@@ -5,7 +5,10 @@
 #include "events/key_event.hpp"
 #include "components/component.hpp"
 
-component_t* key_event_t::visit(component_t* component)
+namespace fensterserver
 {
-    return component->handleKeyEvent(*this);
+	Component* KeyEvent::visit(Component* component)
+	{
+		return component->handleKeyEvent(*this);
+	}
 }

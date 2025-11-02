@@ -7,14 +7,17 @@
 
 #include "component.hpp"
 
-class g_panel : virtual public g_component
+namespace fenster
 {
-public:
-    explicit g_panel(g_ui_component_id id) : g_component(id)
-    {
-    }
+	class Panel : virtual public Component
+	{
+	public:
+		explicit Panel(ComponentId id) : Component(id)
+		{
+		}
 
-    static g_panel* create();
-};
+		static Panel* create();
+	};
+}
 
 #endif

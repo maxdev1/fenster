@@ -6,53 +6,57 @@
 
 #include "platform/platform.hpp"
 #include "platform/ghost/ghost.hpp"
-#include "windowserver.hpp"
+#include "server.hpp"
 
 #include <libinput/keyboard/keyboard.hpp>
 #include <libinput/mouse/mouse.hpp>
 #include <components/cursor.hpp>
 
-windowserver_t* server = nullptr;
 
 int main()
 {
-	server = new windowserver_t();
-	server->launch();
+	fensterserver::server = new fensterserver::Server();
+	fensterserver::server->launch();
 	return 0;
 }
 
-void platformStartInput()
+namespace fensterserver
 {
-	inputReceiverInitialize();
-}
+	Server* server = nullptr;
 
-bool platformInitializeKeyboardLayout(std::string layout)
-{
-	return g_keyboard::loadLayout(layout);
-}
-
-void platformLoadCursors()
-{
-	auto dir = g_open_directory("/system/graphics/cursor");
-	g_fs_directory_entry* entry;
-	while((entry = g_read_directory(dir)) != nullptr)
+	void platformStartInput()
 	{
-		std::string path = std::string("/system/graphics/cursor") + "/" + entry->name;
-		cursor_t::load(path);
+		inputReceiverInitialize();
 	}
-	cursor_t::set("default");
-}
 
-char platformCharForKey(key_info_t info)
-{
-	g_key_info ghostKey;
-	ghostKey.pressed = info.pressed;
-	ghostKey.ctrl = info.ctrl;
-	ghostKey.shift = info.shift;
-	ghostKey.alt = info.alt;
-	ghostKey.scancode = info.scancode;
-	ghostKey.key = info.key;
-	return g_keyboard::charForKey(ghostKey);
+	bool platformInitializeKeyboardLayout(std::string layout)
+	{
+		return g_keyboard::loadLayout(layout);
+	}
+
+	void platformLoadCursors()
+	{
+		auto dir = g_open_directory("/system/graphics/cursor");
+		g_fs_directory_entry* entry;
+		while((entry = g_read_directory(dir)) != nullptr)
+		{
+			std::string path = std::string("/system/graphics/cursor") + "/" + entry->name;
+			Cursor::load(path);
+		}
+		Cursor::set("default");
+	}
+
+	char platformCharForKey(fenster::KeyInfo info)
+	{
+		g_key_info ghostKey;
+		ghostKey.pressed = info.pressed;
+		ghostKey.ctrl = info.ctrl;
+		ghostKey.shift = info.shift;
+		ghostKey.alt = info.alt;
+		ghostKey.scancode = info.scancode;
+		ghostKey.key = info.key;
+		return g_keyboard::charForKey(ghostKey);
+	}
 }
 
 #endif

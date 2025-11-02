@@ -2,35 +2,38 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __LAYOUT_MANAGER__
-#define __LAYOUT_MANAGER__
+#ifndef FENSTER_SERVER_LAYOUT_LAYOUTMANAGER
+#define FENSTER_SERVER_LAYOUT_LAYOUTMANAGER
 
 #include <libwindow/metrics/insets.hpp>
 
-class component_t;
-
-class layout_manager_t
+namespace fensterserver
 {
-protected:
-    component_t* component;
+    class Component;
 
-public:
-    layout_manager_t() : component(nullptr)
+    class LayoutManager
     {
-    }
+    protected:
+        Component* component;
 
-    virtual ~layout_manager_t() = default;
+    public:
+        LayoutManager() : component(nullptr)
+        {
+        }
 
-    void setComponent(component_t* newComp)
-    {
-        component = newComp;
-    }
+        virtual ~LayoutManager() = default;
 
-    virtual void layout() = 0;
+        void setComponent(Component* newComp)
+        {
+            component = newComp;
+        }
 
-    virtual void setPadding(g_insets insets)
-    {
-    }
-};
+        virtual void layout() = 0;
+
+        virtual void setPadding(fenster::Insets insets)
+        {
+        }
+    };
+}
 
 #endif

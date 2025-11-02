@@ -7,12 +7,15 @@
 
 #include "libwindow/interface.hpp"
 
-class g_listener
+namespace fenster
 {
-public:
-    virtual ~g_listener() = default;
+	class Listener
+	{
+	public:
+		virtual ~Listener() = default;
 
-    virtual void process(g_ui_component_event_header* header) = 0;
-};
+		virtual void process(ComponentEventHeader* header) = 0;
+	};
+}
 
 #endif

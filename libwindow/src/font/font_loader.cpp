@@ -6,37 +6,40 @@
 #include "libwindow/font/font_manager.hpp"
 #include "libwindow/platform/platform.hpp"
 
-g_font* g_font_loader::getFont(std::string path, std::string name)
+namespace fenster
 {
-	g_font* existing = g_font_manager::getInstance()->getFont(name);
-	if(existing)
-		return existing;
+	Font* FontLoader::getFont(std::string path, std::string name)
+	{
+		Font* existing = FontManager::getInstance()->getFont(name);
+		if(existing)
+			return existing;
 
-	g_font* newFont = g_font::load(path, name);
-	if(!newFont)
+		Font* newFont = Font::load(path, name);
+		if(!newFont)
+			return nullptr;
+
+		if(FontManager::getInstance()->registerFont(name, newFont))
+			return newFont;
+
+		delete newFont;
 		return nullptr;
+	}
 
-	if(g_font_manager::getInstance()->registerFont(name, newFont))
-		return newFont;
+	Font* FontLoader::getSystemFont(std::string name)
+	{
+		return getFont(platformGetFontPath(name), name);
+	}
 
-	delete newFont;
-	return nullptr;
-}
+	Font* FontLoader::get(std::string name)
+	{
+		Font* font = getSystemFont(name);
+		if(font)
+			return font;
+		return getDefault();
+	}
 
-g_font* g_font_loader::getSystemFont(std::string name)
-{
-	return getFont(platformGetFontPath(name), name);
-}
-
-g_font* g_font_loader::get(std::string name)
-{
-	g_font* font = getSystemFont(name);
-	if(font)
-		return font;
-	return getDefault();
-}
-
-g_font* g_font_loader::getDefault()
-{
-	return getSystemFont("default");
+	Font* FontLoader::getDefault()
+	{
+		return getSystemFont("default");
+	}
 }

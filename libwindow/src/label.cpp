@@ -5,17 +5,20 @@
 #include "libwindow/label.hpp"
 #include "libwindow/properties.hpp"
 
-g_label* g_label::create()
+namespace fenster
 {
-	return createComponent<g_label, G_UI_COMPONENT_TYPE_LABEL>();
-}
+	Label* Label::create()
+	{
+		return createComponent<Label, FENSTER_COMPONENT_TYPE_LABEL>();
+	}
 
-bool g_label::setColor(g_color_argb argb)
-{
-	return setNumericProperty(G_UI_PROPERTY_COLOR, argb);
-}
+	bool Label::setColor(ColorArgb argb)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_COLOR, argb);
+	}
 
-bool g_label::setAlignment(g_text_alignment alignment)
-{
-	return setNumericProperty(G_UI_PROPERTY_ALIGNMENT, (uint32_t) alignment);
+	bool Label::setAlignment(TextAlignment alignment)
+	{
+		return setNumericProperty(FENSTER_UI_PROPERTY_ALIGNMENT, (uint32_t) alignment);
+	}
 }

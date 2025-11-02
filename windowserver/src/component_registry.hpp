@@ -2,26 +2,29 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_INTERFACE_COMPONENTREGISTRY__
-#define __WINDOWSERVER_INTERFACE_COMPONENTREGISTRY__
+#ifndef FENSTER_SERVER_COMPONENTREGISTRY
+#define FENSTER_SERVER_COMPONENTREGISTRY
 
 #include <libwindow/interface.hpp>
 
 #include "components/component.hpp"
 
-class component_registry_t
+namespace fensterserver
 {
-public:
-    static g_ui_component_id add(component_t* component);
-    static void bind(SYS_TID_T process, component_t* component);
-    static component_t* get(g_ui_component_id id);
+    class ComponentRegistry
+    {
+    public:
+        static fenster::ComponentId add(Component* component);
+        static void bind(SYS_TID_T process, Component* component);
+        static Component* get(fenster::ComponentId id);
 
-    static void removeComponent(SYS_TID_T pid, g_ui_component_id id);
-    static void cleanupProcess(SYS_TID_T pid);
+        static void removeComponent(SYS_TID_T pid, fenster::ComponentId id);
+        static void cleanupProcess(SYS_TID_T pid);
 
-private:
-    static void removeProcessComponents(SYS_TID_T process, component_t* component,
-                                          std::list<component_t*>& removedComponents);
-};
+    private:
+        static void removeProcessComponents(SYS_TID_T process, Component* component,
+                                            std::list<Component*>& removedComponents);
+    };
+}
 
 #endif

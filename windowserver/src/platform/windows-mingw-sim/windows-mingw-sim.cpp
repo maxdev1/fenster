@@ -2,8 +2,9 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include <server.hpp>
 #ifdef _WIN32
-#include <windowserver.hpp>
+#include <server.hpp>
 #include <components/cursor.hpp>
 #include <libwindow/input/key_info.hpp>
 
@@ -18,9 +19,12 @@ static BITMAPINFO bmi;
 static HWND hwnd;
 static bool running = true;
 
-windowserver_t* server = nullptr;
+namespace fensterserver
+{
+	fensterserver::Server* server = nullptr;
 
-void platformServerThread();
+	void platformServerThread();
+}
 
 #define GET_WHEEL_DELTA_WPARAM(wParam)  ((short)HIWORD(wParam))
 #define GET_KEYSTATE_WPARAM(wParam)     (LOWORD(wParam))
@@ -80,16 +84,16 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			{
 				alt = true;
 			}
-			printf("KEYDOWN %i, %c%c%c\n", w, shift?'s':' ',ctrl?'c':' ',alt?'a':' ');
+			printf("KEYDOWN %i, %c%c%c\n", w, shift ? 's' : ' ', ctrl ? 'c' : ' ', alt ? 'a' : ' ');
 
-			key_info_t info;
+			fenster::KeyInfo info;
 			info.key = "KEY_B";
 			info.ctrl = ctrl;
 			info.shift = shift;
 			info.alt = alt;
 			info.pressed = true;
-			windowserver_t::instance()->eventProcessor->bufferKeyEvent(info);
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Server::instance()->eventProcessor->bufferKeyEvent(info);
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		}
 		case WM_KEYUP:
@@ -112,17 +116,17 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				alt = false;
 			}
 
-			printf("KEYUP %i, %c%c%c\n", w, shift?'s':' ',ctrl?'c':' ',alt?'a':' ');
+			printf("KEYUP %i, %c%c%c\n", w, shift ? 's' : ' ', ctrl ? 'c' : ' ', alt ? 'a' : ' ');
 
-			key_info_t info;
+			fenster::KeyInfo info;
 			info.scancode = w;
 			info.key = "KEY_B";
 			info.ctrl = ctrl;
 			info.shift = shift;
 			info.alt = alt;
 			info.pressed = false;
-			windowserver_t::instance()->eventProcessor->bufferKeyEvent(info);
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Server::instance()->eventProcessor->bufferKeyEvent(info);
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		}
 		case WM_MOUSEMOVE:
@@ -139,51 +143,51 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				{
 				}
 
-			cursor_t::nextPosition.x = mouseX;
-			cursor_t::nextPosition.y = mouseY;
+			fensterserver::Cursor::nextPosition.x = mouseX;
+			fensterserver::Cursor::nextPosition.y = mouseY;
 
-			if(cursor_t::nextPosition.x < 0)
+			if(fensterserver::Cursor::nextPosition.x < 0)
 			{
-				cursor_t::nextPosition.x = 0;
+				fensterserver::Cursor::nextPosition.x = 0;
 			}
-			if(cursor_t::nextPosition.x > WIDTH - 2)
+			if(fensterserver::Cursor::nextPosition.x > WIDTH - 2)
 			{
-				cursor_t::nextPosition.x = WIDTH - 2;
+				fensterserver::Cursor::nextPosition.x = WIDTH - 2;
 			}
-			if(cursor_t::nextPosition.y < 0)
+			if(fensterserver::Cursor::nextPosition.y < 0)
 			{
-				cursor_t::nextPosition.y = 0;
+				fensterserver::Cursor::nextPosition.y = 0;
 			}
-			if(cursor_t::nextPosition.y > HEIGHT - 2)
+			if(fensterserver::Cursor::nextPosition.y > HEIGHT - 2)
 			{
-				cursor_t::nextPosition.y = HEIGHT - 2;
+				fensterserver::Cursor::nextPosition.y = HEIGHT - 2;
 			}
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Server::instance()->requestUpdateImmediately();
 
 			return 0;
 		}
 		case WM_LBUTTONDOWN:
-			cursor_t::nextPressedButtons |= G_MOUSE_BUTTON_1;
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_1;
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_LBUTTONUP:
-			cursor_t::nextPressedButtons &= ~G_MOUSE_BUTTON_1;
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Cursor::nextPressedButtons &= ~FENSTER_MOUSE_BUTTON_1;
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_RBUTTONDOWN:
-			cursor_t::nextPressedButtons |= G_MOUSE_BUTTON_2;
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_2;
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_RBUTTONUP:
-			cursor_t::nextPressedButtons &= ~G_MOUSE_BUTTON_2;
-			windowserver_t::instance()->requestUpdateImmediately();
+			fensterserver::Cursor::nextPressedButtons &= ~FENSTER_MOUSE_BUTTON_2;
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_MOUSEWHEEL:
 		{
 			int delta = GET_WHEEL_DELTA_WPARAM(w);
 			int steps = delta / WHEEL_DELTA;
 
-			cursor_t::nextScroll += -steps;
+			fensterserver::Cursor::nextScroll += -steps;
 			return 0;
 		}
 	}
@@ -217,8 +221,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR, int)
 			(unsigned char*) pixels, CAIRO_FORMAT_RGB24, WIDTH, HEIGHT, WIDTH * 4);
 	cairo_t* cr = cairo_create(surface);
 
-	server = new windowserver_t();
-	platformCreateThread((void*) &platformServerThread);
+	fensterserver::server = new fensterserver::Server();
+	fenster::platformCreateThread((void*) &fensterserver::platformServerThread);
 
 	MSG msg;
 	while(running)
@@ -253,73 +257,76 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR, int)
 	return 0;
 }
 
-class windows_video_output_t : public g_video_output
+namespace fensterserver
 {
-public:
-	explicit windows_video_output_t() = default;
+	class windows_video_output_t : public VideoOutput
+	{
+	public:
+		explicit windows_video_output_t() = default;
 
-	bool initialize() override
+		bool initialize() override
+		{
+			return true;
+		}
+
+		void blit(fenster::Rectangle invalid, fenster::Rectangle sourceSize, fenster::ColorArgb* source) override
+		{
+			for(int y = 0; y < invalid.height; ++y)
+			{
+				fenster::ColorArgb* srcRow = source + (invalid.y + y) * sourceSize.width + invalid.x;
+				fenster::ColorArgb* dstRow = pixels + (invalid.y + y) * WIDTH + invalid.x;
+				memcpy(dstRow, srcRow, invalid.width * sizeof(fenster::ColorArgb));
+			}
+		}
+
+		fenster::Dimension getResolution() override
+		{
+			return fenster::Dimension(WIDTH, HEIGHT);
+		}
+	};
+
+	void platformServerThread()
+	{
+		server->launch();
+	}
+
+	void platformStartInput()
+	{
+	}
+
+	VideoOutput* platformCreateVideoOutput()
+	{
+		return new windows_video_output_t();
+	}
+
+	char platformCharForKey(fenster::KeyInfo key)
+	{
+		printf("get char for key %s\n", key.key.c_str());
+		return 'A';
+	}
+
+	bool platformInitializeKeyboardLayout(std::string layout)
 	{
 		return true;
 	}
 
-	void blit(g_rectangle invalid, g_rectangle sourceSize, g_color_argb* source) override
+	void platformLoadCursors()
 	{
-		for(int y = 0; y < invalid.height; ++y)
+		const char* path = "../../sysroot/system/graphics/cursor";
+		DIR* dir = opendir(path);
+		if(!dir)
 		{
-			g_color_argb* srcRow = source + (invalid.y + y) * sourceSize.width + invalid.x;
-			g_color_argb* dstRow = pixels + (invalid.y + y) * WIDTH + invalid.x;
-			memcpy(dstRow, srcRow, invalid.width * sizeof(g_color_argb));
+			return;
 		}
+		struct dirent* entry;
+		while((entry = readdir(dir)) != NULL)
+		{
+			std::string path = std::string("../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
+			fensterserver::Cursor::load(path);
+		}
+		fensterserver::Cursor::set("default");
+		closedir(dir);
 	}
-
-	g_dimension getResolution() override
-	{
-		return g_dimension(WIDTH, HEIGHT);
-	}
-};
-
-void platformServerThread()
-{
-	server->launch();
-}
-
-void platformStartInput()
-{
-}
-
-g_video_output* platformCreateVideoOutput()
-{
-	return new windows_video_output_t();
-}
-
-char platformCharForKey(key_info_t key)
-{
-	printf("get char for key %s\n", key.key.c_str());
-	return 'A';
-}
-
-bool platformInitializeKeyboardLayout(std::string layout)
-{
-	return true;
-}
-
-void platformLoadCursors()
-{
-	const char* path = "../../sysroot/system/graphics/cursor";
-	DIR* dir = opendir(path);
-	if(!dir)
-	{
-		return;
-	}
-	struct dirent* entry;
-	while((entry = readdir(dir)) != NULL)
-	{
-		std::string path = std::string("../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
-		cursor_t::load(path);
-	}
-	cursor_t::set("default");
-	closedir(dir);
 }
 
 

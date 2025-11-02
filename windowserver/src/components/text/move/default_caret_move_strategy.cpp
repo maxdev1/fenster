@@ -5,93 +5,96 @@
 #include "components/text/move/default_caret_move_strategy.hpp"
 #include "components/text/text_component.hpp"
 
-static default_caret_move_strategy_t* INSTANCE = 0;
-
-default_caret_move_strategy_t* default_caret_move_strategy_t::getInstance()
+namespace fensterserver
 {
-    if(INSTANCE == 0)
-    {
-        INSTANCE = new default_caret_move_strategy_t();
-    }
-    return INSTANCE;
-}
+	static DefaultCaretMoveStrategy* INSTANCE = nullptr;
 
-void default_caret_move_strategy_t::moveCaret(text_component_t* component, caret_direction_t direction, key_info_t& info)
-{
+	DefaultCaretMoveStrategy* DefaultCaretMoveStrategy::getInstance()
+	{
+		if(INSTANCE == 0)
+		{
+			INSTANCE = new DefaultCaretMoveStrategy();
+		}
+		return INSTANCE;
+	}
 
-    int cursor = component->getCursor();
-    int newCursorPosition = cursor;
-    int selectedLength = component->getSelectedRange().getLength();
+	void DefaultCaretMoveStrategy::moveCaret(TextComponent* component, CaretDirection direction, fenster::KeyInfo& info)
+	{
 
-    if(direction == caret_direction_t::RIGHT)
-    {
-        if(info.ctrl)
-        {
-            newCursorPosition = component->getText().length();
-        }
-        else
-        {
-            newCursorPosition = info.alt ? calculateSkip(component->getText(), cursor, caret_direction_t::RIGHT) : (cursor + 1);
-        }
-    }
-    else if(direction == caret_direction_t::LEFT)
-    {
-        if(info.ctrl)
-        {
-            newCursorPosition = 0;
-        }
-        else
-        {
-            newCursorPosition = info.alt ? calculateSkip(component->getText(), cursor, caret_direction_t::LEFT) : (cursor - 1);
-        }
-    }
+		int cursor = component->getCursor();
+		int newCursorPosition = cursor;
+		int selectedLength = component->getSelectedRange().getLength();
 
-    component->setCursor(newCursorPosition);
-    if(!info.shift)
-    {
-        component->setMarker(newCursorPosition);
-    }
-}
+		if(direction == CaretDirection::RIGHT)
+		{
+			if(info.ctrl)
+			{
+				newCursorPosition = component->getText().length();
+			}
+			else
+			{
+				newCursorPosition = info.alt ? calculateSkip(component->getText(), cursor, CaretDirection::RIGHT) : (cursor + 1);
+			}
+		}
+		else if(direction == CaretDirection::LEFT)
+		{
+			if(info.ctrl)
+			{
+				newCursorPosition = 0;
+			}
+			else
+			{
+				newCursorPosition = info.alt ? calculateSkip(component->getText(), cursor, CaretDirection::LEFT) : (cursor - 1);
+			}
+		}
 
-int default_caret_move_strategy_t::calculateSkip(std::string text, int position, caret_direction_t direction)
-{
+		component->setCursor(newCursorPosition);
+		if(!info.shift)
+		{
+			component->setMarker(newCursorPosition);
+		}
+	}
 
-    bool l = (direction == caret_direction_t::LEFT);
+	int DefaultCaretMoveStrategy::calculateSkip(std::string text, int position, CaretDirection direction)
+	{
 
-    if(l ? (position > 0) : (position < text.length()))
-    {
-        bool inFirst = true;
-        if(!l)
-        {
-            char c = text[position];
-            if(!(c == ' ' || c == ',' || c == '.'))
-            {
-                inFirst = false;
-            }
-        }
+		bool l = (direction == CaretDirection::LEFT);
 
-        l ? --position : ++position;
+		if(l ? (position > 0) : (position < text.length()))
+		{
+			bool inFirst = true;
+			if(!l)
+			{
+				char c = text[position];
+				if(!(c == ' ' || c == ',' || c == '.'))
+				{
+					inFirst = false;
+				}
+			}
 
-        while(l ? position > 0 : position < text.length())
-        {
-            char c = text[position];
-            char p = text[l ? position - 1 : position];
+			l ? --position : ++position;
 
-            if(inFirst && (c == ' ' || c == ',' || c == '.'))
-            {
-                l ? --position : ++position;
-            }
-            else if((!l || !(p == ' ' || p == ',' || p == '.')) && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
-            {
-                l ? --position : ++position;
-                inFirst = false;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
+			while(l ? position > 0 : position < text.length())
+			{
+				char c = text[position];
+				char p = text[l ? position - 1 : position];
 
-    return position;
+				if(inFirst && (c == ' ' || c == ',' || c == '.'))
+				{
+					l ? --position : ++position;
+				}
+				else if((!l || !(p == ' ' || p == ',' || p == '.')) && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+				{
+					l ? --position : ++position;
+					inFirst = false;
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+
+		return position;
+	}
 }

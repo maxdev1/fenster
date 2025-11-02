@@ -4,7 +4,10 @@
 
 #include "libwindow/panel.hpp"
 
-g_panel* g_panel::create()
+namespace fenster
 {
-	return createComponent<g_panel, G_UI_COMPONENT_TYPE_PANEL>();
+	Panel* Panel::create()
+	{
+		return createComponent<Panel, FENSTER_COMPONENT_TYPE_PANEL>();
+	}
 }

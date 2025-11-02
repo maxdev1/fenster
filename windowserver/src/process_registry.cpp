@@ -6,32 +6,35 @@
 
 #include <map>
 
-static std::map<SYS_TID_T, SYS_TID_T> remoteDelegates;
-static SYS_MUTEX_T remoteDelegatesLock = platformInitializeMutex(false);
-
-void process_registry_t::bind(SYS_TID_T pid, SYS_TID_T tid)
+namespace fensterserver
 {
-	platformAcquireMutex(remoteDelegatesLock);
-	remoteDelegates[pid] = tid;
-	platformReleaseMutex(remoteDelegatesLock);
-}
+	static std::map<SYS_TID_T, SYS_TID_T> remoteDelegates;
+	static SYS_MUTEX_T remoteDelegatesLock = fenster::platformInitializeMutex(false);
 
-SYS_TID_T process_registry_t::get(SYS_TID_T pid)
-{
-	platformAcquireMutex(remoteDelegatesLock);
-	if(remoteDelegates.count(pid) > 0)
+	void ProcessRegistry::bind(SYS_TID_T pid, SYS_TID_T tid)
 	{
-		SYS_TID_T tid = remoteDelegates[pid];
-		platformReleaseMutex(remoteDelegatesLock);
-		return tid;
+		fenster::platformAcquireMutex(remoteDelegatesLock);
+		remoteDelegates[pid] = tid;
+		fenster::platformReleaseMutex(remoteDelegatesLock);
 	}
-	platformReleaseMutex(remoteDelegatesLock);
-	return SYS_TID_NONE;
-}
 
-void process_registry_t::cleanup_process(SYS_TID_T pid)
-{
-	platformAcquireMutex(remoteDelegatesLock);
-	remoteDelegates.erase(pid);
-	platformReleaseMutex(remoteDelegatesLock);
+	SYS_TID_T ProcessRegistry::get(SYS_TID_T pid)
+	{
+		fenster::platformAcquireMutex(remoteDelegatesLock);
+		if(remoteDelegates.count(pid) > 0)
+		{
+			SYS_TID_T tid = remoteDelegates[pid];
+			fenster::platformReleaseMutex(remoteDelegatesLock);
+			return tid;
+		}
+		fenster::platformReleaseMutex(remoteDelegatesLock);
+		return SYS_TID_NONE;
+	}
+
+	void ProcessRegistry::cleanup_process(SYS_TID_T pid)
+	{
+		fenster::platformAcquireMutex(remoteDelegatesLock);
+		remoteDelegates.erase(pid);
+		fenster::platformReleaseMutex(remoteDelegatesLock);
+	}
 }

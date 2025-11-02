@@ -2,18 +2,21 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_EVENTS_LOCATABLE__
-#define __WINDOWSERVER_EVENTS_LOCATABLE__
+#ifndef FENSTER_SERVER_EVENTS_LOCATABLE
+#define FENSTER_SERVER_EVENTS_LOCATABLE
 
 #include <libwindow/metrics/point.hpp>
 
-class component_t;
-
-class locatable_t
+namespace fensterserver
 {
-  public:
-    g_point position;
-    g_point screenPosition;
-};
+    class Component;
+
+    class Locatable
+    {
+    public:
+        fenster::Point position;
+        fenster::Point screenPosition;
+    };
+}
 
 #endif

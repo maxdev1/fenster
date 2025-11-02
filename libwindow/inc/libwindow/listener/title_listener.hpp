@@ -10,34 +10,38 @@
 #include <utility>
 #include <bits/std_function.h>
 
-typedef std::function<void(std::string)> g_title_listener_func;
-
-class g_title_listener : public g_listener
+namespace fenster
 {
-public:
-    ~g_title_listener() override = default;
+	typedef std::function<void(std::string)> TitleListenerFunc;
 
-    void process(g_ui_component_event_header* header) override
-    {
-        handleTitleEvent((g_ui_component_title_event*)header);
-    }
+	class TitleListener : public Listener
+	{
+	public:
+		~TitleListener() override = default;
 
-    virtual void handleTitleEvent(g_ui_component_title_event* e) = 0;
-};
+		void process(ComponentEventHeader* header) override
+		{
+			handleTitleEvent((ComponentTitleEvent*) header);
+		}
 
-class g_title_listener_dispatcher : public g_title_listener
-{
-    g_title_listener_func func;
+		virtual void handleTitleEvent(ComponentTitleEvent* e) = 0;
+	};
 
-public:
-    explicit g_title_listener_dispatcher(g_title_listener_func func) : func(std::move(func))
-    {
-    };
+	class TitleListenerDispatcher : public TitleListener
+	{
+		TitleListenerFunc func;
 
-    void handleTitleEvent(g_ui_component_title_event* e) override
-    {
-        func(std::string(e->title));
-    }
-};
+	public:
+		explicit TitleListenerDispatcher(TitleListenerFunc func) :
+			func(std::move(func))
+		{
+		};
+
+		void handleTitleEvent(ComponentTitleEvent* e) override
+		{
+			func(std::string(e->title));
+		}
+	};
+}
 
 #endif

@@ -9,21 +9,25 @@
 #include "interface.hpp"
 #include "component.hpp"
 
-/**
- * Component that is capable of receiving action events
- */
-class g_action_component : virtual public g_component
+namespace fenster
 {
-protected:
-    explicit g_action_component(g_ui_component_id id) : g_component(id)
-    {
-    }
+	/**
+	 * Component that is capable of receiving action events
+	 */
+	class ActionComponent : virtual public Component
+	{
+	protected:
+		explicit ActionComponent(ComponentId id) :
+			Component(id)
+		{
+		}
 
-public:
-    ~g_action_component() override = default;
+	public:
+		~ActionComponent() override = default;
 
-    bool setActionListener(g_action_listener* l);
-    bool setActionListener(g_action_listener_func func);
-};
+		bool setActionListener(ActionListener* l);
+		bool setActionListener(ActionListenerFunc func);
+	};
+}
 
 #endif

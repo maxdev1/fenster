@@ -2,58 +2,61 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_LAYOUT_GRIDLAYOUTMANAGER__
-#define __WINDOWSERVER_LAYOUT_GRIDLAYOUTMANAGER__
+#ifndef FENSTER_SERVER_LAYOUT_GRIDLAYOUTMANAGER
+#define FENSTER_SERVER_LAYOUT_GRIDLAYOUTMANAGER
 
 #include "layout_manager.hpp"
 #include <libwindow/metrics/insets.hpp>
 
-class grid_layout_manager_t : public layout_manager_t
+namespace fensterserver
 {
-    int columns;
-    int rows;
-    g_insets padding;
-    int rowSpace;
-    int colSpace;
-
-public:
-    grid_layout_manager_t(int columns = 1, int rows = 0, int rowSpace = 0, int columnSpace = 0)
-        : columns(columns), rows(rows), padding(g_insets(0, 0, 0, 0)),
-          rowSpace(rowSpace), colSpace(columnSpace)
+    class GridLayoutManager : public LayoutManager
     {
-    }
+        int columns;
+        int rows;
+        fenster::Insets padding;
+        int rowSpace;
+        int colSpace;
 
-    void setPadding(g_insets _padding) override
-    {
-        padding = _padding;
-    }
+    public:
+        GridLayoutManager(int columns = 1, int rows = 0, int rowSpace = 0, int columnSpace = 0)
+            : columns(columns), rows(rows), padding(fenster::Insets(0, 0, 0, 0)),
+              rowSpace(rowSpace), colSpace(columnSpace)
+        {
+        }
 
-    g_insets getPadding() const
-    {
-        return padding;
-    }
+        void setPadding(fenster::Insets _padding) override
+        {
+            padding = _padding;
+        }
 
-    void setRowSpace(int _space)
-    {
-        rowSpace = _space;
-    }
+        fenster::Insets getPadding() const
+        {
+            return padding;
+        }
 
-    int getRowSpace() const
-    {
-        return rowSpace;
-    }
+        void setRowSpace(int _space)
+        {
+            rowSpace = _space;
+        }
 
-    void setColSpace(int _space)
-    {
-        colSpace = _space;
-    }
+        int getRowSpace() const
+        {
+            return rowSpace;
+        }
 
-    int getColSpace() const
-    {
-        return colSpace;
-    }
+        void setColSpace(int _space)
+        {
+            colSpace = _space;
+        }
 
-    virtual void layout();
-};
+        int getColSpace() const
+        {
+            return colSpace;
+        }
+
+        virtual void layout();
+    };
+}
 
 #endif

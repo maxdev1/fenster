@@ -76,60 +76,61 @@ typedef struct {
 
 #endif
 
+namespace fenster
+{
+	/**
+	 * Shall wait until the UI registry task is available to receive messages.
+	 */
+	SYS_TID_T platformAwaitUiRegistry();
 
+	/**
+	 * Initializes whatever is necessary to receive input.
+	 */
+	void platformLog(const char* message, ...);
 
-/**
- * Shall wait until the UI registry task is available to receive messages.
- */
-SYS_TID_T platformAwaitUiRegistry();
+	SYS_MUTEX_T platformInitializeMutex(bool reentrant);
 
-/**
- * Initializes whatever is necessary to receive input.
- */
-void platformLog(const char* message, ...);
+	void platformAcquireMutex(SYS_MUTEX_T mutex);
 
-SYS_MUTEX_T platformInitializeMutex(bool reentrant);
+	void platformAcquireMutexTimeout(SYS_MUTEX_T mutex, uint32_t timeout);
 
-void platformAcquireMutex(SYS_MUTEX_T mutex);
+	void platformReleaseMutex(SYS_MUTEX_T mutex);
 
-void platformAcquireMutexTimeout(SYS_MUTEX_T mutex, uint32_t timeout);
+	SYS_TX_T platformCreateMessageTransaction();
 
-void platformReleaseMutex(SYS_MUTEX_T mutex);
+	bool platformSendMessage(SYS_TID_T tid, void* buf, size_t len, SYS_TX_T tx);
 
-SYS_TX_T platformCreateMessageTransaction();
+	int platformReceiveMessage(void* buf, size_t max, SYS_TX_T tx);
 
-bool platformSendMessage(SYS_TID_T tid, void* buf, size_t len, SYS_TX_T tx);
+	void platformYieldTo(SYS_TID_T tid);
 
-int platformReceiveMessage(void* buf, size_t max, SYS_TX_T tx);
+	void platformUnmapSharedMemory(void* mem);
 
-void platformYieldTo(SYS_TID_T tid);
+	SYS_TID_T platformCreateThread(void* entry);
 
-void platformUnmapSharedMemory(void* mem);
+	SYS_TID_T platformCreateThreadWithData(void* entry, void* data);
 
-SYS_TID_T platformCreateThread(void* entry);
+	std::string platformGetFontPath(std::string fontName);
 
-SYS_TID_T platformCreateThreadWithData(void* entry, void* data);
+	SYS_TID_T platformGetPidForTid(SYS_TID_T tid);
 
-std::string platformGetFontPath(std::string fontName);
+	void* platformAllocateMemory(size_t size);
 
-SYS_TID_T platformGetPidForTid(SYS_TID_T tid);
+	void* platformShareMemory(void* memory, size_t size, SYS_TID_T target);
 
-void* platformAllocateMemory(size_t size);
+	uint64_t platformMillis();
 
-void* platformShareMemory(void* memory, size_t size, SYS_TID_T target);
+	void platformJoin(SYS_TID_T tid);
 
-uint64_t platformMillis();
+	bool platformRegisterTaskIdentifier(const char* task);
 
-void platformJoin(SYS_TID_T tid);
+	SYS_TID_T platformSpawn(const char* path, const char* args, const char* cwd);
 
-bool platformRegisterTaskIdentifier(const char* task);
+	void platformSleep(uint64_t time);
 
-SYS_TID_T platformSpawn(const char* path, const char* args, const char* cwd);
+	SYS_TID_T platformGetTid();
 
-void platformSleep(uint64_t time);
-
-SYS_TID_T platformGetTid();
-
-void platformExit(int v);
+	void platformExit(int v);
+}
 
 #endif

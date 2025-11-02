@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_EVENTS_EVENTPROCESSOR__
-#define __WINDOWSERVER_EVENTS_EVENTPROCESSOR__
+#ifndef FENSTER_SERVER_EVENTS_EVENTPROCESSOR
+#define FENSTER_SERVER_EVENTS_EVENTPROCESSOR
 
 #include <deque>
 #include "platform/platform.hpp"
@@ -11,26 +11,30 @@
 
 #define DEFAULT_MULTICLICK_TIMESPAN 250
 
-/**
- * The event queue is used to store any incoming events for
- * later processing.
- */
-class event_processor_t
+namespace fensterserver
 {
-  public:
-	uint32_t multiclickTimespan;
 
-	event_processor_t();
+    /**
+     * The event queue is used to store any incoming events for
+     * later processing.
+     */
+    class EventProcessor
+    {
+    public:
+        uint32_t multiclickTimespan;
 
-	std::deque<key_info_t> key_info_buffer;
-	SYS_MUTEX_T key_info_buffer_lock = platformInitializeMutex(false);
-	void bufferKeyEvent(key_info_t keyInfo);
+        EventProcessor();
 
-	void process();
+        std::deque<fenster::KeyInfo> key_info_buffer;
+        SYS_MUTEX_T key_info_buffer_lock = fenster::platformInitializeMutex(false);
+        void bufferKeyEvent(fenster::KeyInfo keyInfo);
 
-	void translateKeyEvent(key_info_t& info);
-	void processKeyState();
-	void processMouseState();
-};
+        void process();
+
+        void translateKeyEvent(fenster::KeyInfo& info);
+        void processKeyState();
+        void processMouseState();
+    };
+}
 
 #endif

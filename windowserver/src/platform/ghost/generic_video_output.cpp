@@ -9,20 +9,20 @@
 #include <cstdio>
 #include <immintrin.h>
 
-bool g_generic_video_output::initializeWithSettings(uint32_t width, uint32_t height, uint32_t bits)
+bool GenericVideoOutput::initializeWithSettings(uint32_t width, uint32_t height, uint32_t bits)
 {
 	int tries = 3;
 	while(!videoDriverSetMode(driverTid, deviceId, width, height, bits, videoModeInformation))
 	{
-		platformLog("failed to initialize generic video... retrying");
+		fenster::platformLog("failed to initialize generic video... retrying");
 		if(tries-- == 0)
 			return false;
-		platformSleep(1000);
+		fenster::platformSleep(1000);
 	}
 	return true;
 }
 
-void g_generic_video_output::blit(g_rectangle invalid, g_rectangle sourceSize, g_color_argb* source)
+void GenericVideoOutput::blit(fenster::Rectangle invalid, fenster::Rectangle sourceSize, fenster::ColorArgb* source)
 {
 	uint16_t bpp = videoModeInformation.bpp;
 	uint8_t* position = ((uint8_t*) videoModeInformation.lfb) + (invalid.y * videoModeInformation.bpsl);
@@ -56,7 +56,7 @@ void g_generic_video_output::blit(g_rectangle invalid, g_rectangle sourceSize, g
 		{
 			for(int x = invalid.x; x < right; x++)
 			{
-				g_color_argb color = source[y * sourceSize.width + x];
+				fenster::ColorArgb color = source[y * sourceSize.width + x];
 				position[x * 3] = color & 0xFF;
 				position[x * 3 + 1] = (color >> 8) & 0xFF;
 				position[x * 3 + 2] = (color >> 16) & 0xFF;
@@ -73,7 +73,7 @@ void g_generic_video_output::blit(g_rectangle invalid, g_rectangle sourceSize, g
 }
 
 
-g_dimension g_generic_video_output::getResolution()
+fenster::Dimension GenericVideoOutput::getResolution()
 {
 	return {videoModeInformation.resX, videoModeInformation.resY};
 }

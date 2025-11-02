@@ -4,6 +4,7 @@
 
 #include "test.hpp"
 
+#include <server.hpp>
 #include <sstream>
 #include <components/tree.hpp>
 #include <components/tree_node.hpp>
@@ -20,170 +21,174 @@
 #include "layout/flow_layout_manager.hpp"
 #include "layout/grid_layout_manager.hpp"
 
-class open_exe_data_t;
-void open_executable_spawn(open_exe_data_t* data);
+using namespace fenster;
 
-class open_exe_data_t
+namespace fensterserver
 {
-public:
-	std::string exe;
-	std::string args;
-};
+	class open_exe_data_t;
+	void openExecutableSpawn(open_exe_data_t* data);
 
-void open_executable_spawn(open_exe_data_t* data)
-{
-	platformSpawn(data->exe.c_str(), data->args.c_str(), "/");
-}
-
-static int nextButtonPos = 70;
-
-void addExecutableButton(window_t* window, std::string name, std::string exe, std::string args)
-{
-
-	button_t* openCalculatorButton = new button_t();
-	openCalculatorButton->setBounds(g_rectangle(10, nextButtonPos, 270, 30));
-	openCalculatorButton->getLabel().setTitle(name);
-	openCalculatorButton->setInternalActionHandler([exe, args]()
+	class open_exe_data_t
 	{
-		auto data = new open_exe_data_t();
-		data->exe = exe;
-		data->args = args;
-		platformCreateThreadWithData((void*) &open_executable_spawn, data);
-	});
-	window->addChild(openCalculatorButton);
-	nextButtonPos += 35;
-}
+	public:
+		std::string exe;
+		std::string args;
+	};
 
-void createTestWindow()
-{
-	window_t* window = new window_t;
-	window->setTitle("Components");
-	window->setBounds(g_rectangle(100, 30, 320, 530));
-	window->setLayoutManager(new grid_layout_manager_t(1, 1));
-
-	scrollpane_t* scroller = new scrollpane_t;
-	scroller->setBounds(g_rectangle(0, 0, 300, 200));
-	scroller->setFixedWidth(true);
-
-	panel_t* content = new panel_t();
-	auto contentGrid = new grid_layout_manager_t(1);
-	contentGrid->setRowSpace(20);
-	contentGrid->setPadding(g_insets(10, 10, 10, 10));
-	content->setLayoutManager(contentGrid);
-	scroller->setContent(content);
-	window->addChild(scroller);
-
+	void openExecutableSpawn(open_exe_data_t* data)
 	{
-		panel_t* panel = new panel_t();
-		panel->setLayoutManager(new grid_layout_manager_t(2, 0, 10, 10));
+		platformSpawn(data->exe.c_str(), data->args.c_str(), "/");
+	}
 
-		label_t* info = new label_t();
-		info->setTitle("Buttons:");
-		panel->addChild(info);
+	static int nextButtonPos = 70;
 
-		button_t* button1 = new button_t();
-		button1->setMinimumSize(g_dimension(0, 20));
-		button1->setTitle("Button, enabled");
-		panel->addChild(button1);
+	void addExecutableButton(Window* window, std::string name, std::string exe, std::string args)
+	{
 
-		button_t* button2 = new button_t();
-		button2->setMinimumSize(g_dimension(0, 20));
-		button2->setTitle("Button, disabled");
-		button2->setEnabled(false);
-		panel->addChild(button2);
+		Button* openCalculatorButton = new Button();
+		openCalculatorButton->setBounds(fenster::Rectangle(10, nextButtonPos, 270, 30));
+		openCalculatorButton->getLabel().setTitle(name);
+		openCalculatorButton->setInternalActionHandler([exe, args]()
+		{
+			auto data = new open_exe_data_t();
+			data->exe = exe;
+			data->args = args;
+			platformCreateThreadWithData((void*) &openExecutableSpawn, data);
+		});
+		window->addChild(openCalculatorButton);
+		nextButtonPos += 35;
+	}
 
-		button_t* button3 = new button_t();
-		button3->setTitle("Button with height from text");
-		panel->addChild(button3);
+	void createTestWindow()
+	{
+		Window* window = new Window;
+		window->setTitle("Components");
+		window->setBounds(fenster::Rectangle(100, 30, 320, 530));
+		window->setLayoutManager(new GridLayoutManager(1, 1));
+
+		ScrollPane* scroller = new ScrollPane;
+		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
+		scroller->setFixedWidth(true);
+
+		Panel* content = new Panel();
+		auto contentGrid = new GridLayoutManager(1);
+		contentGrid->setRowSpace(20);
+		contentGrid->setPadding(Insets(10, 10, 10, 10));
+		content->setLayoutManager(contentGrid);
+		scroller->setContent(content);
+		window->addChild(scroller);
 
 		{
-			button_t* b = new button_t();
-			b->setTitle("Another button");
-			panel->addChild(b);
+			Panel* panel = new Panel();
+			panel->setLayoutManager(new GridLayoutManager(2, 0, 10, 10));
+
+			Label* info = new Label();
+			info->setTitle("Buttons:");
+			panel->addChild(info);
+
+			Button* button1 = new Button();
+			button1->setMinimumSize(Dimension(0, 20));
+			button1->setTitle("Button, enabled");
+			panel->addChild(button1);
+
+			Button* button2 = new Button();
+			button2->setMinimumSize(Dimension(0, 20));
+			button2->setTitle("Button, disabled");
+			button2->setEnabled(false);
+			panel->addChild(button2);
+
+			Button* button3 = new Button();
+			button3->setTitle("Button with height from text");
+			panel->addChild(button3);
+
+			{
+				Button* b = new Button();
+				b->setTitle("Another button");
+				panel->addChild(b);
+			}
+			{
+				Button* b = new Button();
+				b->setTitle("Another button");
+				panel->addChild(b);
+			}
+
+			content->addChild(panel);
 		}
+
 		{
-			button_t* b = new button_t();
-			b->setTitle("Another button");
-			panel->addChild(b);
+			Panel* panel = new Panel();
+			panel->setLayoutManager(new GridLayoutManager(1, 0, 10, 10));
+
+			Label* info = new Label();
+			info->setTitle("Text fields:");
+			panel->addChild(info);
+
+			TextField* text = new TextField();
+			text->setPreferredSize(Dimension(0, 30));
+			panel->addChild(text);
+
+			TextField* pass = new TextField();
+			pass->setSecure(true);
+			pass->setPreferredSize(Dimension(0, 30));
+			panel->addChild(pass);
+
+			content->addChild(panel);
 		}
 
-		content->addChild(panel);
+		{
+			Panel* panel = new Panel();
+			panel->setLayoutManager(new FlowLayoutManager());
+
+			Checkbox* check = new Checkbox();
+			check->getLabel().setTitle("Check me");
+			panel->addChild(check);
+
+			content->addChild(panel);
+		}
+
+		Server::instance()->screen->addChild(window);
+		window->setVisible(true);
 	}
 
+	void createTestWindow2()
 	{
-		panel_t* panel = new panel_t();
-		panel->setLayoutManager(new grid_layout_manager_t(1, 0, 10, 10));
+		Window* window = new Window;
+		window->setTitle("Grid layout");
+		window->setBounds(fenster::Rectangle(700, 10, 300, 300));
 
-		label_t* info = new label_t();
-		info->setTitle("Text fields:");
-		panel->addChild(info);
+		auto grid = new GridLayoutManager(3, 3, 10, 10);
+		grid->setPadding(Insets(10, 10, 10, 10));
+		window->setLayoutManager(grid);
 
-		text_field_t* text = new text_field_t();
-		text->setPreferredSize(g_dimension(0, 30));
-		panel->addChild(text);
+		for(int i = 0; i < 9; i++)
+		{
+			Button* button1 = new Button();
+			std::stringstream s;
+			s << "Button " << i;
+			button1->setTitle(s.str().c_str());
+			window->addChild(button1);
+		}
 
-		text_field_t* pass = new text_field_t();
-		pass->setSecure(true);
-		pass->setPreferredSize(g_dimension(0, 30));
-		panel->addChild(pass);
-
-		content->addChild(panel);
+		Server::instance()->screen->addChild(window);
+		window->setVisible(true);
 	}
 
+	void createTestWindow3()
 	{
-		panel_t* panel = new panel_t();
-		panel->setLayoutManager(new flow_layout_manager_t());
+		auto window = new Window;
+		window->setTitle("Components");
+		window->setBounds(fenster::Rectangle(530, 30, 320, 530));
+		window->setLayoutManager(new GridLayoutManager(1, 1));
 
-		checkbox_t* check = new checkbox_t();
-		check->getLabel().setTitle("Check me");
-		panel->addChild(check);
+		auto scroller = new ScrollPane;
+		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
 
-		content->addChild(panel);
-	}
+		auto panel = new Panel();
+		panel->setLayoutManager(new StackLayoutManager());
 
-	windowserver_t::instance()->screen->addChild(window);
-	window->setVisible(true);
-}
-
-void createTestWindow2()
-{
-	window_t* window = new window_t;
-	window->setTitle("Grid layout");
-	window->setBounds(g_rectangle(700, 10, 300, 300));
-
-	auto grid = new grid_layout_manager_t(3, 3, 10, 10);
-	grid->setPadding(g_insets(10, 10, 10, 10));
-	window->setLayoutManager(grid);
-
-	for(int i = 0; i < 9; i++)
-	{
-		button_t* button1 = new button_t();
-		std::stringstream s;
-		s << "Button " << i;
-		button1->setTitle(s.str().c_str());
-		window->addChild(button1);
-	}
-
-	windowserver_t::instance()->screen->addChild(window);
-	window->setVisible(true);
-}
-
-void createTestWindow3()
-{
-	auto window = new window_t;
-	window->setTitle("Components");
-	window->setBounds(g_rectangle(530, 30, 320, 530));
-	window->setLayoutManager(new grid_layout_manager_t(1, 1));
-
-	auto scroller = new scrollpane_t;
-	scroller->setBounds(g_rectangle(0, 0, 300, 200));
-
-	auto panel = new panel_t();
-	panel->setLayoutManager(new stack_layout_manager_t());
-
-	auto jsonInput = new text_area_t();
-	jsonInput->setMinimumSize(g_dimension(500, 300));
-	jsonInput->setText(R"({
+		auto jsonInput = new TextArea();
+		jsonInput->setMinimumSize(Dimension(500, 300));
+		jsonInput->setText(R"({
 	"rootNodes": [
 		{
 			"title": "Fruits",
@@ -194,58 +199,59 @@ void createTestWindow3()
 		}
 	]
 })");
-	panel->addChild(jsonInput);
+		panel->addChild(jsonInput);
 
-	auto testInput = new text_field_t();
-	testInput->setMinimumSize(g_dimension(100, 30));
-	panel->addChild(testInput);
+		auto testInput = new TextField();
+		testInput->setMinimumSize(Dimension(100, 30));
+		panel->addChild(testInput);
 
-	auto tree = new tree_t();
+		auto tree = new Tree();
 
-	auto button = new button_t();
-	button->setTitle("To tree");
-	panel->addChild(button);
-	button->setInternalActionHandler([tree, jsonInput]()
+		auto button = new Button();
+		button->setTitle("To tree");
+		panel->addChild(button);
+		button->setInternalActionHandler([tree, jsonInput]()
+		{
+			auto text = jsonInput->getText();
+			platformLog(("setting model from JSON: " + text).c_str());
+			tree->setModelFromJson(text);
+		});
+
+
+		std::string json = "{"
+				"\"rootNodes\": ["
+				"{"
+				"\"id\": 1,"
+				"\"title\": \"Node 1\","
+				"\"children\": ["
+				"{"
+				"\"id\": 2,"
+				"\"title\": \"Node 1.1\""
+				"},"
+				"{"
+				"\"id\": 3,"
+				"\"title\": \"Node 1.2\""
+				"}"
+				"]"
+				"}"
+				"]"
+				"}";
+		tree->setModelFromJson(json);
+
+		panel->addChild(tree);
+
+		scroller->setContent(panel);
+
+		window->addChild(scroller);
+
+		Server::instance()->screen->addChild(window);
+		window->setVisible(true);
+	}
+
+	void Test::createTestComponents()
 	{
-		auto text = jsonInput->getText();
-		platformLog(("setting model from JSON: " + text).c_str());
-		tree->setModelFromJson(text);
-	});
-
-
-	std::string json = "{"
-			"\"rootNodes\": ["
-			"{"
-			"\"id\": 1,"
-			"\"title\": \"Node 1\","
-			"\"children\": ["
-			"{"
-			"\"id\": 2,"
-			"\"title\": \"Node 1.1\""
-			"},"
-			"{"
-			"\"id\": 3,"
-			"\"title\": \"Node 1.2\""
-			"}"
-			"]"
-			"}"
-			"]"
-			"}";
-	tree->setModelFromJson(json);
-
-	panel->addChild(tree);
-
-	scroller->setContent(panel);
-
-	window->addChild(scroller);
-
-	windowserver_t::instance()->screen->addChild(window);
-	window->setVisible(true);
-}
-
-void test_t::createTestComponents()
-{
-	createTestWindow();
-	createTestWindow2();
-	createTestWindow3();
+		createTestWindow();
+		createTestWindow2();
+		createTestWindow3();
+	}
 }

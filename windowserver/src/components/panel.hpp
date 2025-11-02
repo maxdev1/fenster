@@ -2,34 +2,37 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_PANEL__
-#define __WINDOWSERVER_COMPONENTS_PANEL__
+#ifndef FENSTER_SERVER_COMPONENTS_PANEL
+#define FENSTER_SERVER_COMPONENTS_PANEL
 
 #include "components/component.hpp"
 #include <libwindow/color_argb.hpp>
 
-class panel_t : virtual public component_t
+namespace fensterserver
 {
-    g_color_argb background;
-
-protected:
-    bool hasGraphics() const override
+    class Panel : virtual public Component
     {
-        return background != ARGB(0, 0, 0, 0);
-    }
+        fenster::ColorArgb background;
 
-public:
-    panel_t() : background(ARGB(0, 0, 0, 0))
-    {
-    }
+    protected:
+        bool hasGraphics() const override
+        {
+            return background != ARGB(0, 0, 0, 0);
+        }
 
-    void paint() override;
+    public:
+        Panel() : background(ARGB(0, 0, 0, 0))
+        {
+        }
 
-    void setBackground(g_color_argb color);
-    g_color_argb getBackground();
+        void paint() override;
 
-    bool setNumericProperty(int property, uint32_t value) override;
-    bool getNumericProperty(int property, uint32_t* out) override;
-};
+        void setBackground(fenster::ColorArgb color);
+        fenster::ColorArgb getBackground();
+
+        bool setNumericProperty(int property, uint32_t value) override;
+        bool getNumericProperty(int property, uint32_t* out) override;
+    };
+}
 
 #endif

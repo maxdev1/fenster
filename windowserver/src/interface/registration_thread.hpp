@@ -2,9 +2,12 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_INTERFACE_REGISTRATIONTHREAD__
-#define __WINDOWSERVER_INTERFACE_REGISTRATIONTHREAD__
+#ifndef FENSTER_SERVER_INTERFACE_REGISTRATIONTHREAD
+#define FENSTER_SERVER_INTERFACE_REGISTRATIONTHREAD
 
-void interfaceRegistrationThread();
+namespace fensterserver
+{
+    void interfaceRegistrationThread();
+}
 
 #endif

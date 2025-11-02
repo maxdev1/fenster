@@ -7,12 +7,15 @@
 #include "libwindow/component.hpp"
 #include "libwindow/bounding_component.hpp"
 
-bool g_bounding_component::setBoundsListener(g_bounds_listener* new_listener)
+namespace fenster
 {
-	return self->addListener(G_UI_COMPONENT_EVENT_TYPE_BOUNDS, new_listener);
-}
+	bool BoundingComponent::setBoundsListener(BoundsListener* new_listener)
+	{
+		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_BOUNDS, new_listener);
+	}
 
-bool g_bounding_component::setBoundsListener(g_bounds_listener_func func)
-{
-	return self->addListener(G_UI_COMPONENT_EVENT_TYPE_BOUNDS, new g_bounds_listener_dispatcher(std::move(func)));
+	bool BoundingComponent::setBoundsListener(BoundsListenerFunc func)
+	{
+		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_BOUNDS, new BoundsListenerDispatcher(std::move(func)));
+	}
 }

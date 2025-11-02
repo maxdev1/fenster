@@ -7,58 +7,61 @@
 
 #include <cstdint>
 
-class g_point
+namespace fenster
 {
-  public:
-    int32_t x;
-    int32_t y;
+	class Point
+	{
+	public:
+		int32_t x;
+		int32_t y;
 
-    g_point() : x(0), y(0)
-    {
-    }
+		Point() : x(0), y(0)
+		{
+		}
 
-    g_point(int32_t _x, int32_t _y) : x(_x), y(_y)
-    {
-    }
+		Point(int32_t _x, int32_t _y) : x(_x), y(_y)
+		{
+		}
 
-    g_point(const g_point& p) : x(p.x), y(p.y)
-    {
-    }
+		Point(const Point& p) : x(p.x), y(p.y)
+		{
+		}
 
-    g_point& operator=(const g_point& rhs)
-    {
-        x = rhs.x;
-        y = rhs.y;
-        return *this;
-    }
+		Point& operator=(const Point& rhs)
+		{
+			x = rhs.x;
+			y = rhs.y;
+			return *this;
+		}
 
-    g_point& operator+=(const g_point& rhs)
-    {
-        x += rhs.x;
-        y += rhs.y;
-        return *this;
-    }
+		Point& operator+=(const Point& rhs)
+		{
+			x += rhs.x;
+			y += rhs.y;
+			return *this;
+		}
 
-    bool operator==(const g_point& p) const
-    {
-        return x == p.x && y == p.y;
-    }
+		bool operator==(const Point& p) const
+		{
+			return x == p.x && y == p.y;
+		}
 
-    bool operator!=(const g_point& p) const
-    {
-        return !(*this == p);
-    }
+		bool operator!=(const Point& p) const
+		{
+			return !(*this == p);
+		}
 
-    g_point operator-(const g_point& p) const
-    {
-        return g_point(x - p.x, y - p.y);
-    }
+		Point operator-(const Point& p) const
+		{
+			return Point(x - p.x, y - p.y);
+		}
 
-    g_point operator+(const g_point& p) const
-    {
-        return g_point(x + p.x, y + p.y);
-    }
+		Point operator+(const Point& p) const
+		{
+			return Point(x + p.x, y + p.y);
+		}
 
-} __attribute__((packed));
+	} __attribute__((packed));
+}
 
 #endif

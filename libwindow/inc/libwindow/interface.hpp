@@ -23,499 +23,502 @@
 
 #define G_UI_COMPONENT_TITLE_MAXIMUM 1024
 
-/**
- * Declared in the UI unit
- */
-extern bool g_ui_initialized;
-
-/**
- * ID for a UI component
- */
-typedef int32_t g_ui_component_id;
-
-/**
- * ID for a listener
- */
-typedef int32_t g_ui_listener_id;
-
-/**
- * A protocol message always starts with the header, the message id
- */
-typedef uint8_t g_ui_protocol_command_id;
-#define G_UI_PROTOCOL_INITIALIZATION			((g_ui_protocol_command_id) 1)
-#define G_UI_PROTOCOL_CREATE_COMPONENT			((g_ui_protocol_command_id) 2)
-#define G_UI_PROTOCOL_ADD_COMPONENT				((g_ui_protocol_command_id) 3)
-
-#define G_UI_PROTOCOL_SET_BOUNDS				((g_ui_protocol_command_id) 6)
-#define G_UI_PROTOCOL_FOCUS        				((g_ui_protocol_command_id) 7)
-#define G_UI_PROTOCOL_ADD_LISTENER				((g_ui_protocol_command_id) 8)
-#define G_UI_PROTOCOL_SET_NUMERIC_PROPERTY		((g_ui_protocol_command_id) 9)
-#define G_UI_PROTOCOL_GET_NUMERIC_PROPERTY		((g_ui_protocol_command_id) 10)
-#define G_UI_PROTOCOL_GET_BOUNDS				((g_ui_protocol_command_id) 11)
-#define G_UI_PROTOCOL_CANVAS_BLIT				((g_ui_protocol_command_id) 12)
-#define G_UI_PROTOCOL_REGISTER_DESKTOP_CANVAS	((g_ui_protocol_command_id) 13)
-#define G_UI_PROTOCOL_GET_SCREEN_DIMENSION		((g_ui_protocol_command_id) 14)
-#define G_UI_PROTOCOL_FLEX_SET_ORIENTATION		((g_ui_protocol_command_id) 15)
-#define G_UI_PROTOCOL_FLEX_SET_COMPONENT_INFO   ((g_ui_protocol_command_id) 16)
-#define G_UI_PROTOCOL_LAYOUT_SET_PADDING        ((g_ui_protocol_command_id) 17)
-#define G_UI_PROTOCOL_SCROLLPANE_SET_CONTENT    ((g_ui_protocol_command_id) 18)
-#define G_UI_PROTOCOL_SCROLLPANE_SET_FIXED      ((g_ui_protocol_command_id) 19)
-#define G_UI_PROTOCOL_SET_PREFERRED_SIZE        ((g_ui_protocol_command_id) 20)
-#define G_UI_PROTOCOL_DESTROY_COMPONENT         ((g_ui_protocol_command_id) 21)
-#define G_UI_PROTOCOL_SET_MINIMUM_SIZE          ((g_ui_protocol_command_id) 22)
-#define G_UI_PROTOCOL_SET_MAXIMUM_SIZE          ((g_ui_protocol_command_id) 23)
-#define G_UI_PROTOCOL_SET_STRING_PROPERTY		((g_ui_protocol_command_id) 24)
-#define G_UI_PROTOCOL_GET_STRING_PROPERTY		((g_ui_protocol_command_id) 25)
-
-/**
- * Common status for requests
- */
-typedef uint8_t g_ui_protocol_status;
-const g_ui_protocol_status G_UI_PROTOCOL_SUCCESS = 0;
-const g_ui_protocol_status G_UI_PROTOCOL_FAIL = 1;
-
-/**
- * Component types
- */
-typedef uint32_t g_ui_component_type;
-const g_ui_component_type G_UI_COMPONENT_TYPE_WINDOW = 0;
-const g_ui_component_type G_UI_COMPONENT_TYPE_BUTTON = 1;
-const g_ui_component_type G_UI_COMPONENT_TYPE_LABEL = 2;
-const g_ui_component_type G_UI_COMPONENT_TYPE_TEXTFIELD = 3;
-const g_ui_component_type G_UI_COMPONENT_TYPE_CANVAS = 4;
-const g_ui_component_type G_UI_COMPONENT_TYPE_SELECTION = 5;
-const g_ui_component_type G_UI_COMPONENT_TYPE_PANEL = 6;
-const g_ui_component_type G_UI_COMPONENT_TYPE_SCROLLPANE = 7;
-const g_ui_component_type G_UI_COMPONENT_TYPE_IMAGE = 8;
-
-/**
- * Types of events that can be listened to
- */
-typedef uint32_t g_ui_component_event_type;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_ACTION = 0;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_BOUNDS = 1;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER = 2;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_KEY = 3;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_FOCUS = 4;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_MOUSE = 5;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_CLOSE = 6;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_WINDOWS = 7;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_TITLE = 8;
-const g_ui_component_event_type G_UI_COMPONENT_EVENT_TYPE_VISIBLE = 9;
-
-/**
- *
- */
-typedef uint8_t g_ui_layout_manager;
-#define G_UI_LAYOUT_MANAGER_GRID ((g_ui_layout_manager) 0)
-#define G_UI_LAYOUT_MANAGER_FLOW ((g_ui_layout_manager) 1)
-#define G_UI_LAYOUT_MANAGER_FLEX ((g_ui_layout_manager) 2)
-
-/**
- *
- */
-typedef struct
+namespace fenster
 {
-    g_ui_protocol_command_id id;
-} __attribute__((packed)) g_ui_message_header;
+	/**
+	 * Declared in the UI unit
+	 */
+	extern bool ApplicationInitialized;
 
-/**
- * Request to initialize interface communications. The window server creates a
- * delegate thread that is responsible for further communications and responds
- * with a <g_ui_initialize_response>.
- */
-typedef struct
-{
-    g_ui_message_header header;
-    SYS_TID_T event_dispatcher;
-} __attribute__((packed)) g_ui_initialize_request;
+	/**
+	 * ID for a UI component
+	 */
+	typedef int32_t ComponentId;
 
-/**
- * Response for initializing interface communications.
- *
- * @field status
- * 		whether the initialization was successful
- * @field window_server_delegate
- * 		id of the task that is responsible for further window server communication
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-    SYS_TID_T window_server_delegate;
-} __attribute__((packed)) g_ui_initialize_response;
+	/**
+	 * ID for a listener
+	 */
+	typedef int32_t ListenerId;
 
-/**
- * Generic response
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_simple_response;
+	/**
+	 * A protocol message always starts with the header, the message id
+	 */
+	typedef uint8_t ProtocolCommandId;
+#define FENSTER_PROTOCOL_INITIALIZATION			(1)
+#define FENSTER_PROTOCOL_CREATE_COMPONENT			(2)
+#define FENSTER_PROTOCOL_ADD_COMPONENT				(3)
 
-/**
- * Request sent to create a component.
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_type type;
-} __attribute__((packed)) g_ui_create_component_request;
+#define FENSTER_PROTOCOL_SET_BOUNDS				(6)
+#define FENSTER_PROTOCOL_FOCUS        				(7)
+#define FENSTER_PROTOCOL_ADD_LISTENER				(8)
+#define FENSTER_PROTOCOL_SET_NUMERIC_PROPERTY		(9)
+#define FENSTER_PROTOCOL_GET_NUMERIC_PROPERTY		(10)
+#define FENSTER_PROTOCOL_GET_BOUNDS				(11)
+#define FENSTER_PROTOCOL_CANVAS_BLIT				(12)
+#define FENSTER_PROTOCOL_REGISTER_DESKTOP_CANVAS	(13)
+#define FENSTER_PROTOCOL_GET_SCREEN_DIMENSION		(14)
+#define FENSTER_PROTOCOL_FLEX_SET_ORIENTATION		(15)
+#define FENSTER_PROTOCOL_FLEX_SET_COMPONENT_INFO   (16)
+#define FENSTER_PROTOCOL_LAYOUT_SET_PADDING        (17)
+#define FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT    (18)
+#define FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED      (19)
+#define FENSTER_PROTOCOL_SET_PREFERRED_SIZE        (20)
+#define FENSTER_PROTOCOL_DESTROY_COMPONENT         (21)
+#define FENSTER_PROTOCOL_SET_MINIMUM_SIZE          (22)
+#define FENSTER_PROTOCOL_SET_MAXIMUM_SIZE          (23)
+#define FENSTER_PROTOCOL_SET_STRING_PROPERTY		(24)
+#define FENSTER_PROTOCOL_GET_STRING_PROPERTY		(25)
 
-/**
- * Response when creating a component.
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-    g_ui_component_id id;
-} __attribute__((packed)) g_ui_create_component_response;
+	/**
+	 * Common status for requests
+	 */
+	typedef uint8_t ProtocolStatus;
+#define FENSTER_PROTOCOL_SUCCESS 0
+#define FENSTER_PROTOCOL_FAIL 1
 
-/**
- * Request sent to destroy a component
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-} __attribute__((packed)) g_ui_destroy_component_request;
+	/**
+	 * Component types
+	 */
+	typedef uint32_t ComponentType;
+#define FENSTER_COMPONENT_TYPE_WINDOW 0
+#define FENSTER_COMPONENT_TYPE_BUTTON 1
+#define FENSTER_COMPONENT_TYPE_LABEL 2
+#define FENSTER_COMPONENT_TYPE_TEXTFIELD 3
+#define FENSTER_COMPONENT_TYPE_CANVAS 4
+#define FENSTER_COMPONENT_TYPE_SELECTION 5
+#define FENSTER_COMPONENT_TYPE_PANEL 6
+#define FENSTER_COMPONENT_TYPE_SCROLLPANE 7
+#define FENSTER_COMPONENT_TYPE_IMAGE 8
 
-/**
- * Request/response to focus
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-} __attribute__((packed)) g_ui_component_focus_request;
+	/**
+	 * Types of events that can be listened to
+	 */
+	typedef uint32_t ComponentEventType;
+#define FENSTER_COMPONENT_EVENT_TYPE_ACTION 0
+#define FENSTER_COMPONENT_EVENT_TYPE_BOUNDS 1
+#define FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER 2
+#define FENSTER_COMPONENT_EVENT_TYPE_KEY 3
+#define FENSTER_COMPONENT_EVENT_TYPE_FOCUS 4
+#define FENSTER_COMPONENT_EVENT_TYPE_MOUSE 5
+#define FENSTER_COMPONENT_EVENT_TYPE_CLOSE 6
+#define FENSTER_COMPONENT_EVENT_TYPE_WINDOWS 7
+#define FENSTER_COMPONENT_EVENT_TYPE_TITLE 8
+#define FENSTER_COMPONENT_EVENT_TYPE_VISIBLE 9
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_component_focus_response;
+	/**
+	 *
+	 */
+	typedef uint8_t LayoutManagerType;
+#define FENSTER_LAYOUT_MANAGER_GRID ( 0)
+#define FENSTER_LAYOUT_MANAGER_FLOW ( 1)
+#define FENSTER_LAYOUT_MANAGER_FLEX ( 2)
 
-/**
- * Request/response for adding a child
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id parent;
-    g_ui_component_id child;
-} __attribute__((packed)) g_ui_component_add_child_request;
+	/**
+	 *
+	 */
+	typedef struct
+	{
+		ProtocolCommandId id;
+	} __attribute__((packed)) MessageHeader;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_component_add_child_response;
+	/**
+	 * Request to initialize interface communications. The window server creates a
+	 * delegate thread that is responsible for further communications and responds
+	 * with a <CommandApplicationInitializeResponse>.
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		SYS_TID_T event_dispatcher;
+	} __attribute__((packed)) CommandApplicationInitializeRequest;
 
-/**
- * Setting bounds
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    g_rectangle bounds;
-} __attribute__((packed)) g_ui_component_set_bounds_request;
+	/**
+	 * Response for initializing interface communications.
+	 *
+	 * @field status
+	 * 		whether the initialization was successful
+	 * @field window_server_delegate
+	 * 		id of the task that is responsible for further window server communication
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		SYS_TID_T window_server_delegate;
+	} __attribute__((packed)) CommandApplicationInitializeResponse;
 
-/**
- * Setting size (preferred/minimum/maximum)
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    g_dimension size;
-} __attribute__((packed)) g_ui_component_set_size_request;
+	/**
+	 * Generic response
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandSimpleResponse;
 
-/**
- * Request/response for getting bounds
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-} __attribute__((packed)) g_ui_component_get_bounds_request;
+	/**
+	 * Request sent to create a component.
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentType type;
+	} __attribute__((packed)) CommandCreateComponentRequest;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-    g_rectangle bounds;
-} __attribute__((packed)) g_ui_component_get_bounds_response;
+	/**
+	 * Response when creating a component.
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		ComponentId id;
+	} __attribute__((packed)) CommandCreateComponentResponse;
 
-/**
- * Request/response for getting a numeric property
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    int property;
-} __attribute__((packed)) g_ui_component_get_numeric_property_request;
+	/**
+	 * Request sent to destroy a component
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+	} __attribute__((packed)) CommandDestroyComponentRequest;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-    uint32_t value;
-} __attribute__((packed)) g_ui_component_get_numeric_property_response;
+	/**
+	 * Request/response to focus
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+	} __attribute__((packed)) CommandFocusRequest;
 
-/**
- * Request/response for setting a numeric property
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    int property;
-    uint32_t value;
-} __attribute__((packed)) g_ui_component_set_numeric_property_request;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandFocusResponse;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_component_set_numeric_property_response;
+	/**
+	 * Request/response for adding a child
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId parent;
+		ComponentId child;
+	} __attribute__((packed)) CommandAddChildRequest;
 
-/**
- * Request for setting a string property
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    int property;
-    char value[];
-} __attribute__((packed)) g_ui_component_set_string_property_request;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandAddChildResponse;
 
-/**
- * Request/response for getting a string property
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    int property;
-} __attribute__((packed)) g_ui_component_get_string_property_request;
+	/**
+	 * Setting bounds
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		Rectangle bounds;
+	} __attribute__((packed)) CommandSetBoundsRequest;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-    char value[];
-} __attribute__((packed)) g_ui_component_get_string_property_response;
+	/**
+	 * Setting size (preferred/minimum/maximum)
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		Dimension size;
+	} __attribute__((packed)) CommandSetSizeRequest;
 
-/**
- * Request to blit a canvas
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    g_rectangle area;
-} __attribute__((packed)) g_ui_component_canvas_blit_request;
+	/**
+	 * Request/response for getting bounds
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+	} __attribute__((packed)) CommandGetBoundsRequest;
 
-/**
- * Request to register the desktop canvas
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id canvas_id;
-    SYS_TID_T target_thread; // For global events (like window event)
-} __attribute__((packed)) g_ui_register_desktop_canvas_request;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		Rectangle bounds;
+	} __attribute__((packed)) CommandGetBoundsResponse;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_register_desktop_canvas_response;
+	/**
+	 * Request/response for getting a numeric property
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		int property;
+	} __attribute__((packed)) CommandGetNumericPropertyRequest;
 
-/**
- * Event handler registration functions
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    g_ui_component_event_type event_type;
-    SYS_TID_T target_thread;
-} __attribute__((packed)) g_ui_component_add_listener_request;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		uint32_t value;
+	} __attribute__((packed)) CommandGetNumericPropertyResponse;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_protocol_status status;
-} __attribute__((packed)) g_ui_component_add_listener_response;
+	/**
+	 * Request/response for setting a numeric property
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		int property;
+		uint32_t value;
+	} __attribute__((packed)) CommandSetNumericPropertyRequest;
 
-/**
- * Retrieve screen size
- */
-typedef struct
-{
-    g_ui_message_header header;
-} __attribute__((packed)) g_ui_get_screen_dimension_request;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandSetStringPropertyResponse;
 
-typedef struct
-{
-    g_ui_message_header header;
-    g_dimension size;
-} __attribute__((packed)) g_ui_get_screen_dimension_response;
+	/**
+	 * Request for setting a string property
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		int property;
+		char value[];
+	} __attribute__((packed)) CommandSetStringPropertyRequest;
 
-/**
- * Setting flex orientation
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    bool horizontal;
-} __attribute__((packed)) g_ui_flex_set_orientation_request;
+	/**
+	 * Request/response for getting a string property
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		int property;
+	} __attribute__((packed)) CommandGetStringPropertyRequest;
 
-/**
- * Setting flex info for a component
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id parent;
-    g_ui_component_id child;
-    float grow;
-    float shrink;
-    int basis;
-} __attribute__((packed)) g_ui_flex_set_component_info;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		char value[];
+	} __attribute__((packed)) CommandGetStringPropertyResponse;
 
-/**
- * Setting flex padding
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id id;
-    g_insets insets;
-} __attribute__((packed)) g_ui_layout_set_padding;
+	/**
+	 * Request to blit a canvas
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		Rectangle area;
+	} __attribute__((packed)) CommandCanvasBlitRequest;
 
-/**
- * Scrollpane content
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id scrollpane;
-    g_ui_component_id content;
-} __attribute__((packed)) g_ui_scrollpane_set_content;
+	/**
+	 * Request to register the desktop canvas
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId canvas_id;
+		SYS_TID_T target_thread; // For global events (like window event)
+	} __attribute__((packed)) CommandRegisterDesktopCanvasRequest;
 
-/**
- * Scrollpane fixed sizes
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_id scrollpane;
-    bool width;
-    bool height;
-} __attribute__((packed)) g_ui_scrollpane_set_fixed;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandRegisterDesktopCanvasResponse;
 
-/**
- * Event structures
- */
-typedef struct
-{
-    g_ui_message_header header;
-    g_ui_component_event_type type;
-    g_ui_component_id component_id;
-} __attribute__((packed)) g_ui_component_event_header;
+	/**
+	 * Event handler registration functions
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		ComponentEventType event_type;
+		SYS_TID_T target_thread;
+	} __attribute__((packed)) CommandAddListenerRequest;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-} __attribute__((packed)) g_ui_component_action_event;
+	typedef struct
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+	} __attribute__((packed)) CommandAddListenerResponse;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    g_rectangle bounds;
-} __attribute__((packed)) g_ui_component_bounds_event;
+	/**
+	 * Retrieve screen size
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+	} __attribute__((packed)) CommandGetScreenDimensionRequest;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    size_t newBufferAddress;
-    uint16_t width;
-    uint16_t height;
-} __attribute__((packed)) g_ui_component_canvas_wfa_event;
+	typedef struct
+	{
+		MessageHeader header;
+		Dimension size;
+	} __attribute__((packed)) CommandGetScreenDimensionResponse;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    key_info_basic_t key_info;
-} __attribute__((packed)) g_ui_component_key_event;
+	/**
+	 * Setting flex orientation
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		bool horizontal;
+	} __attribute__((packed)) CommandFlexSetOrientationRequest;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    uint8_t now_focused;
-} __attribute__((packed)) g_ui_component_focus_event;
+	/**
+	 * Setting flex info for a component
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId parent;
+		ComponentId child;
+		float grow;
+		float shrink;
+		int basis;
+	} __attribute__((packed)) CommandFlexSetComponentInfo;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-} __attribute__((packed)) g_ui_component_close_event;
+	/**
+	 * Setting flex padding
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		Insets insets;
+	} __attribute__((packed)) CommandLayoutSetPadding;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    g_ui_protocol_status status;
-    g_ui_component_id window_id;
-    bool present;
-} __attribute__((packed)) g_ui_windows_event;
+	/**
+	 * Scrollpane content
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId scrollpane;
+		ComponentId content;
+	} __attribute__((packed)) CommandScrollpaneSetContent;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    char title[G_UI_COMPONENT_TITLE_MAXIMUM];
-} __attribute__((packed)) g_ui_component_title_event;
+	/**
+	 * Scrollpane fixed sizes
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId scrollpane;
+		bool width;
+		bool height;
+	} __attribute__((packed)) CommandScrollpaneSetFixed;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    bool visible;
-} __attribute__((packed)) g_ui_component_visible_event;
+	/**
+	 * Event structures
+	 */
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentEventType type;
+		ComponentId component_id;
+	} __attribute__((packed)) ComponentEventHeader;
 
-/**
- * Mouse events
- */
-typedef uint8_t g_mouse_button;
-#define G_MOUSE_BUTTON_NONE ((g_mouse_button) 0x0)
-#define G_MOUSE_BUTTON_1 ((g_mouse_button) 0x1)
-#define G_MOUSE_BUTTON_2 ((g_mouse_button) 0x2)
-#define G_MOUSE_BUTTON_3 ((g_mouse_button) 0x4)
+	typedef struct
+	{
+		ComponentEventHeader header;
+	} __attribute__((packed)) ComponentActionEvent;
 
-typedef uint8_t g_mouse_event_type;
-#define G_MOUSE_EVENT_NONE ((g_mouse_event_type) 0)
-#define G_MOUSE_EVENT_MOVE ((g_mouse_event_type) 1)
-#define G_MOUSE_EVENT_PRESS ((g_mouse_event_type) 2)
-#define G_MOUSE_EVENT_RELEASE ((g_mouse_event_type) 3)
-#define G_MOUSE_EVENT_DRAG_RELEASE ((g_mouse_event_type) 4)
-#define G_MOUSE_EVENT_DRAG ((g_mouse_event_type) 5)
-#define G_MOUSE_EVENT_ENTER ((g_mouse_event_type) 6)
-#define G_MOUSE_EVENT_LEAVE ((g_mouse_event_type) 7)
-#define G_MOUSE_EVENT_SCROLL ((g_mouse_event_type) 8)
+	typedef struct
+	{
+		ComponentEventHeader header;
+		Rectangle bounds;
+	} __attribute__((packed)) ComponentBoundsEvent;
 
-typedef struct
-{
-    g_ui_component_event_header header;
-    g_point position;
-    g_mouse_event_type type;
-    g_mouse_button buttons;
-    int clickCount;
-    int scroll;
-} __attribute__((packed)) g_ui_component_mouse_event;
+	typedef struct
+	{
+		ComponentEventHeader header;
+		size_t newBufferAddress;
+		uint16_t width;
+		uint16_t height;
+	} __attribute__((packed)) ComponentCanvasWaitForAcknowledgeEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		KeyInfoBasic key_info;
+	} __attribute__((packed)) ComponentKeyEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		uint8_t now_focused;
+	} __attribute__((packed)) ComponentFocusEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+	} __attribute__((packed)) ComponentCloseEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		ProtocolStatus status;
+		ComponentId window_id;
+		bool present;
+	} __attribute__((packed)) WindowsEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		char title[G_UI_COMPONENT_TITLE_MAXIMUM];
+	} __attribute__((packed)) ComponentTitleEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		bool visible;
+	} __attribute__((packed)) ComponentVisibleEvent;
+
+	/**
+	 * Mouse events
+	 */
+	typedef uint8_t MouseButton;
+#define FENSTER_MOUSE_BUTTON_NONE ( 0x0)
+#define FENSTER_MOUSE_BUTTON_1 ( 0x1)
+#define FENSTER_MOUSE_BUTTON_2 ( 0x2)
+#define FENSTER_MOUSE_BUTTON_3 ( 0x4)
+
+	typedef uint8_t MouseEventType;
+#define FENSTER_MOUSE_EVENT_NONE ( 0)
+#define FENSTER_MOUSE_EVENT_MOVE ( 1)
+#define FENSTER_MOUSE_EVENT_PRESS ( 2)
+#define FENSTER_MOUSE_EVENT_RELEASE ( 3)
+#define FENSTER_MOUSE_EVENT_DRAG_RELEASE ( 4)
+#define FENSTER_MOUSE_EVENT_DRAG ( 5)
+#define FENSTER_MOUSE_EVENT_ENTER ( 6)
+#define FENSTER_MOUSE_EVENT_LEAVE ( 7)
+#define FENSTER_MOUSE_EVENT_SCROLL ( 8)
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		Point position;
+		MouseEventType type;
+		MouseButton buttons;
+		int clickCount;
+		int scroll;
+	} __attribute__((packed)) ComponentMouseEvent;
+}
 
 #endif

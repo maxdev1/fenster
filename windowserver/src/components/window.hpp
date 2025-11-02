@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_WINDOW__
-#define __WINDOWSERVER_COMPONENTS_WINDOW__
+#ifndef FENSTER_SERVER_COMPONENTS_WINDOW
+#define FENSTER_SERVER_COMPONENTS_WINDOW
 
 #include "components/component.hpp"
 #include "components/label.hpp"
@@ -21,100 +21,103 @@
 #define DEFAULT_BORDER_WIDTH 7
 #define DEFAULT_CORNER_SIZE 15
 
-/**
- * modes used when resizing windows
- */
-enum window_resize_mode_t
+namespace fensterserver
 {
-    RESIZE_MODE_NONE,
-    RESIZE_MODE_MOVE,
-    RESIZE_MODE_TOP,
-    RESIZE_MODE_TOP_RIGHT,
-    RESIZE_MODE_RIGHT,
-    RESIZE_MODE_BOTTOM_RIGHT,
-    RESIZE_MODE_BOTTOM,
-    RESIZE_MODE_BOTTOM_LEFT,
-    RESIZE_MODE_LEFT,
-    RESIZE_MODE_TOP_LEFT
-};
-
-/**
- *
- */
-class window_t :
-    virtual public component_t,
-    virtual public titled_component_t
-{
-    int borderWidth;
-    int cornerSize;
-    g_color_argb backgroundColor;
-    bool resizable;
-
-    label_t label;
-    panel_t panel;
-
-    bool crossPressed;
-    bool crossHovered;
-
-    g_point pressPoint;
-    g_rectangle pressBounds;
-    window_resize_mode_t resizeMode;
-
-    int titleHeight;
-    int shadowSize;
-    g_rectangle crossBounds;
-
-public:
-    window_t();
-
-    ~window_t() override = default;
-
-    panel_t* getPanel()
+    /**
+     * modes used when resizing windows
+     */
+    enum window_resize_mode_t
     {
-        return &panel;
-    }
+        RESIZE_MODE_NONE,
+        RESIZE_MODE_MOVE,
+        RESIZE_MODE_TOP,
+        RESIZE_MODE_TOP_RIGHT,
+        RESIZE_MODE_RIGHT,
+        RESIZE_MODE_BOTTOM_RIGHT,
+        RESIZE_MODE_BOTTOM,
+        RESIZE_MODE_BOTTOM_LEFT,
+        RESIZE_MODE_LEFT,
+        RESIZE_MODE_TOP_LEFT
+    };
 
-    void setBackground(g_color_argb color)
+    /**
+     *
+     */
+    class Window :
+        virtual public Component,
+        virtual public TitledComponent
     {
-        backgroundColor = color;
-        markFor(COMPONENT_REQUIREMENT_PAINT);
-    }
+        int borderWidth;
+        int cornerSize;
+        fenster::ColorArgb backgroundColor;
+        bool resizable;
 
-    g_color_argb getBackground() const
-    {
-        return backgroundColor;
-    }
+        Label label;
+        Panel panel;
 
-    bool isWindow() override
-    {
-        return true;
-    }
+        bool crossPressed;
+        bool crossHovered;
 
-    void addChild(component_t* component,
-                  component_child_reference_type_t type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
+        fenster::Point pressPoint;
+        fenster::Rectangle pressBounds;
+        window_resize_mode_t resizeMode;
 
-    void layout() override;
-    void paint() override;
+        int titleHeight;
+        int shadowSize;
+        fenster::Rectangle crossBounds;
 
-    component_t* handleMouseEvent(mouse_event_t& e) override;
+    public:
+        Window();
 
-    bool isFocusableDefault() const override
-    {
-        return true;
-    }
+        ~Window() override = default;
 
-    void setFocusedInternal(bool focused) override;
+        Panel* getPanel()
+        {
+            return &panel;
+        }
 
-    bool getNumericProperty(int property, uint32_t* out) override;
-    bool setNumericProperty(int property, uint32_t value) override;
+        void setBackground(fenster::ColorArgb color)
+        {
+            backgroundColor = color;
+            markFor(COMPONENT_REQUIREMENT_PAINT);
+        }
 
-    void setTitleInternal(std::string title) override;
-    std::string getTitle() override;
+        fenster::ColorArgb getBackground() const
+        {
+            return backgroundColor;
+        }
 
-    virtual void close();
+        bool isWindow() override
+        {
+            return true;
+        }
 
-    void setLayoutManager(layout_manager_t* layoutManager) override;
-    layout_manager_t* getLayoutManager() const override;
-};
+        void addChild(Component* component,
+                      ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
+
+        void layout() override;
+        void paint() override;
+
+        Component* handleMouseEvent(MouseEvent& e) override;
+
+        bool isFocusableDefault() const override
+        {
+            return true;
+        }
+
+        void setFocusedInternal(bool focused) override;
+
+        bool getNumericProperty(int property, uint32_t* out) override;
+        bool setNumericProperty(int property, uint32_t value) override;
+
+        void setTitleInternal(std::string title) override;
+        std::string getTitle() override;
+
+        virtual void close();
+
+        void setLayoutManager(LayoutManager* layoutManager) override;
+        LayoutManager* getLayoutManager() const override;
+    };
+}
 
 #endif

@@ -2,23 +2,26 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_TREE__
-#define __WINDOWSERVER_COMPONENTS_TREE__
+#ifndef FENSTER_SERVER_COMPONENTS_TREE
+#define FENSTER_SERVER_COMPONENTS_TREE
 
 #include "components/component.hpp"
 
 #include <libjson/json.hpp>
 
-class tree_node_t;
-
-class tree_t : virtual public component_t
+namespace fensterserver
 {
-public:
-    tree_t();
-    ~tree_t() override = default;
+    class TreeNode;
 
-    void setModelFromJson(std::string& model);
-    tree_node_t* createNodeComponent(g_json_node& node);
-};
+    class Tree : virtual public Component
+    {
+    public:
+        Tree();
+        ~Tree() override = default;
+
+        void setModelFromJson(std::string& model);
+        TreeNode* createNodeComponent(json::JsonNode& node);
+    };
+}
 
 #endif

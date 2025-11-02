@@ -6,17 +6,20 @@
 #include "event_listener_info.hpp"
 #include <cstring>
 
-void titled_component_t::setTitle(std::string title)
+namespace fensterserver
 {
-	setTitleInternal(title);
-
-	this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_TITLE, [title](event_listener_info_t& info)
+	void TitledComponent::setTitle(std::string title)
 	{
-		auto event = new g_ui_component_title_event;
-		event->header.type = G_UI_COMPONENT_EVENT_TYPE_TITLE;
-		event->header.component_id = info.component_id;
-		strncpy(event->title, title.c_str(), G_UI_COMPONENT_TITLE_MAXIMUM);
-		platformSendMessage(info.target_thread, event, sizeof(g_ui_component_title_event), SYS_TX_NONE);
-		delete event;
-	});
+		setTitleInternal(title);
+
+		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_TITLE, [title](EventListenerInfo& info)
+		{
+			auto event = new fenster::ComponentTitleEvent;
+			event->header.type = FENSTER_COMPONENT_EVENT_TYPE_TITLE;
+			event->header.component_id = info.component_id;
+			strncpy(event->title, title.c_str(), G_UI_COMPONENT_TITLE_MAXIMUM);
+			platformSendMessage(info.target_thread, event, sizeof(fenster::ComponentTitleEvent), SYS_TX_NONE);
+			delete event;
+		});
+	}
 }

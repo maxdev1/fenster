@@ -4,7 +4,10 @@
 
 #include "libwindow/selection.hpp"
 
-g_selection* g_selection::create()
+namespace fenster
 {
-	return createComponent<g_selection, G_UI_COMPONENT_TYPE_SELECTION>();
+	Selection* Selection::create()
+	{
+		return createComponent<Selection, FENSTER_COMPONENT_TYPE_SELECTION>();
+	}
 }

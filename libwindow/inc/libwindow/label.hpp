@@ -9,18 +9,21 @@
 #include "titled_component.hpp"
 #include "libwindow/font/text_alignment.hpp"
 
-class g_label : virtual public g_component, virtual public g_titled_component
+namespace fenster
 {
-public:
-    explicit g_label(g_ui_component_id id) :
-        g_component(id), g_titled_component(id)
-    {
-    }
+	class Label : virtual public Component, virtual public TitledComponent
+	{
+	public:
+		explicit Label(ComponentId id) :
+			Component(id), TitledComponent(id)
+		{
+		}
 
-    static g_label* create();
+		static Label* create();
 
-    bool setColor(g_color_argb argb);
-    bool setAlignment(g_text_alignment alignment);
-};
+		bool setColor(ColorArgb argb);
+		bool setAlignment(TextAlignment alignment);
+	};
+}
 
 #endif

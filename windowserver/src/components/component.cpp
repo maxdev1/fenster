@@ -11,7 +11,7 @@
 #include "layout/grid_layout_manager.hpp"
 #include "layout/flex_layout_manager.hpp"
 #include "component_registry.hpp"
-#include "windowserver.hpp"
+#include "server.hpp"
 
 #include <cairo/cairo.h>
 #include <libwindow/properties.hpp>
@@ -21,679 +21,683 @@
 #include <typeinfo>
 #include <libwindow/properties.hpp>
 
-component_t::component_t() :
-	bounding_component_t(this),
-	focusable_component_t(this),
-	visible(true),
-	requirements(COMPONENT_REQUIREMENT_ALL),
-	childRequirements(COMPONENT_REQUIREMENT_ALL),
-	parent(nullptr),
-	layoutManager(nullptr)
+namespace fensterserver
 {
-	id = component_registry_t::add(this);
-}
+	Component::Component() :
+		BoundingComponent(this),
+		FocusableComponent(this),
+		visible(true),
+		requirements(COMPONENT_REQUIREMENT_ALL),
+		childRequirements(COMPONENT_REQUIREMENT_ALL),
+		parent(nullptr),
+		layoutManager(nullptr)
+	{
+		id = ComponentRegistry::add(this);
+	}
 
-component_t::~component_t()
-{
-	delete layoutManager;
-}
+	Component::~Component()
+	{
+		delete layoutManager;
+	}
 
-void component_t::setBoundsInternal(const g_rectangle& newBounds)
-{
-	platformAcquireMutex(lock);
+	void Component::setBoundsInternal(const fenster::Rectangle& newBounds)
+	{
+		fenster::platformAcquireMutex(lock);
 
-	g_rectangle oldBounds = bounds;
-	markDirty();
+		fenster::Rectangle oldBounds = bounds;
+		markDirty();
 
-	bounds = newBounds;
-	if(bounds.width < minimumSize.width)
-		bounds.width = minimumSize.width;
-	if(bounds.height < minimumSize.height)
-		bounds.height = minimumSize.height;
-	markDirty();
+		bounds = newBounds;
+		if(bounds.width < minimumSize.width)
+			bounds.width = minimumSize.width;
+		if(bounds.height < minimumSize.height)
+			bounds.height = minimumSize.height;
+		markDirty();
 
-	if(oldBounds.width != bounds.width || oldBounds.height != bounds.height)
+		if(oldBounds.width != bounds.width || oldBounds.height != bounds.height)
+		{
+			if(hasGraphics())
+			{
+				graphics.resize(bounds.width, bounds.height);
+			}
+			markFor(COMPONENT_REQUIREMENT_ALL);
+			handleBoundChanged(oldBounds);
+		}
+
+		fenster::platformReleaseMutex(lock);
+	}
+
+	void Component::recheckGraphics()
 	{
 		if(hasGraphics())
-		{
 			graphics.resize(bounds.width, bounds.height);
-		}
-		markFor(COMPONENT_REQUIREMENT_ALL);
-		handleBoundChanged(oldBounds);
 	}
 
-	platformReleaseMutex(lock);
-}
-
-void component_t::recheckGraphics()
-{
-	if(hasGraphics())
-		graphics.resize(bounds.width, bounds.height);
-}
-
-g_rectangle component_t::getBounds() const
-{
-	platformAcquireMutex(lock);
-	auto bounds = this->bounds;
-	platformReleaseMutex(lock);
-	return bounds;
-}
-
-std::vector<component_child_reference_t>& component_t::acquireChildren()
-{
-	platformAcquireMutex(childrenLock);
-	return children;
-}
-
-void component_t::releaseChildren() const
-{
-	platformReleaseMutex(childrenLock);
-}
-
-
-void component_t::update()
-{
-	markFor(COMPONENT_REQUIREMENT_LAYOUT);
-}
-
-void component_t::layout()
-{
-	if(layoutManager)
+	fenster::Rectangle Component::getBounds() const
 	{
-		layoutManager->layout();
-		markFor(COMPONENT_REQUIREMENT_PAINT);
-	}
-}
-
-void component_t::paint()
-{
-}
-
-bool component_t::canHandleEvents() const
-{
-	if(!visible)
-		return false;
-	if(parent)
-		return parent->canHandleEvents();
-	return true;
-}
-
-void component_t::setVisible(bool visible)
-{
-	platformAcquireMutex(lock);
-
-	this->visible = visible;
-	markDirty();
-
-	if(visible)
-	{
-		markFor(COMPONENT_REQUIREMENT_ALL);
-	}
-	else
-	{
-		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+		fenster::platformAcquireMutex(lock);
+		auto bounds = this->bounds;
+		fenster::platformReleaseMutex(lock);
+		return bounds;
 	}
 
-	platformReleaseMutex(lock);
-
-	this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_VISIBLE, [visible](event_listener_info_t& info)
+	std::vector<ComponentChildReference>& Component::acquireChildren()
 	{
-		g_ui_component_visible_event e;
-		e.header.type = G_UI_COMPONENT_EVENT_TYPE_VISIBLE;
-		e.header.component_id = info.component_id;
-		e.visible = visible;
-		platformSendMessage(info.target_thread, &e, sizeof(g_ui_component_visible_event),SYS_TX_NONE);
-	});
-}
-
-void component_t::markDirty(g_rectangle rect)
-{
-	if(parent)
-	{
-		rect.x += bounds.x;
-		rect.y += bounds.y;
-		parent->markDirty(rect);
+		fenster::platformAcquireMutex(childrenLock);
+		return children;
 	}
-}
 
-void component_t::blit(graphics_t* out, const g_rectangle& parentClip, const g_point& screenPosition)
-{
-	if(!this->visible)
-		return;
-
-	platformAcquireMutex(lock);
-
-	g_rectangle clip = getBounds();
-	clip.x = screenPosition.x;
-	clip.y = screenPosition.y;
-	clip = clip.clip(parentClip);
-
-	if(hasGraphics())
+	void Component::releaseChildren() const
 	{
-		graphics.blitTo(out, clip, screenPosition);
+		fenster::platformReleaseMutex(childrenLock);
 	}
-	platformReleaseMutex(lock);
 
-	this->blitChildren(out, clip, screenPosition);
-}
 
-void component_t::blitChildren(graphics_t* out, const g_rectangle& clip, const g_point& screenPosition)
-{
-	platformAcquireMutex(childrenLock);
-	for(auto& c: children)
+	void Component::update()
 	{
-		if(c.component->visible)
+		markFor(COMPONENT_REQUIREMENT_LAYOUT);
+	}
+
+	void Component::layout()
+	{
+		if(layoutManager)
 		{
-			g_point childPositionOnParent = screenPosition + c.component->bounds.getStart();
-			c.component->blit(out, clip, childPositionOnParent);
+			layoutManager->layout();
+			markFor(COMPONENT_REQUIREMENT_PAINT);
 		}
 	}
-	platformReleaseMutex(childrenLock);
-}
 
-void component_t::addChild(component_t* comp, component_child_reference_type_t type)
-{
-	if(comp->parent)
-		comp->parent->removeChild(comp);
-
-	comp->parent = this;
-
-	component_child_reference_t reference;
-	reference.component = comp;
-	reference.type = type;
-
-	platformAcquireMutex(childrenLock);
-	children.push_back(reference);
-	std::stable_sort(children.begin(), children.end(),
-	                 [](const component_child_reference_t& c1, const component_child_reference_t& c2)
-	                 {
-		                 return c1.component->zIndex < c2.component->zIndex;
-	                 });
-	platformReleaseMutex(childrenLock);
-
-	comp->markFor(COMPONENT_REQUIREMENT_ALL);
-	markFor(COMPONENT_REQUIREMENT_ALL);
-}
-
-void component_t::removeChild(component_t* comp)
-{
-	comp->parent = 0;
-
-	platformAcquireMutex(childrenLock);
-	for(auto itr = children.begin(); itr != children.end();)
+	void Component::paint()
 	{
-		if((*itr).component == comp)
+	}
+
+	bool Component::canHandleEvents() const
+	{
+		if(!visible)
+			return false;
+		if(parent)
+			return parent->canHandleEvents();
+		return true;
+	}
+
+	void Component::setVisible(bool visible)
+	{
+		fenster::platformAcquireMutex(lock);
+
+		this->visible = visible;
+		markDirty();
+
+		if(visible)
 		{
-			itr = children.erase(itr);
+			markFor(COMPONENT_REQUIREMENT_ALL);
 		}
 		else
 		{
-			++itr;
+			markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+		}
+
+		fenster::platformReleaseMutex(lock);
+
+		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, [visible](EventListenerInfo& info)
+		{
+			fenster::ComponentVisibleEvent e;
+			e.header.type = FENSTER_COMPONENT_EVENT_TYPE_VISIBLE;
+			e.header.component_id = info.component_id;
+			e.visible = visible;
+			fenster::platformSendMessage(info.target_thread, &e, sizeof(fenster::ComponentVisibleEvent),SYS_TX_NONE);
+		});
+	}
+
+	void Component::markDirty(fenster::Rectangle rect)
+	{
+		if(parent)
+		{
+			rect.x += bounds.x;
+			rect.y += bounds.y;
+			parent->markDirty(rect);
 		}
 	}
-	platformReleaseMutex(childrenLock);
 
-	markFor(COMPONENT_REQUIREMENT_LAYOUT);
-}
-
-component_t* component_t::getComponentAt(g_point p)
-{
-	component_t* target = this;
-
-	platformAcquireMutex(childrenLock);
-	for(auto it = children.rbegin(); it != children.rend(); ++it)
+	void Component::blit(Graphics* out, const fenster::Rectangle& parentClip, const fenster::Point& screenPosition)
 	{
-		auto child = (*it).component;
-		if(child->visible && child->bounds.contains(p))
+		if(!this->visible)
+			return;
+
+		fenster::platformAcquireMutex(lock);
+
+		fenster::Rectangle clip = getBounds();
+		clip.x = screenPosition.x;
+		clip.y = screenPosition.y;
+		clip = clip.clip(parentClip);
+
+		if(hasGraphics())
 		{
-			platformReleaseMutex(childrenLock);
-			target = child->getComponentAt(g_point(p.x - child->bounds.x, p.y - child->bounds.y));
-			break;
+			graphics.blitTo(out, clip, screenPosition);
 		}
+		fenster::platformReleaseMutex(lock);
+
+		this->blitChildren(out, clip, screenPosition);
 	}
-	platformReleaseMutex(childrenLock);
 
-	return target;
-}
-
-window_t* component_t::getWindow()
-{
-	if(isWindow())
-		return dynamic_cast<window_t*>(this);
-
-	if(parent)
-		return parent->getWindow();
-
-	return nullptr;
-}
-
-void component_t::bringChildToFront(component_t* comp)
-{
-	platformAcquireMutex(childrenLock);
-	for(uint32_t index = 0; index < children.size(); index++)
+	void Component::blitChildren(Graphics* out, const fenster::Rectangle& clip, const fenster::Point& screenPosition)
 	{
-		if(children[index].component == comp)
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto& c: children)
 		{
-			auto ref = children[index];
-			children.erase(children.begin() + index);
-			children.push_back(ref);
-
-			markDirty(comp->bounds);
-			break;
+			if(c.component->visible)
+			{
+				fenster::Point childPositionOnParent = screenPosition + c.component->bounds.getStart();
+				c.component->blit(out, clip, childPositionOnParent);
+			}
 		}
+		fenster::platformReleaseMutex(childrenLock);
 	}
-	platformReleaseMutex(childrenLock);
-}
 
-void component_t::bringToFront()
-{
-	if(parent)
-		parent->bringChildToFront(this);
-}
-
-g_point component_t::getLocationOnScreen()
-{
-	g_point location(bounds.x, bounds.y);
-
-	if(parent)
-		location += parent->getLocationOnScreen();
-
-	return location;
-}
-
-component_t* component_t::handleMouseEvent(mouse_event_t& event)
-{
-	component_t* handledByChild = nullptr;
-
-	platformAcquireMutex(childrenLock);
-	for(auto it = children.rbegin(); it != children.rend(); ++it)
+	void Component::addChild(Component* comp, ComponentChildReferenceType type)
 	{
-		auto child = (*it).component;
-		if(!child->visible)
-			continue;
+		if(comp->parent)
+			comp->parent->removeChild(comp);
 
-		if(child->bounds.contains(event.position))
+		comp->parent = this;
+
+		ComponentChildReference reference;
+		reference.component = comp;
+		reference.type = type;
+
+		fenster::platformAcquireMutex(childrenLock);
+		children.push_back(reference);
+		std::stable_sort(children.begin(), children.end(),
+		                 [](const ComponentChildReference& c1, const ComponentChildReference& c2)
+		                 {
+			                 return c1.component->zIndex < c2.component->zIndex;
+		                 });
+		fenster::platformReleaseMutex(childrenLock);
+
+		comp->markFor(COMPONENT_REQUIREMENT_ALL);
+		markFor(COMPONENT_REQUIREMENT_ALL);
+	}
+
+	void Component::removeChild(Component* comp)
+	{
+		comp->parent = 0;
+
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto itr = children.begin(); itr != children.end();)
 		{
-			event.position.x -= child->bounds.x;
-			event.position.y -= child->bounds.y;
+			if((*itr).component == comp)
+			{
+				itr = children.erase(itr);
+			}
+			else
+			{
+				++itr;
+			}
+		}
+		fenster::platformReleaseMutex(childrenLock);
 
-			handledByChild = child->handleMouseEvent(event);
+		markFor(COMPONENT_REQUIREMENT_LAYOUT);
+	}
+
+	Component* Component::getComponentAt(fenster::Point p)
+	{
+		Component* target = this;
+
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto it = children.rbegin(); it != children.rend(); ++it)
+		{
+			auto child = (*it).component;
+			if(child->visible && child->bounds.contains(p))
+			{
+				fenster::platformReleaseMutex(childrenLock);
+				target = child->getComponentAt(fenster::Point(p.x - child->bounds.x, p.y - child->bounds.y));
+				break;
+			}
+		}
+		fenster::platformReleaseMutex(childrenLock);
+
+		return target;
+	}
+
+	Window* Component::getWindow()
+	{
+		if(isWindow())
+			return dynamic_cast<Window*>(this);
+
+		if(parent)
+			return parent->getWindow();
+
+		return nullptr;
+	}
+
+	void Component::bringChildToFront(Component* comp)
+	{
+		fenster::platformAcquireMutex(childrenLock);
+		for(uint32_t index = 0; index < children.size(); index++)
+		{
+			if(children[index].component == comp)
+			{
+				auto ref = children[index];
+				children.erase(children.begin() + index);
+				children.push_back(ref);
+
+				markDirty(comp->bounds);
+				break;
+			}
+		}
+		fenster::platformReleaseMutex(childrenLock);
+	}
+
+	void Component::bringToFront()
+	{
+		if(parent)
+			parent->bringChildToFront(this);
+	}
+
+	fenster::Point Component::getLocationOnScreen()
+	{
+		fenster::Point location(bounds.x, bounds.y);
+
+		if(parent)
+			location += parent->getLocationOnScreen();
+
+		return location;
+	}
+
+	Component* Component::handleMouseEvent(MouseEvent& event)
+	{
+		Component* handledByChild = nullptr;
+
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto it = children.rbegin(); it != children.rend(); ++it)
+		{
+			auto child = (*it).component;
+			if(!child->visible)
+				continue;
+
+			if(child->bounds.contains(event.position))
+			{
+				event.position.x -= child->bounds.x;
+				event.position.y -= child->bounds.y;
+
+				handledByChild = child->handleMouseEvent(event);
+				if(handledByChild)
+				{
+					break;
+				}
+
+				event.position.x += child->bounds.x;
+				event.position.y += child->bounds.y;
+			}
+		}
+		fenster::platformReleaseMutex(childrenLock);
+
+		if(handledByChild)
+			return handledByChild;
+
+		auto handledByListener = this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_MOUSE,
+		                                                [event](EventListenerInfo& info)
+		                                                {
+			                                                fenster::ComponentMouseEvent postedEvent;
+			                                                postedEvent.header.type =
+					                                                FENSTER_COMPONENT_EVENT_TYPE_MOUSE;
+			                                                postedEvent.header.component_id = info.component_id;
+			                                                postedEvent.position = event.position;
+			                                                postedEvent.type = event.type;
+			                                                postedEvent.buttons = event.buttons;
+			                                                postedEvent.clickCount = event.clickCount;
+			                                                postedEvent.scroll = event.scroll;
+			                                                fenster::platformSendMessage(
+					                                                info.target_thread, &postedEvent,
+					                                                sizeof(fenster::ComponentMouseEvent),SYS_TX_NONE);
+		                                                });
+
+		// TODO Temporary fix so scroll-events still go to parents
+		if(event.type == FENSTER_MOUSE_EVENT_SCROLL)
+			return nullptr;
+
+		if(handledByListener)
+			return this;
+
+		return nullptr;
+	}
+
+	Component* Component::handleKeyEvent(KeyEvent& event)
+	{
+		Component* handledByChild = nullptr;
+
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto it = children.rbegin(); it != children.rend(); ++it)
+		{
+			auto child = (*it).component;
+			if(!child->visible)
+				continue;
+
+			handledByChild = child->handleKeyEvent(event);
 			if(handledByChild)
 			{
 				break;
 			}
-
-			event.position.x += child->bounds.x;
-			event.position.y += child->bounds.y;
 		}
-	}
-	platformReleaseMutex(childrenLock);
+		fenster::platformReleaseMutex(childrenLock);
 
-	if(handledByChild)
-		return handledByChild;
-
-	auto handledByListener = this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_MOUSE,
-	                                                [event](event_listener_info_t& info)
-	                                                {
-		                                                g_ui_component_mouse_event postedEvent;
-		                                                postedEvent.header.type = G_UI_COMPONENT_EVENT_TYPE_MOUSE;
-		                                                postedEvent.header.component_id = info.component_id;
-		                                                postedEvent.position = event.position;
-		                                                postedEvent.type = event.type;
-		                                                postedEvent.buttons = event.buttons;
-		                                                postedEvent.clickCount = event.clickCount;
-		                                                postedEvent.scroll = event.scroll;
-		                                                platformSendMessage(
-				                                                info.target_thread, &postedEvent,
-				                                                sizeof(g_ui_component_mouse_event),SYS_TX_NONE);
-	                                                });
-
-	// TODO Temporary fix so scroll-events still go to parents
-	if(event.type == G_MOUSE_EVENT_SCROLL)
-		return nullptr;
-
-	if(handledByListener)
-		return this;
-
-	return nullptr;
-}
-
-component_t* component_t::handleKeyEvent(key_event_t& event)
-{
-	component_t* handledByChild = nullptr;
-
-	platformAcquireMutex(childrenLock);
-	for(auto it = children.rbegin(); it != children.rend(); ++it)
-	{
-		auto child = (*it).component;
-		if(!child->visible)
-			continue;
-
-		handledByChild = child->handleKeyEvent(event);
-		if(handledByChild)
+		if(!handledByChild)
 		{
-			break;
+			if(sendKeyEventToListener(event))
+				return this;
+		}
+
+		return handledByChild;
+	}
+
+	bool Component::sendKeyEventToListener(KeyEvent& event)
+	{
+		return this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_KEY,
+		                              [event](EventListenerInfo& info)
+		                              {
+			                              fenster::ComponentKeyEvent posted_key_event;
+			                              posted_key_event.header.type =
+					                              FENSTER_COMPONENT_EVENT_TYPE_KEY;
+			                              posted_key_event.header.component_id = info.component_id;
+			                              posted_key_event.key_info = event.info;
+			                              fenster::platformSendMessage(
+					                              info.target_thread, &posted_key_event,
+					                              sizeof(fenster::ComponentKeyEvent),SYS_TX_NONE);
+		                              });
+	}
+
+	void Component::setPreferredSize(const fenster::Dimension& size)
+	{
+		if(preferredSize != size)
+		{
+			preferredSize = size;
+			markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
 		}
 	}
-	platformReleaseMutex(childrenLock);
 
-	if(!handledByChild)
+	fenster::Dimension Component::getEffectivePreferredSize()
 	{
-		if(sendKeyEventToListener(event))
-			return this;
+		auto preferred = getPreferredSize();
+		auto min = getMinimumSize();
+		preferred.width = std::max(preferred.width, min.width);
+		preferred.height = std::max(preferred.height, min.height);
+		return preferred;
 	}
 
-	return handledByChild;
-}
-
-bool component_t::sendKeyEventToListener(key_event_t& event)
-{
-	return this->callForListeners(G_UI_COMPONENT_EVENT_TYPE_KEY,
-	                              [event](event_listener_info_t& info)
-	                              {
-		                              g_ui_component_key_event posted_key_event;
-		                              posted_key_event.header.type =
-				                              G_UI_COMPONENT_EVENT_TYPE_KEY;
-		                              posted_key_event.header.component_id = info.component_id;
-		                              posted_key_event.key_info = event.info;
-		                              platformSendMessage(
-				                              info.target_thread, &posted_key_event,
-				                              sizeof(g_ui_component_key_event),SYS_TX_NONE);
-	                              });
-}
-
-void component_t::setPreferredSize(const g_dimension& size)
-{
-	if(preferredSize != size)
+	void Component::setMinimumSize(const fenster::Dimension& size)
 	{
-		preferredSize = size;
+		minimumSize = size;
 		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
 	}
-}
 
-g_dimension component_t::getEffectivePreferredSize()
-{
-	auto preferred = getPreferredSize();
-	auto min = getMinimumSize();
-	preferred.width = std::max(preferred.width, min.width);
-	preferred.height = std::max(preferred.height, min.height);
-	return preferred;
-}
-
-void component_t::setMinimumSize(const g_dimension& size)
-{
-	minimumSize = size;
-	markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
-}
-
-void component_t::setMaximumSize(const g_dimension& size)
-{
-	maximumSize = size;
-	markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
-}
-
-void component_t::setLayoutManager(layout_manager_t* newMgr)
-{
-	newMgr->setComponent(this);
-	this->layoutManager = newMgr;
-	markFor(COMPONENT_REQUIREMENT_LAYOUT);
-}
-
-void component_t::markParentFor(component_requirement_t req)
-{
-	if(parent)
-		parent->markFor(req);
-}
-
-void component_t::markFor(component_requirement_t req)
-{
-	requirements |= req;
-
-	if(parent)
-		parent->markChildsFor(req);
-
-	windowserver_t::instance()->requestUpdateLater();
-}
-
-void component_t::markChildsFor(component_requirement_t req)
-{
-	childRequirements |= req;
-
-	if(parent)
-		parent->markChildsFor(req);
-}
-
-/**
- * Resolves a single requirement in the component tree. Layouting is done top-down,
- * while updating and painting is done bottom-up.
- */
-void component_t::resolveRequirement(component_requirement_t req, int lvl)
-{
-	if((childRequirements & req) && !(req == COMPONENT_REQUIREMENT_LAYOUT))
+	void Component::setMaximumSize(const fenster::Dimension& size)
 	{
-		platformAcquireMutex(childrenLock);
-		for(auto& child: children)
+		maximumSize = size;
+		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+	}
+
+	void Component::setLayoutManager(LayoutManager* newMgr)
+	{
+		newMgr->setComponent(this);
+		this->layoutManager = newMgr;
+		markFor(COMPONENT_REQUIREMENT_LAYOUT);
+	}
+
+	void Component::markParentFor(ComponentRequirement req)
+	{
+		if(parent)
+			parent->markFor(req);
+	}
+
+	void Component::markFor(ComponentRequirement req)
+	{
+		requirements |= req;
+
+		if(parent)
+			parent->markChildsFor(req);
+
+		Server::instance()->requestUpdateLater();
+	}
+
+	void Component::markChildsFor(ComponentRequirement req)
+	{
+		childRequirements |= req;
+
+		if(parent)
+			parent->markChildsFor(req);
+	}
+
+	/**
+	 * Resolves a single requirement in the component tree. Layouting is done top-down,
+	 * while updating and painting is done bottom-up.
+	 */
+	void Component::resolveRequirement(ComponentRequirement req, int lvl)
+	{
+		if((childRequirements & req) && !(req == COMPONENT_REQUIREMENT_LAYOUT))
 		{
-			if(child.component->visible)
+			fenster::platformAcquireMutex(childrenLock);
+			for(auto& child: children)
 			{
-				platformAcquireMutex(child.component->lock);
-				child.component->resolveRequirement(req, lvl + 1);
-				platformReleaseMutex(child.component->lock);
+				if(child.component->visible)
+				{
+					fenster::platformAcquireMutex(child.component->lock);
+					child.component->resolveRequirement(req, lvl + 1);
+					fenster::platformReleaseMutex(child.component->lock);
+				}
+			}
+			childRequirements &= ~req;
+			fenster::platformReleaseMutex(childrenLock);
+		}
+
+		fenster::platformAcquireMutex(lock);
+		if(requirements & req)
+		{
+			if(req == COMPONENT_REQUIREMENT_UPDATE)
+			{
+				update();
+			}
+			else if(req == COMPONENT_REQUIREMENT_LAYOUT)
+			{
+				layout();
+			}
+			else if(req == COMPONENT_REQUIREMENT_PAINT)
+			{
+				paint();
+				markDirty();
+			}
+
+			requirements &= ~req;
+		}
+		fenster::platformReleaseMutex(lock);
+
+		if((childRequirements & req) && req == COMPONENT_REQUIREMENT_LAYOUT)
+		{
+			fenster::platformAcquireMutex(childrenLock);
+			for(auto& child: children)
+			{
+				if(child.component->visible)
+				{
+					fenster::platformAcquireMutex(child.component->lock);
+					child.component->resolveRequirement(req, lvl + 1);
+					fenster::platformReleaseMutex(child.component->lock);
+				}
+			}
+			childRequirements &= ~req;
+			fenster::platformReleaseMutex(childrenLock);
+		}
+	}
+
+	void Component::addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id)
+	{
+		fenster::platformAcquireMutex(lock);
+
+		auto entry = new ComponentListenerEntry();
+		entry->info.target_thread = target_thread;
+		entry->info.component_id = id;
+		entry->type = eventType;
+		listeners.push_back(entry);
+
+		fenster::platformReleaseMutex(lock);
+	}
+
+	bool Component::callForListeners(fenster::ComponentEventType eventType,
+	                                 const std::function<void(EventListenerInfo&)>& func)
+	{
+		fenster::platformAcquireMutex(lock);
+
+		bool handled = false;
+		for(auto& entry: listeners)
+		{
+			if(entry->type == eventType)
+			{
+				func(entry->info);
+				handled = true;
 			}
 		}
-		childRequirements &= ~req;
-		platformReleaseMutex(childrenLock);
+
+		fenster::platformReleaseMutex(lock);
+		return handled;
 	}
 
-	platformAcquireMutex(lock);
-	if(requirements & req)
+	void Component::clearSurface()
 	{
-		if(req == COMPONENT_REQUIREMENT_UPDATE)
-		{
-			update();
-		}
-		else if(req == COMPONENT_REQUIREMENT_LAYOUT)
-		{
-			layout();
-		}
-		else if(req == COMPONENT_REQUIREMENT_PAINT)
-		{
-			paint();
-			markDirty();
-		}
+		auto cr = graphics.acquireContext();
+		if(!cr)
+			return;
 
-		requirements &= ~req;
+		cairo_save(cr);
+		cairo_set_source_rgba(cr, 0, 0, 0, 0);
+		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+		cairo_paint(cr);
+		cairo_restore(cr);
+
+		graphics.releaseContext();
 	}
-	platformReleaseMutex(lock);
 
-	if((childRequirements & req) && req == COMPONENT_REQUIREMENT_LAYOUT)
+	bool Component::isChildOf(Component* component)
 	{
-		platformAcquireMutex(childrenLock);
-		for(auto& child: children)
+		Component* next = parent;
+		while(next)
 		{
-			if(child.component->visible)
+			if(next == component)
 			{
-				platformAcquireMutex(child.component->lock);
-				child.component->resolveRequirement(req, lvl + 1);
-				platformReleaseMutex(child.component->lock);
+				return true;
 			}
+			next = next->getParent();
 		}
-		childRequirements &= ~req;
-		platformReleaseMutex(childrenLock);
-	}
-}
 
-void component_t::addListener(g_ui_component_event_type eventType, SYS_TID_T target_thread, g_ui_component_id id)
-{
-	platformAcquireMutex(lock);
-
-	auto entry = new component_listener_entry_t();
-	entry->info.target_thread = target_thread;
-	entry->info.component_id = id;
-	entry->type = eventType;
-	listeners.push_back(entry);
-
-	platformReleaseMutex(lock);
-}
-
-bool component_t::callForListeners(g_ui_component_event_type eventType,
-                                   const std::function<void(event_listener_info_t&)>& func)
-{
-	platformAcquireMutex(lock);
-
-	bool handled = false;
-	for(auto& entry: listeners)
-	{
-		if(entry->type == eventType)
-		{
-			func(entry->info);
-			handled = true;
-		}
+		return false;
 	}
 
-	platformReleaseMutex(lock);
-	return handled;
-}
-
-void component_t::clearSurface()
-{
-	auto cr = graphics.acquireContext();
-	if(!cr)
-		return;
-
-	cairo_save(cr);
-	cairo_set_source_rgba(cr, 0, 0, 0, 0);
-	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-	cairo_paint(cr);
-	cairo_restore(cr);
-
-	graphics.releaseContext();
-}
-
-bool component_t::isChildOf(component_t* component)
-{
-	component_t* next = parent;
-	while(next)
+	bool Component::getNumericProperty(int property, uint32_t* out)
 	{
-		if(next == component)
+		if(property == FENSTER_UI_PROPERTY_VISIBLE)
 		{
+			*out = this->isVisible() ? 1 : 0;
 			return true;
 		}
-		next = next->getParent();
-	}
-
-	return false;
-}
-
-bool component_t::getNumericProperty(int property, uint32_t* out)
-{
-	if(property == G_UI_PROPERTY_VISIBLE)
-	{
-		*out = this->isVisible() ? 1 : 0;
-		return true;
-	}
-	else if(property == G_UI_PROPERTY_FLEX_GAP)
-	{
-		auto flexManager = dynamic_cast<flex_layout_manager_t*>(getLayoutManager());
-		if(flexManager)
+		else if(property == FENSTER_UI_PROPERTY_FLEX_GAP)
 		{
-			*out = flexManager->getGap();
+			auto flexManager = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			if(flexManager)
+			{
+				*out = flexManager->getGap();
+				return true;
+			}
+			return false;
+		}
+
+
+		if(FocusableComponent::getNumericProperty(property, out))
+		{
 			return true;
 		}
 		return false;
 	}
 
-
-	if(focusable_component_t::getNumericProperty(property, out))
+	bool Component::setNumericProperty(int property, uint32_t value)
 	{
-		return true;
-	}
-	return false;
-}
-
-bool component_t::setNumericProperty(int property, uint32_t value)
-{
-	if(property == G_UI_PROPERTY_LAYOUT_MANAGER)
-	{
-		if(value == G_UI_LAYOUT_MANAGER_FLOW)
+		if(property == FENSTER_UI_PROPERTY_LAYOUT_MANAGER)
 		{
-			setLayoutManager(new flow_layout_manager_t());
+			if(value == FENSTER_LAYOUT_MANAGER_FLOW)
+			{
+				setLayoutManager(new FlowLayoutManager());
+				return true;
+			}
+			if(value == FENSTER_LAYOUT_MANAGER_GRID)
+			{
+				setLayoutManager(new GridLayoutManager());
+				return true;
+			}
+			if(value == FENSTER_LAYOUT_MANAGER_FLEX)
+			{
+				setLayoutManager(new FlexLayoutManager());
+				return true;
+			}
+		}
+		else if(property == FENSTER_UI_PROPERTY_VISIBLE)
+		{
+			setVisible(value == 1);
 			return true;
 		}
-		if(value == G_UI_LAYOUT_MANAGER_GRID)
+		else if(property == FENSTER_UI_PROPERTY_FLEX_GAP)
 		{
-			setLayoutManager(new grid_layout_manager_t());
+			auto flexManager = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			if(flexManager)
+			{
+				flexManager->setGap(value);
+				return true;
+			}
 			return true;
 		}
-		if(value == G_UI_LAYOUT_MANAGER_FLEX)
+
+		if(FocusableComponent::setNumericProperty(property, value))
 		{
-			setLayoutManager(new flex_layout_manager_t());
 			return true;
 		}
+		return false;
 	}
-	else if(property == G_UI_PROPERTY_VISIBLE)
+
+	bool Component::setStringProperty(int property, std::string text)
 	{
-		setVisible(value == 1);
-		return true;
-	}
-	else if(property == G_UI_PROPERTY_FLEX_GAP)
-	{
-		auto flexManager = dynamic_cast<flex_layout_manager_t*>(getLayoutManager());
-		if(flexManager)
+		if(property == FENSTER_UI_PROPERTY_TITLE)
 		{
-			flexManager->setGap(value);
-			return true;
+			if(auto titled = dynamic_cast<TitledComponent*>(this))
+			{
+				titled->setTitle(text);
+				return true;
+			}
 		}
-		return true;
+
+		return false;
 	}
 
-	if(focusable_component_t::setNumericProperty(property, value))
+	bool Component::getStringProperty(int property, std::string& out)
 	{
-		return true;
-	}
-	return false;
-}
-
-bool component_t::setStringProperty(int property, std::string text)
-{
-	if(property == G_UI_PROPERTY_TITLE)
-	{
-		if(auto titled = dynamic_cast<titled_component_t*>(this))
+		if(property == FENSTER_UI_PROPERTY_TITLE)
 		{
-			titled->setTitle(text);
-			return true;
+			if(auto titled = dynamic_cast<TitledComponent*>(this))
+			{
+				out = titled->getTitle();
+				return true;
+			}
 		}
+
+		return false;
 	}
 
-	return false;
-}
-
-bool component_t::getStringProperty(int property, std::string& out)
-{
-	if(property == G_UI_PROPERTY_TITLE)
+	bool Component::getChildReference(Component* child, ComponentChildReference& out)
 	{
-		if(auto titled = dynamic_cast<titled_component_t*>(this))
+		fenster::platformAcquireMutex(childrenLock);
+		for(auto& ref: children)
 		{
-			out = titled->getTitle();
-			return true;
+			if(ref.component == child)
+			{
+				out = ref;
+				fenster::platformReleaseMutex(childrenLock);
+				return true;
+			}
 		}
+		fenster::platformReleaseMutex(childrenLock);
+		return false;
 	}
-
-	return false;
-}
-
-bool component_t::getChildReference(component_t* child, component_child_reference_t& out)
-{
-	platformAcquireMutex(childrenLock);
-	for(auto& ref: children)
-	{
-		if(ref.component == child)
-		{
-			out = ref;
-			platformReleaseMutex(childrenLock);
-			return true;
-		}
-	}
-	platformReleaseMutex(childrenLock);
-	return false;
 }

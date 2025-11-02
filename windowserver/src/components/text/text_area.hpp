@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __TEXT_AREA__
-#define __TEXT_AREA__
+#ifndef FENSTER_SERVER_COMPONENTS_TEXTAREA
+#define FENSTER_SERVER_COMPONENTS_TEXTAREA
 
 #include "components/text/text_component.hpp"
 #include "components/titled_component.hpp"
@@ -14,98 +14,102 @@
 #include <libwindow/color_argb.hpp>
 #include <string>
 
-enum class text_area_visual_status_t : uint8_t
+namespace fensterserver
 {
-    NORMAL,
-    HOVERED
-};
-
-class text_area_t : virtual public text_component_t, virtual public titled_component_t
-{
-    std::string text;
-    text_area_visual_status_t visualStatus;
-    bool secure;
-
-    g_font* font;
-
-    int scrollX;
-    int fontSize;
-    g_color_argb textColor;
-    g_insets insets;
-
-    int cursor;
-    int marker;
-
-    g_layouted_text* viewModel;
-
-    bool shiftDown = false;
-
-    void loadDefaultFont();
-    void applyScroll();
-
-public:
-    text_area_t();
-    ~text_area_t() override = default;
-
-    void update() override;
-    void paint() override;
-
-    component_t* handleKeyEvent(key_event_t& e) override;
-    component_t* handleMouseEvent(mouse_event_t& e) override;
-
-    bool getNumericProperty(int property, uint32_t* out) override;
-    bool setNumericProperty(int property, uint32_t value) override;
-
-    void setText(std::string text) override;
-    std::string getText() override;
-
-    bool isFocusableDefault() const override
+    enum class TextAreaVisualStatus : uint8_t
     {
-        return true;
-    }
-    void setFocusedInternal(bool focused) override;
+        NORMAL,
+        HOVERED
+    };
 
-    virtual void setSecure(bool secure);
-
-    virtual bool isSecure()
+    class TextArea : virtual public TextComponent, virtual public TitledComponent
     {
-        return secure;
-    }
+        std::string text;
+        TextAreaVisualStatus visualStatus;
+        bool secure;
 
-    void setTitleInternal(std::string title) override
-    {
-        setText(title);
-    }
+        fenster::Font* font;
 
-    std::string getTitle() override
-    {
-        return getText();
-    }
+        int scrollX;
+        int fontSize;
+        fenster::ColorArgb textColor;
+        fenster::Insets insets;
 
-    void setCursor(int pos) override;
+        int cursor;
+        int marker;
 
-    int getCursor() override
-    {
-        return cursor;
-    }
+        fenster::LayoutedText* viewModel;
 
-    void setMarker(int pos) override;
+        bool shiftDown = false;
 
-    int getMarker() override
-    {
-        return marker;
-    }
+        void loadDefaultFont();
+        void applyScroll();
 
-    g_range getSelectedRange() override;
+    public:
+        TextArea();
+        ~TextArea() override = default;
 
-    void backspace(key_info_t& info);
+        void update() override;
+        void paint() override;
 
-    void insert(std::string text);
-    int viewToPosition(g_point p);
-    g_rectangle glyphToView(g_positioned_glyph& g);
-    g_point positionToUnscrolledCursorPoint(int pos);
-    g_rectangle positionToCursorBounds(int pos);
-    void setFont(g_font* f);
-};
+        Component* handleKeyEvent(KeyEvent& e) override;
+        Component* handleMouseEvent(MouseEvent& e) override;
+
+        bool getNumericProperty(int property, uint32_t* out) override;
+        bool setNumericProperty(int property, uint32_t value) override;
+
+        void setText(std::string text) override;
+        std::string getText() override;
+
+        bool isFocusableDefault() const override
+        {
+            return true;
+        }
+
+        void setFocusedInternal(bool focused) override;
+
+        virtual void setSecure(bool secure);
+
+        virtual bool isSecure()
+        {
+            return secure;
+        }
+
+        void setTitleInternal(std::string title) override
+        {
+            setText(title);
+        }
+
+        std::string getTitle() override
+        {
+            return getText();
+        }
+
+        void setCursor(int pos) override;
+
+        int getCursor() override
+        {
+            return cursor;
+        }
+
+        void setMarker(int pos) override;
+
+        int getMarker() override
+        {
+            return marker;
+        }
+
+        fenster::Range getSelectedRange() override;
+
+        void backspace(fenster::KeyInfo& info);
+
+        void insert(std::string text);
+        int viewToPosition(fenster::Point p);
+        fenster::Rectangle glyphToView(fenster::PositionedGlyph& g);
+        fenster::Point positionToUnscrolledCursorPoint(int pos);
+        fenster::Rectangle positionToCursorBounds(int pos);
+        void setFont(fenster::Font* f);
+    };
+}
 
 #endif

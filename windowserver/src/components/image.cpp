@@ -8,61 +8,63 @@
 
 #include <cairo/cairo.h>
 #include <sstream>
-#include "windowserver.hpp"
 
-image_t::image_t()
+namespace fensterserver
 {
-}
-
-void image_t::loadImage(std::string path)
-{
-	platformAcquireMutex(this->lock);
-	if(image)
+	Image::Image()
 	{
-		cairo_surface_destroy(image);
-		image = nullptr;
 	}
 
-	image = cairo_image_surface_create_from_png(path.c_str());
-	if(cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+	void Image::loadImage(std::string path)
 	{
-		platformLog("failed to load image: %s", path.c_str());
-		image = nullptr;
+		fenster::platformAcquireMutex(this->lock);
+		if(image)
+		{
+			cairo_surface_destroy(image);
+			image = nullptr;
+		}
+
+		image = cairo_image_surface_create_from_png(path.c_str());
+		if(cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+		{
+			fenster::platformLog("failed to load image: %s", path.c_str());
+			image = nullptr;
+		}
+		fenster::platformReleaseMutex(this->lock);
+
+		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
-	platformReleaseMutex(this->lock);
 
-	markFor(COMPONENT_REQUIREMENT_PAINT);
-}
-
-bool image_t::setStringProperty(int property, std::string text)
-{
-	if(property == G_UI_PROPERTY_IMAGE_SOURCE)
+	bool Image::setStringProperty(int property, std::string text)
 	{
-		this->loadImage(text);
-		return true;
+		if(property == FENSTER_UI_PROPERTY_IMAGE_SOURCE)
+		{
+			this->loadImage(text);
+			return true;
+		}
+		return false;
 	}
-	return false;
-}
 
-void image_t::paint()
-{
-	auto cr = graphics.acquireContext();
-	if(!cr)
-		return;
+	void Image::paint()
+	{
+		auto cr = graphics.acquireContext();
+		if(!cr)
+			return;
 
-	platformAcquireMutex(this->lock);
+		fenster::platformAcquireMutex(this->lock);
 
-	cairo_save(cr);
-	int imageWidth = cairo_image_surface_get_width(image);
-	int imageX = bounds.width / 2 - imageWidth / 2;
-	int imageY = 10;
-	cairo_set_source_surface(cr, image, imageX, imageY);
-	cairo_rectangle(cr, imageX, imageY, bounds.width, bounds.height);
-	cairo_fill(cr);
-	cairo_restore(cr);
+		cairo_save(cr);
+		int imageWidth = cairo_image_surface_get_width(image);
+		int imageX = bounds.width / 2 - imageWidth / 2;
+		int imageY = 10;
+		cairo_set_source_surface(cr, image, imageX, imageY);
+		cairo_rectangle(cr, imageX, imageY, bounds.width, bounds.height);
+		cairo_fill(cr);
+		cairo_restore(cr);
 
-	platformReleaseMutex(this->lock);
+		fenster::platformReleaseMutex(this->lock);
 
-	graphics.releaseContext();
+		graphics.releaseContext();
 
+	}
 }

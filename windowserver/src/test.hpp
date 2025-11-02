@@ -2,15 +2,16 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_TEST__
-#define __WINDOWSERVER_TEST__
+#ifndef FENSTER_SERVER_TEST
+#define FENSTER_SERVER_TEST
 
-#include "windowserver.hpp"
-
-class test_t
+namespace fensterserver
 {
-  public:
-    static void createTestComponents();
-};
+    class Test
+    {
+    public:
+        static void createTestComponents();
+    };
+}
 
 #endif

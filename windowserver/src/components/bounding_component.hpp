@@ -2,26 +2,29 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_BOUNDINGCOMPONENT__
-#define __WINDOWSERVER_COMPONENTS_BOUNDINGCOMPONENT__
+#ifndef FENSTER_SERVER_COMPONENTS_BOUNDINGCOMPONENT
+#define FENSTER_SERVER_COMPONENTS_BOUNDINGCOMPONENT
 
 #include <libwindow/metrics/rectangle.hpp>
 
-class component_t;
-
-class bounding_component_t
+namespace fensterserver
 {
-    component_t* self;
+    class Component;
 
-public:
-    explicit bounding_component_t(component_t* self) : self(self)
+    class BoundingComponent
     {
-    }
+        Component* self;
 
-    virtual ~bounding_component_t() = default;
+    public:
+        explicit BoundingComponent(Component* self) : self(self)
+        {
+        }
 
-    virtual void setBounds(const g_rectangle& bounds);
-    virtual void setBoundsInternal(const g_rectangle& bounds) = 0;
-};
+        virtual ~BoundingComponent() = default;
+
+        virtual void setBounds(const fenster::Rectangle& bounds);
+        virtual void setBoundsInternal(const fenster::Rectangle& bounds) = 0;
+    };
+}
 
 #endif

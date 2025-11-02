@@ -7,17 +7,21 @@
 
 #include "component.hpp"
 
-class g_scrollpane : virtual public g_component
+namespace fenster
 {
-public:
-    explicit g_scrollpane(g_ui_component_id id) : g_component(id)
-    {
-    }
+	class Scrollpane : virtual public Component
+	{
+	public:
+		explicit Scrollpane(ComponentId id) :
+			Component(id)
+		{
+		}
 
-    static g_scrollpane* create();
+		static Scrollpane* create();
 
-	bool setContent(g_component* content);
-	bool setFixed(bool width, bool height);
-};
+		bool setContent(Component* content);
+		bool setFixed(bool width, bool height);
+	};
+}
 
 #endif

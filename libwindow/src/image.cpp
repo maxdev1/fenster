@@ -5,12 +5,15 @@
 #include "libwindow/image.hpp"
 #include "libwindow/properties.hpp"
 
-g_image* g_image::create()
+namespace fenster
 {
-	return createComponent<g_image, G_UI_COMPONENT_TYPE_IMAGE>();
-}
+	Image* Image::create()
+	{
+		return createComponent<Image, FENSTER_COMPONENT_TYPE_IMAGE>();
+	}
 
-bool g_image::loadImage(std::string path)
-{
-	return setStringProperty(G_UI_PROPERTY_IMAGE_SOURCE, path);
+	bool Image::loadImage(std::string path)
+	{
+		return setStringProperty(FENSTER_UI_PROPERTY_IMAGE_SOURCE, path);
+	}
 }

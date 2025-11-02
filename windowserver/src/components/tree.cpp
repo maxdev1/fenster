@@ -9,78 +9,81 @@
 
 #include <libjson/json.hpp>
 
-tree_t::tree_t()
+namespace fensterserver
 {
-	auto layout = new stack_layout_manager_t();
-	this->component_t::setLayoutManager(layout);
-}
-
-void tree_t::setModelFromJson(std::string& model)
-{
-	for(auto child: this->acquireChildren())
+	Tree::Tree()
 	{
-		this->removeChild(child.component);
-		delete child.component;
-	}
-	this->releaseChildren();
-
-	g_json parser;
-	auto json = parser.parse(model);
-
-	if(!json.isObject())
-	{
-		platformLog("Tree model JSON was not an object");
-		return;
-	}
-	auto jsonObject = json.asObject();
-
-	auto rootNodes = jsonObject["rootNodes"];
-	if(!rootNodes.isArray())
-	{
-		platformLog("Property 'rootNodes' in JSON model must be an array");
-		return;
+		auto layout = new StackLayoutManager();
+		this->Component::setLayoutManager(layout);
 	}
 
-	for(auto node: rootNodes.asArray())
+	void Tree::setModelFromJson(std::string& model)
 	{
-		auto nodeComponent = this->createNodeComponent(node);
-		if(nodeComponent)
-			this->addChild(nodeComponent);
-	}
-}
-
-tree_node_t* tree_t::createNodeComponent(g_json_node& node)
-{
-	if(!node.isObject())
-	{
-		platformLog("Skipping non-object node in 'rootNodes'");
-		return nullptr;
-	}
-
-	auto nodeObject = node.asObject();
-
-	auto nodeComponent = new tree_node_t();
-
-	auto titleValue = nodeObject["title"];
-	if(titleValue.isString())
-		nodeComponent->setTitle(titleValue.asString());
-
-	// TODO Add ID
-
-	auto childrenValue = nodeObject["children"];
-	if(childrenValue.isArray())
-	{
-		for(auto child: childrenValue.asArray())
+		for(auto child: this->acquireChildren())
 		{
-			if(!child.isObject())
-				continue;
+			this->removeChild(child.component);
+			delete child.component;
+		}
+		this->releaseChildren();
 
-			auto childComponent = this->createNodeComponent(child);
-			if(childComponent)
-				nodeComponent->addChild(childComponent);
+		json::Json parser;
+		auto json = parser.parse(model);
+
+		if(!json.isObject())
+		{
+			fenster::platformLog("Tree model JSON was not an object");
+			return;
+		}
+		auto jsonObject = json.asObject();
+
+		auto rootNodes = jsonObject["rootNodes"];
+		if(!rootNodes.isArray())
+		{
+			fenster::platformLog("Property 'rootNodes' in JSON model must be an array");
+			return;
+		}
+
+		for(auto node: rootNodes.asArray())
+		{
+			auto nodeComponent = this->createNodeComponent(node);
+			if(nodeComponent)
+				this->addChild(nodeComponent);
 		}
 	}
 
+	TreeNode* Tree::createNodeComponent(json::JsonNode& node)
+	{
+		if(!node.isObject())
+		{
+			fenster::platformLog("Skipping non-object node in 'rootNodes'");
+			return nullptr;
+		}
 
-	return nodeComponent;
+		auto nodeObject = node.asObject();
+
+		auto nodeComponent = new TreeNode();
+
+		auto titleValue = nodeObject["title"];
+		if(titleValue.isString())
+			nodeComponent->setTitle(titleValue.asString());
+
+		// TODO Add ID
+
+		auto childrenValue = nodeObject["children"];
+		if(childrenValue.isArray())
+		{
+			for(auto child: childrenValue.asArray())
+			{
+				if(!child.isObject())
+					continue;
+
+				auto childComponent = this->createNodeComponent(child);
+				if(childComponent)
+					nodeComponent->addChild(childComponent);
+			}
+		}
+
+
+		return nodeComponent;
+	}
 }

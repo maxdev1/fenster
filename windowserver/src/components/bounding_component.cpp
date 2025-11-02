@@ -5,16 +5,19 @@
 #include "components/bounding_component.hpp"
 #include "components/component.hpp"
 
-void bounding_component_t::setBounds(const g_rectangle& bounds)
+namespace fensterserver
 {
-	setBoundsInternal(bounds);
-
-	self->callForListeners(G_UI_COMPONENT_EVENT_TYPE_BOUNDS, [bounds](event_listener_info_t& info)
+	void BoundingComponent::setBounds(const fenster::Rectangle& bounds)
 	{
-		g_ui_component_bounds_event bounds_event;
-		bounds_event.header.type = G_UI_COMPONENT_EVENT_TYPE_BOUNDS;
-		bounds_event.header.component_id = info.component_id;
-		bounds_event.bounds = bounds;
-		platformSendMessage(info.target_thread, &bounds_event, sizeof(g_ui_component_bounds_event), SYS_TX_NONE);
-	});
+		setBoundsInternal(bounds);
+
+		self->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_BOUNDS, [bounds](EventListenerInfo& info)
+		{
+			fenster::ComponentBoundsEvent bounds_event;
+			bounds_event.header.type = FENSTER_COMPONENT_EVENT_TYPE_BOUNDS;
+			bounds_event.header.component_id = info.component_id;
+			bounds_event.bounds = bounds;
+			platformSendMessage(info.target_thread, &bounds_event, sizeof(fenster::ComponentBoundsEvent), SYS_TX_NONE);
+		});
+	}
 }

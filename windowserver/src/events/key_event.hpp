@@ -2,20 +2,25 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_EVENTS_KEYEVENT__
-#define __WINDOWSERVER_EVENTS_KEYEVENT__
+#ifndef FENSTER_SERVER_EVENTS_KEYEVENT
+#define FENSTER_SERVER_EVENTS_KEYEVENT
 
 #include "events/event.hpp"
 #include <libwindow/input/key_info.hpp>
 
-class key_event_t : public event_t
+namespace fensterserver
 {
-  public:
-	key_info_t info;
+    class KeyEvent : public Event
+    {
+    public:
+        fenster::KeyInfo info;
 
-	virtual ~key_event_t() {}
+        virtual ~KeyEvent()
+        {
+        }
 
-	virtual component_t *visit(component_t *component);
-};
+        virtual Component* visit(Component* component);
+    };
+}
 
 #endif

@@ -2,25 +2,25 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __FLOW_LAYOUT_MANAGER__
-#define __FLOW_LAYOUT_MANAGER__
+#ifndef FENSTER_SERVER_LAYOUT_FLOWLAYOUTMANAGER
+#define FENSTER_SERVER_LAYOUT_FLOWLAYOUTMANAGER
 
 #include "layout_manager.hpp"
 
-/**
- *
- */
-class flow_layout_manager_t : public layout_manager_t
+namespace fensterserver
 {
-    g_insets padding;
-
-public:
-    virtual void layout();
-
-    void setPadding(g_insets padding) override
+    class FlowLayoutManager : public LayoutManager
     {
-        this->padding = padding;
-    }
-};
+        fenster::Insets padding;
+
+    public:
+        virtual void layout();
+
+        void setPadding(fenster::Insets padding) override
+        {
+            this->padding = padding;
+        }
+    };
+}
 
 #endif

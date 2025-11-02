@@ -8,17 +8,21 @@
 #include "component.hpp"
 #include "titled_component.hpp"
 
-class g_textfield : virtual public g_component, virtual public g_titled_component
+namespace fenster
 {
-public:
-    explicit g_textfield(g_ui_component_id id) : g_component(id), g_titled_component(id)
-    {
-    }
+	class TextField : virtual public Component, virtual public TitledComponent
+	{
+	public:
+		explicit TextField(ComponentId id) :
+			Component(id), TitledComponent(id)
+		{
+		}
 
-    static g_textfield* create();
+		static TextField* create();
 
-    void setSecure(bool secure);
-    bool isSecure();
-};
+		void setSecure(bool secure);
+		bool isSecure();
+	};
+}
 
 #endif

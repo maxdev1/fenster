@@ -2,29 +2,31 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef __WINDOWSERVER_COMPONENTS_TEXT_MOVE_DEFAULTCARETMOVESTRATEGY__
-#define __WINDOWSERVER_COMPONENTS_TEXT_MOVE_DEFAULTCARETMOVESTRATEGY__
+#ifndef FENSTER_SERVER_COMPONENTS_TEXT_MOVE_DEFAULTCARETMOVESTRATEGY
+#define FENSTER_SERVER_COMPONENTS_TEXT_MOVE_DEFAULTCARETMOVESTRATEGY
 
 #include "components/text/move/caret_move_strategy.hpp"
 #include <libwindow/input/key_info.hpp>
 
-class default_caret_move_strategy_t : public caret_move_strategy_t
+namespace fensterserver
 {
-  private:
-    default_caret_move_strategy_t()
+    class DefaultCaretMoveStrategy : public CaretMoveStrategy
     {
-    }
+        DefaultCaretMoveStrategy()
+        {
+        }
 
-  public:
-    virtual ~default_caret_move_strategy_t()
-    {
-    }
+    public:
+        virtual ~DefaultCaretMoveStrategy()
+        {
+        }
 
-    virtual void moveCaret(text_component_t* component, caret_direction_t direction, key_info_t& keyInfo);
+        virtual void moveCaret(TextComponent* component, CaretDirection direction, fenster::KeyInfo& keyInfo);
 
-    virtual int calculateSkip(std::string text, int position, caret_direction_t direction);
+        virtual int calculateSkip(std::string text, int position, CaretDirection direction);
 
-    static default_caret_move_strategy_t* getInstance();
-};
+        static DefaultCaretMoveStrategy* getInstance();
+    };
+}
 
 #endif
