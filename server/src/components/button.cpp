@@ -37,30 +37,30 @@ namespace fensterserver
 			{FENSTER_BUTTON_STYLE_DEFAULT, {
 					 {
 							 DEFAULT, {
-									 {BACKGROUND, RGB(248, 248, 248)},
-									 {BORDER, RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, RGB(84, 149, 255)}
+									 {BACKGROUND, _RGB(248, 248, 248)},
+									 {BORDER, _RGB(200, 200, 200)},
+									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
 							 HOVER, {
-									 {BACKGROUND, RGB(255, 255, 255)},
-									 {BORDER, RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, RGB(84, 149, 255)}
+									 {BACKGROUND, _RGB(255, 255, 255)},
+									 {BORDER, _RGB(193, 193, 193)},
+									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
 							 PRESSED, {
-									 {BACKGROUND, RGB(230, 230, 230)},
-									 {BORDER, RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, RGB(84, 149, 255)}
+									 {BACKGROUND, _RGB(230, 230, 230)},
+									 {BORDER, _RGB(193, 193, 193)},
+									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
 							 DISABLED, {
-									 {BACKGROUND, RGB(249, 249, 249)},
-									 {BORDER, RGB(234, 234, 234)},
-									 {BORDER_FOCUSED, RGB(234, 234, 234)}
+									 {BACKGROUND, _RGB(249, 249, 249)},
+									 {BORDER, _RGB(234, 234, 234)},
+									 {BORDER_FOCUSED, _RGB(234, 234, 234)}
 							 }
 					 }
 			 }},
@@ -74,16 +74,16 @@ namespace fensterserver
 					 },
 					 {
 							 HOVER, {
-									 {BACKGROUND, RGB(255, 255, 255)},
-									 {BORDER, RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, RGB(84, 149, 255)}
+									 {BACKGROUND, _RGB(255, 255, 255)},
+									 {BORDER, _RGB(193, 193, 193)},
+									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
 							 PRESSED, {
-									 {BACKGROUND, RGB(230, 230, 230)},
-									 {BORDER, RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, RGB(84, 149, 255)}
+									 {BACKGROUND, _RGB(230, 230, 230)},
+									 {BORDER, _RGB(193, 193, 193)},
+									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
@@ -103,7 +103,7 @@ namespace fensterserver
 		enabled = true;
 		Component::addChild(&label, COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL);
 		label.setAlignment(fenster::TextAlignment::CENTER);
-		label.setColor(RGB(10, 10, 15));
+		label.setColor(_RGB(10, 10, 15));
 	}
 
 	/**
@@ -172,9 +172,9 @@ namespace fensterserver
 		cairo_arc(cr, offsetX + borderRadius, offsetY + borderRadius, borderRadius, 180 * degrees, 270 * degrees);
 		cairo_close_path(cr);
 
-		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(background));
+		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(background));
 		cairo_fill_preserve(cr);
-		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(border));
+		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(border));
 		cairo_set_line_width(cr, 1);
 		cairo_stroke(cr);
 
@@ -242,7 +242,7 @@ namespace fensterserver
 	void Button::setEnabled(bool enabled)
 	{
 		this->enabled = enabled;
-		label.setColor(enabled ? RGB(10, 10, 15) : RGB(80, 80, 80));
+		label.setColor(enabled ? _RGB(10, 10, 15) : _RGB(80, 80, 80));
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 

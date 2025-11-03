@@ -15,9 +15,26 @@ namespace fensterserver
     class StackLayoutManager : public LayoutManager
     {
         bool horizontal = false;
+        fenster::Insets padding;
+        int space = 0;
 
     public:
-        virtual void layout();
+        StackLayoutManager() = default;
+        explicit StackLayoutManager(int space) : space(space)
+        {
+        }
+
+        void layout() override;
+
+        void setPadding(fenster::Insets insets) override
+        {
+            padding = insets;
+        }
+
+        void setSpace(int space)
+        {
+            this->space = space;
+        }
 
         void setHorizontal(bool horizontal)
         {

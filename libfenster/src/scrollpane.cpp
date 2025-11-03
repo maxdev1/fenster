@@ -6,20 +6,19 @@
 
 namespace fenster
 {
-	Scrollpane* Scrollpane::create()
+	ScrollPane* ScrollPane::create()
 	{
-		return createComponent<Scrollpane, FENSTER_COMPONENT_TYPE_SCROLLPANE>();
+		return createComponent<ScrollPane, FENSTER_COMPONENT_TYPE_SCROLLPANE>();
 	}
 
-
-	bool Scrollpane::setContent(Component* content)
+	bool ScrollPane::setContent(Component* content)
 	{
 		if(!ApplicationInitialized)
 			return false;
 
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
-		CommandScrollpaneSetContent request;
+		CommandScrollPaneSetContent request;
 		request.header.id = FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT;
 		request.scrollpane = this->id;
 		request.content = content->getId();
@@ -36,14 +35,14 @@ namespace fenster
 		return false;
 	}
 
-	bool Scrollpane::setFixed(bool width, bool height)
+	bool ScrollPane::setFixed(bool width, bool height)
 	{
 		if(!ApplicationInitialized)
 			return false;
 
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
-		CommandScrollpaneSetFixed request;
+		CommandScrollPaneSetFixed request;
 		request.header.id = FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED;
 		request.scrollpane = this->id;
 		request.width = width;

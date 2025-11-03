@@ -26,19 +26,13 @@ namespace fensterserver
     /**
      * modes used when resizing windows
      */
-    enum window_resize_mode_t
-    {
-        RESIZE_MODE_NONE,
-        RESIZE_MODE_MOVE,
-        RESIZE_MODE_TOP,
-        RESIZE_MODE_TOP_RIGHT,
-        RESIZE_MODE_RIGHT,
-        RESIZE_MODE_BOTTOM_RIGHT,
-        RESIZE_MODE_BOTTOM,
-        RESIZE_MODE_BOTTOM_LEFT,
-        RESIZE_MODE_LEFT,
-        RESIZE_MODE_TOP_LEFT
-    };
+    typedef uint16_t WindowResizeMode;
+#define RESIZE_MODE_NONE 0b00000000
+#define RESIZE_MODE_MOVE 0b00000001
+#define RESIZE_MODE_TOP 0b00000010
+#define RESIZE_MODE_RIGHT 0b00000100
+#define RESIZE_MODE_BOTTOM 0b00001000
+#define RESIZE_MODE_LEFT 0b00010000
 
     /**
      *
@@ -60,11 +54,14 @@ namespace fensterserver
 
         fenster::Point pressPoint;
         fenster::Rectangle pressBounds;
-        window_resize_mode_t resizeMode;
+        WindowResizeMode resizeMode;
 
         int titleHeight;
         int shadowSize;
         fenster::Rectangle crossBounds;
+
+        void dragOrResize(MouseEvent& me);
+        void startDragOrResize(MouseEvent& me);
 
     public:
         Window();
@@ -96,6 +93,8 @@ namespace fensterserver
                       ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
 
         void layout() override;
+        void paintBackground(cairo_t* cr);
+        void paintControls(cairo_t* cr);
         void paint() override;
 
         Component* handleMouseEvent(MouseEvent& e) override;

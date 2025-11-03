@@ -17,47 +17,61 @@ namespace fensterserver
 
 		if(horizontal)
 		{
-			int x = 0;
+			int x = padding.left;
 			int highestHeight = 0;
 
 			auto& children = component->acquireChildren();
+			bool first = true;
 			for(auto& childRef: children)
 			{
+				if(first)
+					first = false;
+				else
+					x += space;
+
 				Component* child = childRef.component;
 				if(!child->isVisible())
 					continue;
 				fenster::Dimension childSize = child->getEffectivePreferredSize();
 
-				child->setBounds(fenster::Rectangle(x, 0, childSize.width, childSize.height));
+				child->setBounds(fenster::Rectangle(x, padding.top, childSize.width, childSize.height));
 				x += childSize.width;
 
 				highestHeight = childSize.height > highestHeight ? childSize.height : highestHeight;
 			}
 			component->releaseChildren();
 
-			component->setPreferredSize(fenster::Dimension(x, highestHeight));
+			component->setPreferredSize(
+					fenster::Dimension(x + padding.right, padding.top + highestHeight + padding.bottom));
 		}
 		else
 		{
-			int y = 0;
+			int y = padding.top;
 			int widestWidth = 0;
 
 			auto& children = component->acquireChildren();
+			bool first = true;
 			for(auto& childRef: children)
 			{
+				if(first)
+					first = false;
+				else
+					y += space;
+
 				Component* child = childRef.component;
 				if(!child->isVisible())
 					continue;
 				fenster::Dimension childSize = child->getEffectivePreferredSize();
 
-				child->setBounds(fenster::Rectangle(0, y, childSize.width, childSize.height));
+				child->setBounds(fenster::Rectangle(padding.left, y, childSize.width, childSize.height));
 				y += childSize.height;
 
 				widestWidth = childSize.width > widestWidth ? childSize.width : widestWidth;
 			}
 			component->releaseChildren();
 
-			component->setPreferredSize(fenster::Dimension(widestWidth, y));
+			component->setPreferredSize(
+					fenster::Dimension(padding.left + widestWidth + padding.right, y + padding.bottom));
 		}
 	}
 }

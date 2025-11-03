@@ -104,6 +104,7 @@ namespace fenster
 #define FENSTER_COMPONENT_EVENT_TYPE_WINDOWS 7
 #define FENSTER_COMPONENT_EVENT_TYPE_TITLE 8
 #define FENSTER_COMPONENT_EVENT_TYPE_VISIBLE 9
+#define FENSTER_COMPONENT_EVENT_TYPE_CHECKED 10
 
 	/**
 	 *
@@ -404,17 +405,17 @@ namespace fenster
 	} __attribute__((packed)) CommandLayoutSetPadding;
 
 	/**
-	 * Scrollpane content
+	 * ScrollPane content
 	 */
 	typedef struct
 	{
 		MessageHeader header;
 		ComponentId scrollpane;
 		ComponentId content;
-	} __attribute__((packed)) CommandScrollpaneSetContent;
+	} __attribute__((packed)) CommandScrollPaneSetContent;
 
 	/**
-	 * Scrollpane fixed sizes
+	 * ScrollPane fixed sizes
 	 */
 	typedef struct
 	{
@@ -422,7 +423,7 @@ namespace fenster
 		ComponentId scrollpane;
 		bool width;
 		bool height;
-	} __attribute__((packed)) CommandScrollpaneSetFixed;
+	} __attribute__((packed)) CommandScrollPaneSetFixed;
 
 	/**
 	 * Event structures
@@ -444,6 +445,12 @@ namespace fenster
 		ComponentEventHeader header;
 		Rectangle bounds;
 	} __attribute__((packed)) ComponentBoundsEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		bool checked;
+	} __attribute__((packed)) ComponentCheckedEvent;
 
 	typedef struct
 	{

@@ -94,13 +94,13 @@ namespace fensterserver
 		stateLabel->setAlignment(fenster::TextAlignment::RIGHT);
 		stateLabel->setVisible(debugOn);
 		stateLabel->setBounds(fenster::Rectangle(10, screenBounds.height - 100, screenBounds.width - 20, 30));
-		instance()->stateLabel->setColor(RGB(255, 255, 255));
+		instance()->stateLabel->setColor(_RGB(255, 255, 255));
 		screen->addChild(stateLabel);
 
-#ifndef _GHOST_
+#ifdef _WIN32
 		Panel* backgroundPanel = new Panel();
 		backgroundPanel->setBounds(screenBounds);
-		backgroundPanel->setBackground(RGB(0,0,0));
+		backgroundPanel->setBackground(_RGB(0,0,0));
 		screen->addChild(backgroundPanel);
 #endif
 

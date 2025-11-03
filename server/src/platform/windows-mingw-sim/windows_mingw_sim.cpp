@@ -2,8 +2,10 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include <server.hpp>
 #ifdef _WIN32
+
+#include "windows_mingw_sim.hpp"
+
 #include <server.hpp>
 #include <components/cursor.hpp>
 #include <libfenster/input/key_info.hpp>
@@ -13,7 +15,7 @@
 #include <cairo/cairo-win32.h>
 #include <dirent.h>
 
-static const int WIDTH = 800, HEIGHT = 600;
+static const int WIDTH = 1600, HEIGHT = 1200;
 static unsigned int pixels[WIDTH * HEIGHT];
 static BITMAPINFO bmi;
 static HWND hwnd;
@@ -21,15 +23,8 @@ static bool running = true;
 
 namespace fensterserver
 {
-	fensterserver::Server* server = nullptr;
-
-	void platformServerThread();
+	Server* server = nullptr;
 }
-
-#define GET_WHEEL_DELTA_WPARAM(wParam)  ((short)HIWORD(wParam))
-#define GET_KEYSTATE_WPARAM(wParam)     (LOWORD(wParam))
-#define GET_X_LPARAM(lParam)            ((int)(short)LOWORD(lParam))
-#define GET_Y_LPARAM(lParam)            ((int)(short)HIWORD(lParam))
 
 void CenterWindow(HWND hwnd)
 {
@@ -72,22 +67,30 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				running = false;
 				DestroyWindow(h);
 			}
-			else if(w == VK_SHIFT)
+
+			auto key = fensterserver::platformKeyForVKey(w);
+			if(key == "KEY_SHIFT_L")
 			{
 				shift = true;
 			}
-			else if(w == VK_CONTROL)
+			else if(key == "KEY_CTRL_L")
 			{
 				ctrl = true;
 			}
-			else if(w == VK_LMENU || w == VK_RMENU)
+			else if(key == "KEY_ALT_L")
 			{
 				alt = true;
 			}
-			printf("KEYDOWN %i, %c%c%c\n", w, shift ? 's' : ' ', ctrl ? 'c' : ' ', alt ? 'a' : ' ');
+
+			if(ctrl && key == "KEY_Q" )
+			{
+				fensterserver::Server::setDebug(!fensterserver::Server::isDebug());
+				return 0;
+			}
 
 			fenster::KeyInfo info;
-			info.key = "KEY_B";
+			info.pressed = true;
+			info.key = key;
 			info.ctrl = ctrl;
 			info.shift = shift;
 			info.alt = alt;
@@ -103,24 +106,24 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				running = false;
 				DestroyWindow(h);
 			}
-			else if(w == VK_SHIFT)
+
+			auto key = fensterserver::platformKeyForVKey(w);
+			if(key == "KEY_SHIFT_L")
 			{
 				shift = false;
 			}
-			else if(w == VK_CONTROL)
+			else if(key == "KEY_CTRL_L")
 			{
 				ctrl = false;
 			}
-			else if(w == VK_LMENU || w == VK_RMENU)
+			else if(key == "KEY_ALT_L")
 			{
 				alt = false;
 			}
 
-			printf("KEYUP %i, %c%c%c\n", w, shift ? 's' : ' ', ctrl ? 'c' : ' ', alt ? 'a' : ' ');
-
 			fenster::KeyInfo info;
 			info.scancode = w;
-			info.key = "KEY_B";
+			info.key = key;
 			info.ctrl = ctrl;
 			info.shift = shift;
 			info.alt = alt;
@@ -188,6 +191,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			int steps = delta / WHEEL_DELTA;
 
 			fensterserver::Cursor::nextScroll += -steps;
+			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		}
 	}
@@ -232,19 +236,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE, LPSTR, int)
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-
-		// cairo_save(cr);
-		// cairo_set_source_rgb(cr, 0.125, 0.125, 0.125);
-		// cairo_paint(cr); // background
-		//
-		// int size = 20;
-		// cairo_rectangle(cr, mouseX - size, mouseY - size, size * 2, size * 2);
-		// if(mouseDown)
-		// 	cairo_set_source_rgb(cr, 0, 1, 0);
-		// else
-		// 	cairo_set_source_rgb(cr, 1, 0, 0);
-		// cairo_fill(cr);
-		// cairo_restore(cr);
 
 		StretchDIBits(dc, 0, 0, WIDTH, HEIGHT, 0, 0, WIDTH, HEIGHT,
 		              pixels, &bmi, DIB_RGB_COLORS, SRCCOPY);
@@ -297,12 +288,6 @@ namespace fensterserver
 	VideoOutput* platformCreateVideoOutput()
 	{
 		return new windows_video_output_t();
-	}
-
-	char platformCharForKey(fenster::KeyInfo key)
-	{
-		printf("get char for key %s\n", key.key.c_str());
-		return 'A';
 	}
 
 	bool platformInitializeKeyboardLayout(std::string layout)

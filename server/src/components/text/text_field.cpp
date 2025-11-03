@@ -18,7 +18,7 @@ namespace fensterserver
 	TextField::TextField() :
 		text(""), cursor(0), marker(0), scrollX(0), secure(false),
 		visualStatus(TextFieldVisualStatus::NORMAL), fontSize(14),
-		textColor(RGB(0, 0, 0)), insets(fenster::Insets(5, 5, 5, 5))
+		textColor(_RGB(0, 0, 0)), insets(fenster::Insets(5, 5, 5, 5))
 	{
 		caretMoveStrategy = DefaultCaretMoveStrategy::getInstance();
 		viewModel = fenster::TextLayouter::getInstance()->initializeBuffer();
@@ -90,17 +90,17 @@ namespace fensterserver
 		fenster::ColorArgb borderColor;
 		if(focused)
 		{
-			borderColor = RGB(55, 155, 255);
+			borderColor = _RGB(55, 155, 255);
 		}
 		else if(visualStatus == TextFieldVisualStatus::HOVERED)
 		{
-			borderColor = RGB(150, 150, 150);
+			borderColor = _RGB(150, 150, 150);
 		}
 		else
 		{
-			borderColor = RGB(180, 180, 180);
+			borderColor = _RGB(180, 180, 180);
 		}
-		cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(borderColor));
+		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(borderColor));
 		cairo_rectangle(cr, 0.5, 0.5, bounds.width - 1, bounds.height - 1);
 		cairo_set_line_width(cr, 1.0);
 		cairo_stroke(cr);
@@ -136,13 +136,13 @@ namespace fensterserver
 				fenster::ColorArgb color = textColor;
 				if(first != second && pos >= first && pos < second)
 				{
-					cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(55, 155, 255)));
+					cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(_RGB(55, 155, 255)));
 					fenster::Rectangle before = positionToCursorBounds(pos);
 					fenster::Rectangle after = positionToCursorBounds(pos + 1);
 					cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
 					cairo_fill(cr);
 
-					color = RGB(255, 255, 255);
+					color = _RGB(255, 255, 255);
 				}
 			}
 		}
@@ -156,11 +156,11 @@ namespace fensterserver
 			fenster::ColorArgb color = textColor;
 			if(focused && first != second && pos >= first && pos < second)
 			{
-				color = RGB(255, 255, 255);
+				color = _RGB(255, 255, 255);
 			}
 
 			cairo_save(cr);
-			cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(color));
+			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(color));
 			cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
 			cairo_glyph_path(cr, g.glyph, g.glyph_count);
 			cairo_fill(cr);
@@ -171,7 +171,7 @@ namespace fensterserver
 		// Paint cursor
 		if(focused)
 		{
-			cairo_set_source_rgba(cr, G_COLOR_ARGB_TO_FPARAMS(RGB(60, 60, 60)));
+			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(_RGB(60, 60, 60)));
 			auto cursorBounds = positionToCursorBounds(cursor);
 			cairo_rectangle(cr, cursorBounds.x, cursorBounds.y, cursorBounds.width, cursorBounds.height);
 			cairo_fill(cr);

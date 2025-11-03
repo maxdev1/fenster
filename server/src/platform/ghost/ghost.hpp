@@ -4,9 +4,11 @@
 
 #ifndef __PLATFORM_GHOST__
 #define __PLATFORM_GHOST__
+#ifdef _GHOST_
 
 void inputReceiverInitialize();
 void inputReceiverStartReceiveKeyEvents();
 void inputReceiverStartReceiveMouseEvents();
 
+#endif
 #endif

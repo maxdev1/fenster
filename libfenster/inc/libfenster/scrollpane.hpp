@@ -9,15 +9,15 @@
 
 namespace fenster
 {
-	class Scrollpane : virtual public Component
+	class ScrollPane : virtual public Component
 	{
 	public:
-		explicit Scrollpane(ComponentId id) :
+		explicit ScrollPane(ComponentId id) :
 			Component(id)
 		{
 		}
 
-		static Scrollpane* create();
+		static ScrollPane* create();
 
 		bool setContent(Component* content);
 		bool setFixed(bool width, bool height);

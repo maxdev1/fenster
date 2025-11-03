@@ -2,19 +2,20 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "components/checkbox.hpp"
+#include "components/radio_button.hpp"
 #include "events/mouse_event.hpp"
+#include <cmath>
 
 namespace fensterserver
 {
-	Checkbox::Checkbox() :
-		checked(false), boxSize(FENSTER_CHECKBOX_DEFAULT_BOX_SIZE), boxTextGap(FENSTER_CHECKBOX_DEFAULT_TEXT_GAP),
-		hovered(false), pressed(false)
+	RadioButton::RadioButton() :
+		checked(false), boxSize(FENSTER_RADIOBUTTON_DEFAULT_CIRCLE_SIZE),
+		boxTextGap(FENSTER_RADIOBUTTON_DEFAULT_TEXT_GAP), hovered(false), pressed(false)
 	{
 		Component::addChild(&label, COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL);
 	}
 
-	void Checkbox::handleBoundChanged(const fenster::Rectangle& oldBounds)
+	void RadioButton::handleBoundChanged(const fenster::Rectangle& oldBounds)
 	{
 		fenster::Rectangle unpositioned = getBounds();
 		unpositioned.x = boxSize + boxTextGap;
@@ -22,7 +23,7 @@ namespace fensterserver
 		this->label.setBounds(unpositioned);
 	}
 
-	void Checkbox::layout()
+	void RadioButton::layout()
 	{
 		fenster::Dimension preferredSize = label.getPreferredSize();
 		if(preferredSize.height < boxSize + boxTextGap)
@@ -33,42 +34,42 @@ namespace fensterserver
 		setPreferredSize(preferredSize);
 	}
 
-	void Checkbox::paint()
+	void RadioButton::paint()
 	{
 		auto cr = graphics.acquireContext();
 		if(!cr)
 			return;
 
+		double cx = boxSize / 2.0 + 1;
+		double cy = boxSize / 2.0 + 1;
+		double rOuter = (boxSize - 1.0) / 2.0;
+
+		// background circle
 		auto background = (pressed ? _RGB(240, 240, 240) : (hovered ? _RGB(245, 245, 255) : _RGB(255, 255, 255)));
 		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(background));
-		cairo_rectangle(cr, 0, 0, boxSize, boxSize);
+		cairo_arc(cr, cx, cy, rOuter, 0, 2 * M_PI);
 		cairo_fill(cr);
 
+		// border circle
 		auto border = ((hovered || pressed) ? _RGB(140, 140, 150) : _RGB(160, 160, 170));
 		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(border));
-		cairo_rectangle(cr, 0.5, 0.5, boxSize, boxSize);
 		cairo_set_line_width(cr, 1.0);
+		cairo_arc(cr, cx, cy, rOuter, 0, 2 * M_PI);
 		cairo_stroke(cr);
 
+		// checked state
 		if(checked)
 		{
+			double rInner = rOuter * 0.55;
 			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(_RGB(25, 125, 255)));
-			cairo_set_line_width(cr, 2.2);
-			cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-
-			int pad = 4;
-
-			cairo_move_to(cr, pad, boxSize * 0.55);
-			cairo_line_to(cr, boxSize * 0.40, boxSize - pad);
-			cairo_line_to(cr, boxSize - pad, pad + 2);
-
-			cairo_stroke(cr);
+			cairo_arc(cr, cx, cy, rInner, 0, 2 * M_PI);
+			cairo_fill(cr);
 		}
 
 		graphics.releaseContext();
 	}
 
-	Component* Checkbox::handleMouseEvent(MouseEvent& me)
+	Component* RadioButton::handleMouseEvent(MouseEvent& me)
 	{
 		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
 		{
@@ -94,16 +95,26 @@ namespace fensterserver
 			bounds.y = 0;
 			if(me.type == FENSTER_MOUSE_EVENT_RELEASE && bounds.contains(me.position))
 			{
-				setChecked(!checked, false);
+				setChecked(true, false);
 			}
 		}
 		return this;
 	}
 
-	void Checkbox::setCheckedInternal(bool value)
+	void RadioButton::setCheckedInternal(bool value)
 	{
 		this->checked = value;
 		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	void RadioButton::setTitleInternal(std::string title)
+	{
+		this->label.setTitle(title);
+	}
+
+	std::string RadioButton::getTitle()
+	{
+		return this->label.getTitle();
 	}
 
 }

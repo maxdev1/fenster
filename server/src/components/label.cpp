@@ -15,7 +15,7 @@ namespace fensterserver
 	{
 		setFont(fenster::FontLoader::getDefault());
 		alignment = fenster::TextAlignment::LEFT;
-		color = RGB(0, 0, 0);
+		color = _RGB(0, 0, 0);
 		graphics.resize(1, 1);
 	}
 

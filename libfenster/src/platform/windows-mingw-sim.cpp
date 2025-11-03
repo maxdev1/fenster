@@ -16,7 +16,8 @@ namespace fenster
 		return NULL;
 	}
 
-	std::string platformGetFontPath(std::string fontName) {
+	std::string platformGetFontPath(std::string fontName)
+	{
 		return "../../sysroot/system/graphics/fonts/" + fontName + ".ttf";
 	}
 
@@ -52,9 +53,22 @@ namespace fenster
 		}
 	}
 
-	void platformAcquireMutexTimeout(SYS_MUTEX_T mutex, uint32_t timeout)
+	void platformAcquireMutexTimeout(SYS_MUTEX_T m, uint32_t timeoutMs)
 	{
-		// TODO
+		if (m->reentrant) {
+			uint32_t waited = 0;
+			while (true) {
+				if (TryEnterCriticalSection(&m->cs))
+					return;
+
+				Sleep(1);
+
+				if (++waited >= timeoutMs)
+					return;
+			}
+		} else {
+			WaitForSingleObject(m->handle, timeoutMs);
+		}
 	}
 
 	void platformReleaseMutex(SYS_MUTEX_T m)

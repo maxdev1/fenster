@@ -455,7 +455,7 @@ namespace fensterserver
 			auto response = new CommandSimpleResponse;
 			response->status = FENSTER_PROTOCOL_FAIL;
 
-			auto request = (CommandScrollpaneSetContent*) requestUiMessage;
+			auto request = (CommandScrollPaneSetContent*) requestUiMessage;
 			ScrollPane* scrollpane = dynamic_cast<ScrollPane*>(ComponentRegistry::get(request->scrollpane));
 			Component* content = ComponentRegistry::get(request->content);
 			if(scrollpane && content)
@@ -472,7 +472,7 @@ namespace fensterserver
 			auto response = new CommandSimpleResponse;
 			response->status = FENSTER_PROTOCOL_FAIL;
 
-			auto request = (CommandScrollpaneSetFixed*) requestUiMessage;
+			auto request = (CommandScrollPaneSetFixed*) requestUiMessage;
 			ScrollPane* scrollpane = dynamic_cast<ScrollPane*>(ComponentRegistry::get(request->scrollpane));
 			if(scrollpane)
 			{

@@ -11,11 +11,11 @@ namespace fensterserver
 	ScrollPane::ScrollPane()
 	{
 		addChild(&horizontalScrollbar, COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL);
-		horizontalScrollbar.setZIndex(100);
+		horizontalScrollbar.setZIndex(1000);
 		horizontalScrollbar.setScrollHandler(this);
 
 		addChild(&verticalScrollbar, COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL);
-		verticalScrollbar.setZIndex(101);
+		verticalScrollbar.setZIndex(1001);
 		verticalScrollbar.setScrollHandler(this);
 	}
 

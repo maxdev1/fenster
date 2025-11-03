@@ -10,14 +10,16 @@
 
 #include <cairo/cairo.h>
 #include <libfenster/font/font_manager.hpp>
-#include <libproperties/properties.hpp>
 #include <libfenster/properties.hpp>
-#include <math.h>
+#include <cmath>
 
 namespace fensterserver
 {
+	constexpr int WINDOW_MIN_WIDTH = 50;
+	constexpr int WINDOW_MIN_HEIGHT = 20;
+
 	Window::Window() :
-		backgroundColor(RGB(244, 244, 248)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE)
+		backgroundColor(_RGB(244, 244, 248)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE)
 	{
 		focused = false;
 		visible = false;
@@ -42,8 +44,8 @@ namespace fensterserver
 		fenster::Rectangle bounds = getBounds();
 		label.setBounds(fenster::Rectangle(shadowSize + 12, shadowSize, bounds.width - shadowSize - 20, titleHeight));
 		panel.setBounds(fenster::Rectangle(shadowSize, shadowSize + titleHeight, bounds.width - shadowSize * 2,
-									bounds.height - titleHeight - shadowSize * 2));
-		crossBounds = fenster::Rectangle(bounds.width - 40, 25, 15, 15);
+		                                   bounds.height - titleHeight - shadowSize * 2));
+		crossBounds = fenster::Rectangle(bounds.width - 47, 15, 30, 30);
 	}
 
 	/**
@@ -75,16 +77,10 @@ namespace fensterserver
 		cairo_close_path(cr);
 	}
 
-	void Window::paint()
+	void Window::paintBackground(cairo_t* cr)
 	{
-		fenster::Rectangle bounds = getBounds();
-		cairo_t* cr = graphics.acquireContext();
-		if(!cr)
-			return;
+		auto bounds = getBounds();
 
-		clearSurface();
-
-		// draw shadow
 		double shadowAlpha = 0.003;
 		double shadowAlphaAdd = 0.003;
 		double addIncr;
@@ -105,41 +101,49 @@ namespace fensterserver
 			shadowAlphaAdd += addIncr;
 		}
 
-		// draw background
 		int borderRadius = 5;
 		roundedRectangle(cr, shadowSize, shadowSize, bounds.width - 2 * shadowSize, bounds.height - 2 * shadowSize,
-						 borderRadius);
-		cairo_set_source_rgba(cr,
-							  ARGB_FR_FROM(backgroundColor),
-							  ARGB_FG_FROM(backgroundColor),
-							  ARGB_FB_FROM(backgroundColor),
-							  ARGB_FA_FROM(backgroundColor));
+		                 borderRadius);
+		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(backgroundColor));
 		cairo_fill(cr);
+	}
 
-		// draw cross
+	void Window::paintControls(cairo_t* cr)
+	{
+		if(crossHovered)
+		{
+			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(ARGB(20, 50, 50, 50)));
+			cairo_rectangle(cr, crossBounds.x, crossBounds.y, crossBounds.width, crossBounds.height);
+			cairo_fill(cr);
+		}
+
 		if(crossPressed && crossHovered)
-		{
 			cairo_set_source_rgba(cr, 0.0, 0.4, 0.8, 1);
-		}
 		else if(crossHovered)
-		{
 			cairo_set_source_rgba(cr, 0.1, 0.5, 0.9, 1);
-		}
 		else
-		{
 			cairo_set_source_rgba(cr, 0.4, 0.4, 0.4, 1);
-		}
 
-		int crossPadding = 3;
+		int crossPadding = 11;
 		cairo_set_line_width(cr, 1.5);
 		cairo_move_to(cr, crossBounds.x + crossPadding, crossBounds.y + crossPadding);
 		cairo_line_to(cr, crossBounds.x + crossBounds.width - crossPadding,
-					  crossBounds.y + crossBounds.height - crossPadding);
+		              crossBounds.y + crossBounds.height - crossPadding);
 		cairo_stroke(cr);
 		cairo_move_to(cr, crossBounds.x + crossBounds.width - crossPadding, crossBounds.y + crossPadding);
 		cairo_line_to(cr, crossBounds.x + crossPadding, crossBounds.y + crossBounds.height - crossPadding);
 		cairo_stroke(cr);
+	}
 
+	void Window::paint()
+	{
+		cairo_t* cr = graphics.acquireContext();
+		if(!cr)
+			return;
+
+		clearSurface();
+		paintBackground(cr);
+		paintControls(cr);
 		graphics.releaseContext();
 	}
 
@@ -149,10 +153,123 @@ namespace fensterserver
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
+	void Window::dragOrResize(MouseEvent& me)
+	{
+		if(resizeMode == RESIZE_MODE_MOVE)
+		{
+			fenster::Point newLocation = me.screenPosition - pressPoint;
+			setBounds({newLocation.x, newLocation.y, pressBounds.width, pressBounds.height});
+			Cursor::set("drag");
+			return;
+		}
+
+		fenster::Point newLocation = me.screenPosition - pressPoint;
+
+		int left = pressBounds.x;
+		int top = pressBounds.y;
+		int right = pressBounds.x + pressBounds.width;
+		int bottom = pressBounds.y + pressBounds.height;
+
+		if(resizeMode & RESIZE_MODE_LEFT)
+			left = newLocation.x;
+		if(resizeMode & RESIZE_MODE_RIGHT)
+			right = newLocation.x + pressBounds.width;
+		if(resizeMode & RESIZE_MODE_TOP)
+			top = newLocation.y;
+		if(resizeMode & RESIZE_MODE_BOTTOM)
+			bottom = newLocation.y + pressBounds.height;
+
+		if(right - left < WINDOW_MIN_WIDTH)
+		{
+			if(resizeMode & RESIZE_MODE_LEFT)
+				left = right - WINDOW_MIN_WIDTH;
+			else
+				right = left + WINDOW_MIN_WIDTH;
+		}
+		if(bottom - top < WINDOW_MIN_HEIGHT)
+		{
+			if(resizeMode & RESIZE_MODE_TOP)
+				bottom = top + WINDOW_MIN_HEIGHT;
+			else
+				top = bottom - WINDOW_MIN_HEIGHT;
+		}
+
+		fenster::Rectangle r;
+		r.x = left;
+		r.y = top;
+		r.width = right - left;
+		r.height = bottom - top;
+
+		setBounds(r);
+	}
+
+	void Window::startDragOrResize(MouseEvent& me)
+	{
+		auto currentBounds = getBounds();
+		pressPoint = me.position;
+		pressBounds = currentBounds;
+
+		resizeMode = RESIZE_MODE_NONE;
+
+		if(resizable)
+		{
+			if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2) && (
+				   pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
+			{
+				resizeMode |= RESIZE_MODE_TOP | RESIZE_MODE_LEFT;
+			}
+			else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
+				        pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
+				        pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
+			{
+				resizeMode |= RESIZE_MODE_TOP | RESIZE_MODE_RIGHT;
+			}
+			else if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2)
+			        &&
+			        (pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+				        pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
+			{
+				resizeMode |= RESIZE_MODE_BOTTOM | RESIZE_MODE_LEFT;
+			}
+			else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
+				        pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
+				        pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+				        pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
+			{
+				resizeMode |= RESIZE_MODE_BOTTOM | RESIZE_MODE_RIGHT;
+			}
+			else if(pressPoint.y < shadowSize + borderWidth / 2 && pressPoint.y > shadowSize - borderWidth / 2)
+			{
+				resizeMode = RESIZE_MODE_TOP;
+			}
+			else if(pressPoint.x < shadowSize + borderWidth / 2 && pressPoint.x > shadowSize - borderWidth / 2)
+			{
+				resizeMode = RESIZE_MODE_LEFT;
+			}
+			else if((pressPoint.y > currentBounds.height - shadowSize - borderWidth / 2) && (
+				        pressPoint.y < currentBounds.height - shadowSize + borderWidth / 2))
+			{
+				resizeMode = RESIZE_MODE_BOTTOM;
+			}
+			else if((pressPoint.x > currentBounds.width - shadowSize - borderWidth / 2) && (
+				        pressPoint.x < currentBounds.width - shadowSize + borderWidth / 2))
+			{
+				resizeMode = RESIZE_MODE_RIGHT;
+			}
+		}
+
+		if(resizeMode == RESIZE_MODE_NONE)
+		{
+			if(pressPoint.y < titleHeight)
+			{
+				resizeMode = RESIZE_MODE_MOVE;
+				Cursor::set("drag");
+			}
+		}
+	}
+
 	Component* Window::handleMouseEvent(MouseEvent& me)
 	{
-		fenster::Rectangle currentBounds = getBounds();
-
 		if(me.type == FENSTER_MOUSE_EVENT_DRAG)
 		{
 			if(crossPressed)
@@ -162,88 +279,7 @@ namespace fensterserver
 			}
 			else
 			{
-				// Window dragging/resizing
-				fenster::Point newLocation = me.screenPosition - pressPoint;
-
-				// Calculate new bounds
-				fenster::Rectangle newBounds = currentBounds;
-
-				if(resizeMode == RESIZE_MODE_TOP_LEFT)
-				{
-					newBounds.x = newLocation.x;
-					newBounds.y = newLocation.y;
-					newBounds.width = pressBounds.width + (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height + (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_TOP_RIGHT)
-				{
-					newBounds.x = pressBounds.x;
-					newBounds.y = newLocation.y;
-					newBounds.width = pressBounds.width - (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height + (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_BOTTOM_LEFT)
-				{
-					newBounds.x = newLocation.x;
-					newBounds.y = pressBounds.y;
-					newBounds.width = pressBounds.width + (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height - (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_BOTTOM_RIGHT)
-				{
-					newBounds.x = pressBounds.x;
-					newBounds.y = pressBounds.y;
-					newBounds.width = pressBounds.width - (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height - (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_TOP)
-				{
-					newBounds.x = pressBounds.x;
-					newBounds.y = newLocation.y;
-					newBounds.width = pressBounds.width;
-					newBounds.height = pressBounds.height + (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_LEFT)
-				{
-					newBounds.x = newLocation.x;
-					newBounds.y = pressBounds.y;
-					newBounds.width = pressBounds.width + (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height;
-				}
-				else if(resizeMode == RESIZE_MODE_BOTTOM)
-				{
-					newBounds.x = pressBounds.x;
-					newBounds.y = pressBounds.y;
-					newBounds.width = pressBounds.width;
-					newBounds.height = pressBounds.height - (pressBounds.y - newLocation.y);
-				}
-				else if(resizeMode == RESIZE_MODE_RIGHT)
-				{
-					newBounds.x = pressBounds.x;
-					newBounds.y = pressBounds.y;
-					newBounds.width = pressBounds.width - (pressBounds.x - newLocation.x);
-					newBounds.height = pressBounds.height;
-				}
-				else if(resizeMode == RESIZE_MODE_MOVE)
-				{
-					newBounds.x = newLocation.x;
-					newBounds.y = newLocation.y;
-					Cursor::set("drag");
-				}
-
-				// Apply bounds
-				fenster::Rectangle appliedBounds = getBounds();
-				if(newBounds.width > 50)
-				{
-					appliedBounds.x = newBounds.x;
-					appliedBounds.width = newBounds.width;
-				}
-				if(newBounds.height > 20)
-				{
-					appliedBounds.y = newBounds.y;
-					appliedBounds.height = newBounds.height;
-				}
-				this->setBounds(appliedBounds);
+				dragOrResize(me);
 			}
 			return this;
 		}
@@ -258,31 +294,34 @@ namespace fensterserver
 		{
 			if(resizable)
 			{
+				fenster::Rectangle currentBounds = getBounds();
+
 				fenster::Point pos = me.position;
-				if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (pos.y < cornerSize) &&
+				if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (
+					   pos.y < cornerSize) &&
 				   (pos.y > shadowSize - cornerSize / 2))
 				{
 					// Top left corner
 					Cursor::set("resize-nwes");
 				}
 				else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-							pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (pos.y < cornerSize) && (
-							pos.y > shadowSize - cornerSize / 2))
+					        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (pos.y < cornerSize) && (
+					        pos.y > shadowSize - cornerSize / 2))
 				{
 					// Top right corner
 					Cursor::set("resize-nesw");
 				}
 				else if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (
-							pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-							pos.y < currentBounds.height - shadowSize + cornerSize / 2))
+					        pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+					        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
 				{
 					// Bottom left corner
 					Cursor::set("resize-nesw");
 				}
 				else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-							pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-							pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-							pos.y < currentBounds.height - shadowSize + cornerSize / 2))
+					        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (
+					        pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+					        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
 				{
 					// Bottom right corner
 					Cursor::set("resize-nwes");
@@ -298,13 +337,13 @@ namespace fensterserver
 					Cursor::set("resize-ew");
 				}
 				else if((pos.y > currentBounds.height - shadowSize - borderWidth / 2) && (
-							pos.y < currentBounds.height - shadowSize + borderWidth / 2))
+					        pos.y < currentBounds.height - shadowSize + borderWidth / 2))
 				{
 					// Bottom edge
 					Cursor::set("resize-ns");
 				}
 				else if((pos.x > currentBounds.width - shadowSize - borderWidth / 2) && (
-							pos.x < currentBounds.width - shadowSize + borderWidth / 2))
+					        pos.x < currentBounds.width - shadowSize + borderWidth / 2))
 				{
 					// Right edge
 					Cursor::set("resize-ew");
@@ -340,69 +379,7 @@ namespace fensterserver
 			}
 			else
 			{
-				// Window drag and resize
-				pressPoint = me.position;
-				pressBounds = currentBounds;
-
-				resizeMode = RESIZE_MODE_NONE;
-
-				if(resizable)
-				{
-
-					if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2) && (
-						   pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
-					{
-						// Corner resizing
-						resizeMode = RESIZE_MODE_TOP_LEFT;
-					}
-					else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-								pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-								pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
-					{
-						resizeMode = RESIZE_MODE_TOP_RIGHT;
-					}
-					else if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2) &&
-							(pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-								pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
-					{
-						resizeMode = RESIZE_MODE_BOTTOM_LEFT;
-					}
-					else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-								pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-								pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-								pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
-					{
-						resizeMode = RESIZE_MODE_BOTTOM_RIGHT;
-					}
-					else if(pressPoint.y < shadowSize + borderWidth / 2 && pressPoint.y > shadowSize - borderWidth / 2)
-					{
-						// Edge resizing
-						resizeMode = RESIZE_MODE_TOP;
-					}
-					else if(pressPoint.x < shadowSize + borderWidth / 2 && pressPoint.x > shadowSize - borderWidth / 2)
-					{
-						resizeMode = RESIZE_MODE_LEFT;
-					}
-					else if((pressPoint.y > currentBounds.height - shadowSize - borderWidth / 2) && (
-								pressPoint.y < currentBounds.height - shadowSize + borderWidth / 2))
-					{
-						resizeMode = RESIZE_MODE_BOTTOM;
-					}
-					else if((pressPoint.x > currentBounds.width - shadowSize - borderWidth / 2) && (
-								pressPoint.x < currentBounds.width - shadowSize + borderWidth / 2))
-					{
-						resizeMode = RESIZE_MODE_RIGHT;
-					}
-				}
-
-				if(resizeMode == RESIZE_MODE_NONE)
-				{
-					if(pressPoint.y < titleHeight)
-					{
-						resizeMode = RESIZE_MODE_MOVE;
-						Cursor::set("drag");
-					}
-				}
+				startDragOrResize(me);
 			}
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)

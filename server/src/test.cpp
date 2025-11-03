@@ -6,6 +6,8 @@
 
 #include <server.hpp>
 #include <sstream>
+#include <components/radio_button.hpp>
+#include <components/radio_group.hpp>
 #include <components/tree.hpp>
 #include <components/tree_node.hpp>
 #include <components/text/text_area.hpp>
@@ -143,6 +145,15 @@ namespace fensterserver
 			check->getLabel().setTitle("Check me");
 			panel->addChild(check);
 
+			RadioGroup* radioGroup = new RadioGroup();
+			auto subRadio1 = new RadioButton();
+			subRadio1->getLabel().setTitle("First option");
+			radioGroup->addChild(subRadio1);
+			auto subRadio2 = new RadioButton();
+			subRadio2->getLabel().setTitle("Second option");
+			radioGroup->addChild(subRadio2);
+			panel->addChild(radioGroup);
+
 			content->addChild(panel);
 		}
 
@@ -184,7 +195,10 @@ namespace fensterserver
 		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
 
 		auto panel = new Panel();
-		panel->setLayoutManager(new StackLayoutManager());
+		auto stackLayout = new StackLayoutManager();
+		stackLayout->setPadding(Insets(10, 10, 10, 10));
+		stackLayout->setSpace(10);
+		panel->setLayoutManager(stackLayout);
 
 		auto jsonInput = new TextArea();
 		jsonInput->setMinimumSize(Dimension(500, 300));
