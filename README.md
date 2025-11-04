@@ -2,7 +2,10 @@
 
 A small, lightweight window server and UI toolkit designed for easy embedding and minimal dependencies.
 
-This work-in-progress project aims to provide a clean, self-contained system for powering graphical environments — from hobby operating systems to embedded or experimental platforms.
+It features standard components, a sophisticated event handling mechanism, different container
+layouts, canvas for client-side drawing and more.
+
+This work-in-progress project aims to provide a clean, self-contained system for GUIs - from hobby operating systems to embedded or experimental platforms.
 
 It originated as part of the [Ghost OS](https://github.com/maxdev1/ghost) project, a hobby operating system.
 
@@ -18,7 +21,7 @@ The utility library `libproperties` is used for configuration management.
 Aside from this way, it is also possible to link the entire application into your embedded software and directly interface
 with the component classes.
 
-## Client Library
+## Client library
 
 `libfenster` offers a set of component classes and layouts that can be combined to create a UI for your application.
 Starting interaction with the server works by initializing the application. This operation returns a status code:
@@ -37,10 +40,51 @@ about it or attach listeners.
     window->setBounds(fenster::Rectangle(30, 30, 400, 200));
     window->setVisible(true);
 
-## Event Handling
+## Components & Updates
 
-There is a system for event processing that allows handling different kinds of events like keyboard or mouse input and
-also actions (clicking on a button). On client-side, it is easily possible to subscribe events directly on the component:
+Components are organized in a tree structure, where any component can have child components.
+The root component is the `Screen`, which is a special component that also tracks dirty (invalidated) areas and emits window events.
+
+The window server repeatedly executes the following cycle:
+
+### 1. Processing input events
+
+Input events such as mouse and keyboard interactions are captured and converted into specific
+event types like `MouseEvent` or `KeyEvent`.
+These events are then dispatched to the affected components.
+
+### 2. Resolving component requirements
+
+Each component can go through up to three phases, each serving a specific purpose:
+
+* **Update** – Updates the component's model and determines its preferred size (bottom-up).
+* **Layout** – Positions and sizes child components (top-down).
+* **Paint** – Renders visual content (bottom-up).
+
+A component maintains a _requirement state_ that indicates which phases need to be executed.
+It also tracks the requirement state of its children to optimize updates.
+
+Typical scenarios:
+* When a component's own model changes, the update requirement should be set.
+→ The framework will call `update()`.
+
+* When child sizes or layout positions are affected, the layout requirement should be set.
+→ The framework will call `layout()` and cascade layouting to children.
+
+* When only visual changes occur (e.g., a checkbox being checked/unchecked), the paint requirement should be set.
+→ Only the affected component will be repainted, and parent components will be informed that a repaint is needed.
+
+### 3. Blitting to output buffer
+
+Each component has an internal buffer where it draws its contents during `paint()`.
+Once all updates and paints are resolved, visible components are composited (blitted) from top to bottom into a screen buffer.
+Finally, only the dirty regions of the screen are copied to the actual output (for example, a framebuffer).
+
+## Event handling
+
+There is a system for event processing that handles different types of input — such as keyboard and mouse — as well as higher-level actions like clicking a button.
+
+On the client side, it’s easy to subscribe to events directly on components:
 
     auto button = fenster::Button::create();
     button->setTitle("Click me!");
@@ -48,8 +92,20 @@ also actions (clicking on a button). On client-side, it is easily possible to su
         printf("Button was clicked\n");
     });
 
+### Flow overview
 
-## Embedding & Platform Specifics
+Events are processed centrally by the `EventProcessor`, which collects raw input
+data (from the platform layer), converts it into structured events (like `MouseEvent`
+or `KeyEvent`), and dispatches them to the appropriate components through the Server.
+
+Events are dispatched to components starting from the root and traversing down the
+tree until a component handles the event. If an event is not handled, it can be bubbled
+upwards (to parent components).
+
+Some events, like scroll, drag or mouse-enter/leave events are dispatched upwards, starting
+at the component lowest in the tree.
+
+## Embedding & platform-specifics
 
 The project intends to keep dependencies for the target platform minimal. The major dependencies of the project are:
 

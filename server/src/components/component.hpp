@@ -317,8 +317,7 @@ namespace fensterserver
 
         /**
          * This method is called by the window manager if the layout requirement flag is set.
-         * The component may here change the bounds of each child component and also change its
-         * own preferred size.
+         * The component may here change the bounds of each child component.
          */
         virtual void layout();
 
