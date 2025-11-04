@@ -74,16 +74,19 @@ namespace fensterserver
 		{
 			hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
 		{
 			hovered = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
 		{
 			pressed = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE || me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
 		{
@@ -96,14 +99,31 @@ namespace fensterserver
 			{
 				setChecked(!checked, false);
 			}
+			return this;
 		}
-		return this;
+
+		return nullptr;
 	}
 
 	void Checkbox::setCheckedInternal(bool value)
 	{
 		this->checked = value;
 		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	bool Checkbox::isChecked()
+	{
+		return this->checked;
+	}
+
+	void Checkbox::setTitleInternal(std::string title)
+	{
+		this->label.setTitle(title);
+	}
+
+	std::string Checkbox::getTitle()
+	{
+		return this->label.getTitle();
 	}
 
 }

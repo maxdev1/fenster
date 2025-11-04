@@ -57,9 +57,6 @@ namespace fenster
 #define FENSTER_PROTOCOL_CANVAS_BLIT				(12)
 #define FENSTER_PROTOCOL_REGISTER_DESKTOP_CANVAS	(13)
 #define FENSTER_PROTOCOL_GET_SCREEN_DIMENSION		(14)
-#define FENSTER_PROTOCOL_FLEX_SET_ORIENTATION		(15)
-#define FENSTER_PROTOCOL_FLEX_SET_COMPONENT_INFO	(16)
-#define FENSTER_PROTOCOL_LAYOUT_SET_PADDING			(17)
 #define FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT		(18)
 #define FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED		(19)
 #define FENSTER_PROTOCOL_SET_PREFERRED_SIZE			(20)
@@ -89,6 +86,7 @@ namespace fenster
 #define FENSTER_COMPONENT_TYPE_PANEL 6
 #define FENSTER_COMPONENT_TYPE_SCROLLPANE 7
 #define FENSTER_COMPONENT_TYPE_IMAGE 8
+#define FENSTER_COMPONENT_TYPE_CHECKBOX 9
 
 	/**
 	 * Types of events that can be listened to
@@ -110,9 +108,10 @@ namespace fenster
 	 *
 	 */
 	typedef uint8_t LayoutManagerType;
-#define FENSTER_LAYOUT_MANAGER_GRID ( 0)
-#define FENSTER_LAYOUT_MANAGER_FLOW ( 1)
-#define FENSTER_LAYOUT_MANAGER_FLEX ( 2)
+#define FENSTER_LAYOUT_MANAGER_GRID (0)
+#define FENSTER_LAYOUT_MANAGER_FLOW (1)
+#define FENSTER_LAYOUT_MANAGER_FLEX (2)
+#define FENSTER_LAYOUT_MANAGER_STACK (3)
 
 	/**
 	 *
@@ -370,39 +369,6 @@ namespace fenster
 		MessageHeader header;
 		Dimension size;
 	} __attribute__((packed)) CommandGetScreenDimensionResponse;
-
-	/**
-	 * Setting flex orientation
-	 */
-	typedef struct
-	{
-		MessageHeader header;
-		ComponentId id;
-		bool horizontal;
-	} __attribute__((packed)) CommandFlexSetOrientationRequest;
-
-	/**
-	 * Setting flex info for a component
-	 */
-	typedef struct
-	{
-		MessageHeader header;
-		ComponentId parent;
-		ComponentId child;
-		float grow;
-		float shrink;
-		int basis;
-	} __attribute__((packed)) CommandFlexSetComponentInfo;
-
-	/**
-	 * Setting flex padding
-	 */
-	typedef struct
-	{
-		MessageHeader header;
-		ComponentId id;
-		Insets insets;
-	} __attribute__((packed)) CommandLayoutSetPadding;
 
 	/**
 	 * ScrollPane content

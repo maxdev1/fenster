@@ -23,26 +23,26 @@ namespace fensterserver
         std::unordered_map<Component*, FlexInfo> flexInfo;
         bool horizontal = true;
         fenster::Insets padding = fenster::Insets(0, 0, 0, 0);
-        int gap = 0;
+        int space = 0;
 
     public:
         void layout() override;
 
-        void setLayoutInfo(Component* child, float grow, float shrink, int basis);
+        void setComponentInfo(Component* child, float grow, float shrink, int basis);
 
         void setHorizontal(bool horizontal)
         {
             this->horizontal = horizontal;
         }
 
-        int getGap()
+        int getSpace()
         {
-            return gap;
+            return space;
         }
 
-        void setGap(int gap)
+        void setSpace(int gap)
         {
-            this->gap = gap;
+            this->space = gap;
         }
 
         void setPadding(fenster::Insets padding) override

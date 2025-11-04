@@ -35,6 +35,7 @@ namespace fensterserver
 		{
 			Cursor::set("default");
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
 		{
@@ -53,6 +54,7 @@ namespace fensterserver
 				}
 			}
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_DRAG)
 		{
@@ -86,8 +88,9 @@ namespace fensterserver
 
 			if(scrollHandler)
 				scrollHandler->handleScroll(this);
+			return this;
 		}
-		return this;
+		return nullptr;
 	}
 
 	void Scrollbar::setViewLengths(int viewportLength, int contentLength)

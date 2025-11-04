@@ -190,16 +190,19 @@ namespace fensterserver
 		{
 			state.hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
 		{
 			state.hovered = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
 		{
 			state.pressed = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE || me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
 		{
@@ -214,8 +217,10 @@ namespace fensterserver
 					fireAction();
 				}
 			}
+			return this;
 		}
-		return this;
+
+		return nullptr;
 	}
 
 	void Button::setFocusedInternal(bool focused)
@@ -274,7 +279,6 @@ namespace fensterserver
 		{
 			style = value;
 			markFor(COMPONENT_REQUIREMENT_ALL);
-			fenster::platformLog("set style to %i", value);
 			return true;
 		}
 

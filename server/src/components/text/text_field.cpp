@@ -372,12 +372,14 @@ namespace fensterserver
 			visualStatus = TextFieldVisualStatus::HOVERED;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			Cursor::set("text");
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
 		{
 			visualStatus = TextFieldVisualStatus::NORMAL;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			Cursor::set("default");
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
 		{
@@ -405,15 +407,17 @@ namespace fensterserver
 			}
 
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_DRAG)
 		{
 			fenster::Point p = me.position;
 			cursor = viewToPosition(p);
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 
-		return this;
+		return nullptr;
 	}
 
 	int TextField::viewToPosition(fenster::Point p)

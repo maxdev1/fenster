@@ -9,7 +9,7 @@
 
 #include <string>
 
-namespace json
+namespace fenster
 {
 	/**
 	 * A simple JSON parser and serializer
@@ -28,9 +28,12 @@ namespace json
 		JsonNode parseArray();
 		JsonNode parseObject();
 
+		JsonNode doParse(const std::string& s);
+		std::string doStringify(JsonNode& node);
+
 	public:
-		JsonNode parse(const std::string& s);
-		std::string stringify(JsonNode& node);
+		static JsonNode parse(const std::string& s);
+		static std::string stringify(JsonNode& node);
 	};
 }
 

@@ -51,6 +51,7 @@ namespace fensterserver
         }
 
         void setCheckedInternal(bool value) override;
+        bool isChecked() override;
     };
 }
 

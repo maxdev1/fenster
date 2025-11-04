@@ -75,16 +75,19 @@ namespace fensterserver
 		{
 			hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
 		{
 			hovered = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
 		{
 			pressed = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
+			return this;
 		}
 		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE || me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
 		{
@@ -97,14 +100,21 @@ namespace fensterserver
 			{
 				setChecked(true, false);
 			}
+			return this;
 		}
-		return this;
+
+		return nullptr;
 	}
 
 	void RadioButton::setCheckedInternal(bool value)
 	{
 		this->checked = value;
 		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	bool RadioButton::isChecked()
+	{
+		return this->checked;
 	}
 
 	void RadioButton::setTitleInternal(std::string title)

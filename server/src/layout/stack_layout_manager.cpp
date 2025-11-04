@@ -12,66 +12,54 @@ namespace fensterserver
 	 */
 	void StackLayoutManager::layout()
 	{
-		if(component == nullptr)
+		if(!component)
 			return;
+
+		int max = 0;
+		int pos = horizontal ? padding.left : padding.top;
+		bool first = true;
+
+		auto& children = component->acquireChildren();
+		for(auto& cr: children)
+		{
+			Component* child = cr.component;
+			if(!child->isVisible())
+				continue;
+
+			if(!first)
+				pos += space;
+			first = false;
+
+			auto size = child->getEffectivePreferredSize();
+
+			if(horizontal)
+			{
+				child->setBounds({pos, padding.top, size.width, size.height});
+				pos += size.width;
+				max = std::max(max, size.height);
+			}
+			else
+			{
+				child->setBounds({padding.left, pos, size.width, size.height});
+				pos += size.height;
+				max = std::max(max, size.width);
+			}
+		}
+		component->releaseChildren();
 
 		if(horizontal)
 		{
-			int x = padding.left;
-			int highestHeight = 0;
-
-			auto& children = component->acquireChildren();
-			bool first = true;
-			for(auto& childRef: children)
-			{
-				if(first)
-					first = false;
-				else
-					x += space;
-
-				Component* child = childRef.component;
-				if(!child->isVisible())
-					continue;
-				fenster::Dimension childSize = child->getEffectivePreferredSize();
-
-				child->setBounds(fenster::Rectangle(x, padding.top, childSize.width, childSize.height));
-				x += childSize.width;
-
-				highestHeight = childSize.height > highestHeight ? childSize.height : highestHeight;
-			}
-			component->releaseChildren();
-
-			component->setPreferredSize(
-					fenster::Dimension(x + padding.right, padding.top + highestHeight + padding.bottom));
+			component->setPreferredSize({
+					pos + padding.right,
+					padding.top + max + padding.bottom
+			});
 		}
 		else
 		{
-			int y = padding.top;
-			int widestWidth = 0;
-
-			auto& children = component->acquireChildren();
-			bool first = true;
-			for(auto& childRef: children)
-			{
-				if(first)
-					first = false;
-				else
-					y += space;
-
-				Component* child = childRef.component;
-				if(!child->isVisible())
-					continue;
-				fenster::Dimension childSize = child->getEffectivePreferredSize();
-
-				child->setBounds(fenster::Rectangle(padding.left, y, childSize.width, childSize.height));
-				y += childSize.height;
-
-				widestWidth = childSize.width > widestWidth ? childSize.width : widestWidth;
-			}
-			component->releaseChildren();
-
-			component->setPreferredSize(
-					fenster::Dimension(padding.left + widestWidth + padding.right, y + padding.bottom));
+			component->setPreferredSize({
+					padding.left + max + padding.right,
+					pos + padding.bottom
+			});
 		}
 	}
 }

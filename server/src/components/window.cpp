@@ -15,11 +15,9 @@
 
 namespace fensterserver
 {
-	constexpr int WINDOW_MIN_WIDTH = 50;
-	constexpr int WINDOW_MIN_HEIGHT = 20;
-
 	Window::Window() :
-		backgroundColor(_RGB(244, 244, 248)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE)
+		backgroundColor(_RGB(244, 244, 248)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE),
+		resizeMode(RESIZE_MODE_NONE)
 	{
 		focused = false;
 		visible = false;
@@ -77,7 +75,7 @@ namespace fensterserver
 		cairo_close_path(cr);
 	}
 
-	void Window::paintBackground(cairo_t* cr)
+	void Window::paintBackground(cairo_t* cr) const
 	{
 		auto bounds = getBounds();
 
@@ -108,7 +106,7 @@ namespace fensterserver
 		cairo_fill(cr);
 	}
 
-	void Window::paintControls(cairo_t* cr)
+	void Window::paintControls(cairo_t* cr) const
 	{
 		if(crossHovered)
 		{
@@ -179,19 +177,20 @@ namespace fensterserver
 		if(resizeMode & RESIZE_MODE_BOTTOM)
 			bottom = newLocation.y + pressBounds.height;
 
-		if(right - left < WINDOW_MIN_WIDTH)
+		auto minimumSize = getMinimumSize();
+		if(right - left < minimumSize.width)
 		{
 			if(resizeMode & RESIZE_MODE_LEFT)
-				left = right - WINDOW_MIN_WIDTH;
+				left = right - minimumSize.width;
 			else
-				right = left + WINDOW_MIN_WIDTH;
+				right = left + minimumSize.width;
 		}
-		if(bottom - top < WINDOW_MIN_HEIGHT)
+		if(bottom - top < minimumSize.height)
 		{
 			if(resizeMode & RESIZE_MODE_TOP)
-				bottom = top + WINDOW_MIN_HEIGHT;
+				top = bottom - minimumSize.height;
 			else
-				top = bottom - WINDOW_MIN_HEIGHT;
+				bottom = top + minimumSize.height;
 		}
 
 		fenster::Rectangle r;

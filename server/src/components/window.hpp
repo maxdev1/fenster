@@ -93,8 +93,8 @@ namespace fensterserver
                       ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
 
         void layout() override;
-        void paintBackground(cairo_t* cr);
-        void paintControls(cairo_t* cr);
+        void paintBackground(cairo_t* cr) const;
+        void paintControls(cairo_t* cr) const;
         void paint() override;
 
         Component* handleMouseEvent(MouseEvent& e) override;

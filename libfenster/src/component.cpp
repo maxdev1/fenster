@@ -315,11 +315,6 @@ namespace fenster
 		return addListener(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, new VisibleListenerDispatcher(std::move(func)));
 	}
 
-	bool Component::setLayout(LayoutManagerType layout)
-	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_MANAGER, layout);
-	}
-
 	bool Component::setBackground(ColorArgb argb)
 	{
 		return setNumericProperty(FENSTER_UI_PROPERTY_BACKGROUND, argb);
@@ -411,85 +406,9 @@ namespace fenster
 		return false;
 	}
 
-	bool Component::setFlexOrientation(bool horizontal)
+	bool Component::setLayoutManager(LayoutManager* layoutManager)
 	{
-		if(!ApplicationInitialized)
-			return false;
-
-		SYS_TX_T tx = platformCreateMessageTransaction();
-
-		CommandFlexSetOrientationRequest request;
-		request.header.id = FENSTER_PROTOCOL_FLEX_SET_ORIENTATION;
-		request.id = this->id;
-		request.horizontal = horizontal;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFlexSetOrientationRequest), tx);
-		platformYieldTo(DelegateTaskId);
-
-		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
-		uint8_t buffer[buflen];
-		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-		{
-			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
-		}
-		return false;
+		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_MANAGER, layoutManager->getType());
 	}
 
-	bool Component::setFlexComponentInfo(Component* child, float grow, float shrink, int basis)
-	{
-		if(!ApplicationInitialized)
-			return false;
-
-		SYS_TX_T tx = platformCreateMessageTransaction();
-
-		CommandFlexSetComponentInfo request;
-		request.header.id = FENSTER_PROTOCOL_FLEX_SET_COMPONENT_INFO;
-		request.parent = this->id;
-		request.child = child->id;
-		request.grow = grow;
-		request.shrink = shrink;
-		request.basis = basis;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFlexSetComponentInfo), tx);
-		platformYieldTo(DelegateTaskId);
-
-		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
-		uint8_t buffer[buflen];
-		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-		{
-			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
-		}
-		return false;
-	}
-
-
-	bool Component::setLayoutPadding(Insets padding)
-	{
-		if(!ApplicationInitialized)
-			return false;
-
-		SYS_TX_T tx = platformCreateMessageTransaction();
-
-		CommandLayoutSetPadding request;
-		request.header.id = FENSTER_PROTOCOL_LAYOUT_SET_PADDING;
-		request.id = this->id;
-		request.insets = padding;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandLayoutSetPadding), tx);
-		platformYieldTo(DelegateTaskId);
-
-		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
-		uint8_t buffer[buflen];
-		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-		{
-			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
-		}
-		return false;
-	}
-
-
-	bool Component::setFlexGap(int gap)
-	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_FLEX_GAP, gap);
-	}
 }

@@ -15,8 +15,6 @@ To build with MinGW within WSL:
 - Then, build the libraries, each with `sudo make clean && make target=windows && make target=windows install`
 
         libfenster
-        libfont
         libproperties
-        libjson
 
 - Then, build windowserver with `sudo make clean && make target=windows && make target=windows install`

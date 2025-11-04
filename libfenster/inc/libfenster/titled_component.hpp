@@ -9,6 +9,7 @@
 
 #include "interface.hpp"
 #include "component.hpp"
+#include "listener/title_listener.hpp"
 
 namespace fenster
 {
@@ -26,7 +27,7 @@ namespace fenster
 		virtual bool setTitle(std::string title);
 		virtual std::string getTitle();
 
-		virtual void addTitleListener(std::function<void(std::string)> callback);
+		virtual void addTitleListener(TitleListenerFunc callback);
 	};
 }
 

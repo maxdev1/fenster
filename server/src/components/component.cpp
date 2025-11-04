@@ -10,16 +10,18 @@
 #include "layout/flow_layout_manager.hpp"
 #include "layout/grid_layout_manager.hpp"
 #include "layout/flex_layout_manager.hpp"
+#include "layout/stack_layout_manager.hpp"
 #include "component_registry.hpp"
+#include "libfenster/json/json.hpp"
 #include "server.hpp"
 
 #include <cairo/cairo.h>
 #include <libfenster/properties.hpp>
 #include <libfenster/interface.hpp>
 #include <algorithm>
-#include <stdlib.h>
-#include <typeinfo>
-#include <libfenster/properties.hpp>
+#include <cstdlib>
+
+#include "checkable_component.hpp"
 
 namespace fensterserver
 {
@@ -123,20 +125,15 @@ namespace fensterserver
 	void Component::setVisible(bool visible)
 	{
 		fenster::platformAcquireMutex(lock);
-
 		this->visible = visible;
 		markDirty();
+		fenster::platformReleaseMutex(lock);
 
 		if(visible)
 		{
 			markFor(COMPONENT_REQUIREMENT_ALL);
 		}
-		else
-		{
-			markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
-		}
-
-		fenster::platformReleaseMutex(lock);
+		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
 
 		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, [visible](EventListenerInfo& info)
 		{
@@ -200,7 +197,7 @@ namespace fensterserver
 
 		comp->parent = this;
 
-		ComponentChildReference reference;
+		ComponentChildReference reference{};
 		reference.component = comp;
 		reference.type = type;
 
@@ -351,10 +348,6 @@ namespace fensterserver
 					                                                sizeof(fenster::ComponentMouseEvent),SYS_TX_NONE);
 		                                                });
 
-		// TODO Temporary fix so scroll-events still go to parents
-		if(event.type == FENSTER_MOUSE_EVENT_SCROLL)
-			return nullptr;
-
 		if(handledByListener)
 			return this;
 
@@ -410,7 +403,7 @@ namespace fensterserver
 		if(preferredSize != size)
 		{
 			preferredSize = size;
-			markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+			markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 		}
 	}
 
@@ -426,13 +419,13 @@ namespace fensterserver
 	void Component::setMinimumSize(const fenster::Dimension& size)
 	{
 		minimumSize = size;
-		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+		markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
 	void Component::setMaximumSize(const fenster::Dimension& size)
 	{
 		maximumSize = size;
-		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
+		markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
 	void Component::setLayoutManager(LayoutManager* newMgr)
@@ -472,7 +465,7 @@ namespace fensterserver
 	 */
 	void Component::resolveRequirement(ComponentRequirement req, int lvl)
 	{
-		if((childRequirements & req) && !(req == COMPONENT_REQUIREMENT_LAYOUT))
+		if((childRequirements & req) && (req & COMPONENT_REQUIREMENT_UPDATE || req & COMPONENT_REQUIREMENT_PAINT))
 		{
 			fenster::platformAcquireMutex(childrenLock);
 			for(auto& child: children)
@@ -491,15 +484,15 @@ namespace fensterserver
 		fenster::platformAcquireMutex(lock);
 		if(requirements & req)
 		{
-			if(req == COMPONENT_REQUIREMENT_UPDATE)
+			if(req & COMPONENT_REQUIREMENT_UPDATE)
 			{
 				update();
 			}
-			else if(req == COMPONENT_REQUIREMENT_LAYOUT)
+			if(req & COMPONENT_REQUIREMENT_LAYOUT)
 			{
 				layout();
 			}
-			else if(req == COMPONENT_REQUIREMENT_PAINT)
+			if(req & COMPONENT_REQUIREMENT_PAINT)
 			{
 				paint();
 				markDirty();
@@ -509,7 +502,7 @@ namespace fensterserver
 		}
 		fenster::platformReleaseMutex(lock);
 
-		if((childRequirements & req) && req == COMPONENT_REQUIREMENT_LAYOUT)
+		if((childRequirements & req) && (req & COMPONENT_REQUIREMENT_LAYOUT))
 		{
 			fenster::platformAcquireMutex(childrenLock);
 			for(auto& child: children)
@@ -595,17 +588,15 @@ namespace fensterserver
 			*out = this->isVisible() ? 1 : 0;
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_FLEX_GAP)
+		else if(property == FENSTER_UI_PROPERTY_CHECKED)
 		{
-			auto flexManager = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
-			if(flexManager)
+			auto checkableComponent = dynamic_cast<CheckableComponent*>(getLayoutManager());
+			if(checkableComponent)
 			{
-				*out = flexManager->getGap();
+				*out = checkableComponent->isChecked();
 				return true;
 			}
-			return false;
 		}
-
 
 		if(FocusableComponent::getNumericProperty(property, out))
 		{
@@ -633,21 +624,55 @@ namespace fensterserver
 				setLayoutManager(new FlexLayoutManager());
 				return true;
 			}
+			if(value == FENSTER_LAYOUT_MANAGER_STACK)
+			{
+				setLayoutManager(new StackLayoutManager());
+				return true;
+			}
 		}
 		else if(property == FENSTER_UI_PROPERTY_VISIBLE)
 		{
 			setVisible(value == 1);
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_FLEX_GAP)
+		else if(property == FENSTER_UI_PROPERTY_CHECKED)
 		{
-			auto flexManager = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
-			if(flexManager)
+			auto checkableComponent = dynamic_cast<CheckableComponent*>(this);
+			if(checkableComponent)
 			{
-				flexManager->setGap(value);
+				checkableComponent->setChecked(value == 1, false);
 				return true;
 			}
-			return true;
+		}
+		else if(property == FENSTER_UI_PROPERTY_LAYOUT_HORIZONTAL)
+		{
+			// TODO abstract into OrientedLayoutManager
+			auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+			if(stackLayout)
+			{
+				stackLayout->setHorizontal(value == 1);
+			}
+
+			auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			if(flexLayout)
+			{
+				flexLayout->setHorizontal(value == 1);
+			}
+		}
+		else if(property == FENSTER_UI_PROPERTY_LAYOUT_SPACE)
+		{
+			// TODO abstract into SpacedLayoutManager
+			auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+			if(stackLayout)
+			{
+				stackLayout->setSpace(value);
+			}
+
+			auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			if(flexLayout)
+			{
+				flexLayout->setSpace(value);
+			}
 		}
 
 		if(FocusableComponent::setNumericProperty(property, value))
@@ -665,6 +690,61 @@ namespace fensterserver
 			{
 				titled->setTitle(text);
 				return true;
+			}
+		}
+		else if(property == FENSTER_UI_PROPERTY_LAYOUT_PADDING)
+		{
+			fenster::JsonNode result = fenster::Json::parse(text);
+
+			if(result.isObject())
+			{
+				auto obj = result.asObject();
+				fenster::Insets insets(
+						(int) obj["top"].asNumber(),
+						(int) obj["left"].asNumber(),
+						(int) obj["bottom"].asNumber(),
+						(int) obj["right"].asNumber()
+						);
+
+				// TODO abstract into "PaddedLayoutManager"
+				auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+				if(stackLayout)
+				{
+					stackLayout->setPadding(insets);
+				}
+
+				auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+				if(flexLayout)
+				{
+					flexLayout->setPadding(insets);
+				}
+			}
+		}
+		else if(property == FENSTER_UI_PROPERTY_LAYOUT_COMPONENT_INFO)
+		{
+			fenster::JsonNode result = fenster::Json::parse(text);
+
+			if(result.isObject())
+			{
+				auto obj = result.asObject();
+
+				auto childId = (fenster::ComponentId) obj["component"].asNumber();
+				auto child = ComponentRegistry::get(childId);
+				if(!child)
+				{
+					fenster::platformLog("Attempted to set component info for non-existant component %i", child);
+					return false;
+				}
+
+				float grow = obj["grow"].asNumber();
+				float shrink = obj["shrink"].asNumber();
+				int basis = obj["basis"].asNumber();
+
+				auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+				if(flexLayout)
+				{
+					flexLayout->setComponentInfo(child, grow, shrink, basis);
+				}
 			}
 		}
 

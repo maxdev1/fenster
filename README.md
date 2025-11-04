@@ -13,10 +13,41 @@ Applications build their graphical user interfaces through `libfenster`, which p
 
 The server uses an event-driven architecture that allows clients to subscribe to events from any component.
 
-The utility libraries `libjson` and `libproperties` are used for data serialization and configuration management.
+The utility library `libproperties` is used for configuration management.
 
 Aside from this way, it is also possible to link the entire application into your embedded software and directly interface
 with the component classes.
+
+## Client Library
+
+`libfenster` offers a set of component classes and layouts that can be combined to create a UI for your application.
+Starting interaction with the server works by initializing the application. This operation returns a status code:
+
+    if(fenster::Application::open() != FENSTER_APPLICATION_STATUS_SUCCESSFUL)
+        return -1;
+
+For creating components, there is usually always a static factory method that will create an instance:
+
+    auto window = fenster::Window::create();
+
+This client-side handle represents a component on the server and is used to modify the component, retrieve information
+about it or attach listeners.
+
+    window->setTitle("Window title");
+    window->setBounds(fenster::Rectangle(30, 30, 400, 200));
+    window->setVisible(true);
+
+## Event Handling
+
+There is a system for event processing that allows handling different kinds of events like keyboard or mouse input and
+also actions (clicking on a button). On client-side, it is easily possible to subscribe events directly on the component:
+
+    auto button = fenster::Button::create();
+    button->setTitle("Click me!");
+    button->setActionListener([] () {
+        printf("Button was clicked\n");
+    });
+
 
 ## Embedding & Platform Specifics
 

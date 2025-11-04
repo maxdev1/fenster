@@ -26,4 +26,5 @@ namespace fensterserver
 			platformSendMessage(info.target_thread, &event, sizeof(fenster::ComponentCheckedEvent), SYS_TX_NONE);
 		});
 	}
+
 }

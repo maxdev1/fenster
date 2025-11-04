@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 
-namespace json
+namespace fenster
 {
 	struct JsonNode
 	{

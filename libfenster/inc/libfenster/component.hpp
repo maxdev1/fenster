@@ -19,6 +19,7 @@
 #include "metrics/rectangle.hpp"
 #include "application.hpp"
 #include "color_argb.hpp"
+#include "layout/layout_manager.hpp"
 #include "platform/platform.hpp"
 
 namespace fenster
@@ -123,14 +124,9 @@ namespace fenster
 		bool addKeyListener(KeyListener* listener);
 		bool addKeyListener(KeyListenerFunc listener);
 
-		bool setFlexOrientation(bool horizontal);
-		bool setFlexComponentInfo(Component* child, float grow, float shrink, int basis);
-		bool setLayoutPadding(Insets padding);
-		bool setFlexGap(int gap);
-
 		void handle(ComponentEventHeader* header);
 
-		bool setLayout(LayoutManagerType layout);
+		bool setLayoutManager(LayoutManager* layoutManager);
 	};
 }
 

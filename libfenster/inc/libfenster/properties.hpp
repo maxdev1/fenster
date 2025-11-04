@@ -22,9 +22,18 @@
 #define FENSTER_UI_PROPERTY_VISIBLE           10
 #define FENSTER_UI_PROPERTY_FOCUSABLE         11
 #define FENSTER_UI_PROPERTY_DISPATCHES_FOCUS  12
-#define FENSTER_UI_PROPERTY_FLEX_GAP          13
 #define FENSTER_UI_PROPERTY_IMAGE_SOURCE      14
 #define FENSTER_UI_PROPERTY_STYLE             15
 #define FENSTER_UI_PROPERTY_TITLE             16
+#define FENSTER_UI_PROPERTY_CHECKED           17
+
+/**
+ * Properties for layout managers that also might have a different meaning
+ * per layout manager.
+ */
+#define FENSTER_UI_PROPERTY_LAYOUT_HORIZONTAL		20
+#define FENSTER_UI_PROPERTY_LAYOUT_SPACE			21
+#define FENSTER_UI_PROPERTY_LAYOUT_PADDING			22
+#define FENSTER_UI_PROPERTY_LAYOUT_COMPONENT_INFO	23
 
 #endif

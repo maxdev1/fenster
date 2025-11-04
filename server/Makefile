@@ -1,13 +1,13 @@
 include ../platform.mk
 
 ifeq ($(target),windows)
-	LDEPS := -ljson -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
+	LDEPS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
 	EXTRA_CXXFLAGS := -I$(SYSROOT)/system/include
 	EXTRA_LDFLAGS := -L$(SYSROOT)/system/lib -lgdi32
 	EXE := ../fenster.exe
 
 else ifeq ($(target),ghost)
-	LDEPS := -ljson -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
+	LDEPS := -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
 	EXTRA_CXXFLAGS :=
 	EXTRA_LDFLAGS :=
 	EXE := ../fenster.bin

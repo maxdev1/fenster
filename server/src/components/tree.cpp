@@ -6,8 +6,7 @@
 #include "components/tree_node.hpp"
 #include "components/window.hpp"
 #include "layout/stack_layout_manager.hpp"
-
-#include <libjson/json.hpp>
+#include "libfenster/json/json.hpp"
 
 namespace fensterserver
 {
@@ -26,8 +25,7 @@ namespace fensterserver
 		}
 		this->releaseChildren();
 
-		json::Json parser;
-		auto json = parser.parse(model);
+		auto json = fenster::Json::parse(model);
 
 		if(!json.isObject())
 		{
@@ -51,7 +49,7 @@ namespace fensterserver
 		}
 	}
 
-	TreeNode* Tree::createNodeComponent(json::JsonNode& node)
+	TreeNode* Tree::createNodeComponent(fenster::JsonNode& node)
 	{
 		if(!node.isObject())
 		{

@@ -17,6 +17,8 @@
 #include "components/image.hpp"
 #include "interface/interface_receiver.hpp"
 
+#include <components/checkbox.hpp>
+
 #include "layout/grid_layout_manager.hpp"
 #include "layout/flex_layout_manager.hpp"
 
@@ -99,6 +101,10 @@ namespace fensterserver
 
 				case FENSTER_COMPONENT_TYPE_IMAGE:
 					component = new Image();
+				break;
+
+				case FENSTER_COMPONENT_TYPE_CHECKBOX:
+					component = new Checkbox();
 				break;
 
 				default:
@@ -388,67 +394,6 @@ namespace fensterserver
 
 			responseMessage = response;
 			responseLength = sizeof(CommandGetScreenDimensionResponse);
-		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_FLEX_SET_ORIENTATION)
-		{
-			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
-
-			auto request = (CommandFlexSetOrientationRequest*) requestUiMessage;
-			Component* component = ComponentRegistry::get(request->id);
-			if(component)
-			{
-				auto flexLayoutManager = dynamic_cast<FlexLayoutManager*>(component->getLayoutManager());
-				if(flexLayoutManager)
-				{
-					flexLayoutManager->setHorizontal(request->horizontal);
-					response->status = FENSTER_PROTOCOL_SUCCESS;
-				}
-			}
-
-			responseMessage = response;
-			responseLength = sizeof(CommandSimpleResponse);
-		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_FLEX_SET_COMPONENT_INFO)
-		{
-			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
-
-			auto request = (CommandFlexSetComponentInfo*) requestUiMessage;
-			Component* component = ComponentRegistry::get(request->parent);
-			Component* child = ComponentRegistry::get(request->child);
-			if(component && child)
-			{
-				auto flexLayoutManager = dynamic_cast<FlexLayoutManager*>(component->getLayoutManager());
-				if(flexLayoutManager)
-				{
-					flexLayoutManager->setLayoutInfo(child, request->grow, request->shrink, request->basis);
-					response->status = FENSTER_PROTOCOL_SUCCESS;
-				}
-			}
-
-			responseMessage = response;
-			responseLength = sizeof(CommandSimpleResponse);
-		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_LAYOUT_SET_PADDING)
-		{
-			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
-
-			auto request = (CommandLayoutSetPadding*) requestUiMessage;
-			Component* component = ComponentRegistry::get(request->id);
-			if(component)
-			{
-				auto layoutManager = component->getLayoutManager();
-				if(layoutManager)
-				{
-					layoutManager->setPadding(request->insets);
-					response->status = FENSTER_PROTOCOL_SUCCESS;
-				}
-			}
-
-			responseMessage = response;
-			responseLength = sizeof(CommandSimpleResponse);
 		}
 		else if(requestUiMessage->id == FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT)
 		{

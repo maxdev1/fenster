@@ -7,7 +7,7 @@
 
 namespace fensterserver
 {
-	void FlexLayoutManager::setLayoutInfo(Component* child, float grow, float shrink, int basis)
+	void FlexLayoutManager::setComponentInfo(Component* child, float grow, float shrink, int basis)
 	{
 		FlexInfo info;
 		info.grow = grow;
@@ -46,7 +46,7 @@ namespace fensterserver
 		}
 
 		// Calculate remaining space, considering the gaps
-		int remainingSize = totalSpace - totalFixedSpace - (gap * (children.size() - 1));
+		int remainingSize = totalSpace - totalFixedSpace - (space * (children.size() - 1));
 
 		// Distribute space
 		int xOffset = bounds.x;
@@ -71,12 +71,12 @@ namespace fensterserver
 			if(horizontal)
 			{
 				child->setBounds(fenster::Rectangle(xOffset, yOffset, allocatedSize, bounds.height));
-				xOffset += allocatedSize + gap; // Add the gap after each component
+				xOffset += allocatedSize + space; // Add the gap after each component
 			}
 			else
 			{
 				child->setBounds(fenster::Rectangle(xOffset, yOffset, bounds.width, allocatedSize));
-				yOffset += allocatedSize + gap; // Add the gap after each component
+				yOffset += allocatedSize + space; // Add the gap after each component
 			}
 		}
 

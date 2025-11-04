@@ -21,7 +21,7 @@
 
 namespace fensterserver
 {
-    class Checkbox : virtual public Component, virtual public CheckableComponent
+    class Checkbox : virtual public Component, virtual public TitledComponent, virtual public CheckableComponent
     {
         Label label;
         bool checked;
@@ -38,6 +38,10 @@ namespace fensterserver
         void paint() override;
 
         void setCheckedInternal(bool value) override;
+        bool isChecked() override;
+
+        void setTitleInternal(std::string title) override;
+        std::string getTitle() override;
 
         Component* handleMouseEvent(MouseEvent& e) override;
         void handleBoundChanged(const fenster::Rectangle& oldBounds) override;

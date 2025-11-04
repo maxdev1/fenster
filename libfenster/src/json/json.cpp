@@ -2,13 +2,13 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libjson/json.hpp"
+#include "libfenster/json/json.hpp"
 
 #include <cctype>
 #include <string.h>
 #include <stdlib.h>
 
-namespace json
+namespace fenster
 {
 	void Json::skipWhitespace()
 	{
@@ -167,12 +167,24 @@ namespace json
 
 	JsonNode Json::parse(const std::string& s)
 	{
+		Json parser;
+		return parser.doParse(s);
+	}
+
+	JsonNode Json::doParse(const std::string& s)
+	{
 		start = s.c_str();
 		source = start;
 		return parseValue();
 	}
 
 	std::string Json::stringify(JsonNode& node)
+	{
+		Json parser;
+		return parser.doStringify(node);
+	}
+
+	std::string Json::doStringify(JsonNode& node)
 	{
 		if(node.isNull())
 		{

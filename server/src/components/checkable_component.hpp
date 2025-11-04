@@ -27,6 +27,7 @@ namespace fensterserver
 
         virtual void setChecked(bool value, bool triggeredByGroup);
         virtual void setCheckedInternal(bool value) = 0;
+        virtual bool isChecked() = 0;
 
         void setInternalCheckedHandler(InternalCheckedHandlerFunc handler)
         {

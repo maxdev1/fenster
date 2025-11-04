@@ -6,8 +6,7 @@
 #define FENSTER_SERVER_COMPONENTS_TREE
 
 #include "components/component.hpp"
-
-#include <libjson/json.hpp>
+#include "libfenster/json/json.hpp"
 
 namespace fensterserver
 {
@@ -20,7 +19,7 @@ namespace fensterserver
         ~Tree() override = default;
 
         void setModelFromJson(std::string& model);
-        TreeNode* createNodeComponent(json::JsonNode& node);
+        TreeNode* createNodeComponent(fenster::JsonNode& node);
     };
 }
 
