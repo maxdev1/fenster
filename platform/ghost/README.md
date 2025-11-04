@@ -1,0 +1,1 @@
+This will contain details about the integration into Ghost.
