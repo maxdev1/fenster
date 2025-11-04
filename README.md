@@ -21,6 +21,25 @@ The utility library `libproperties` is used for configuration management.
 Aside from this way, it is also possible to link the entire application into your embedded software and directly interface
 with the component classes.
 
+## Embedding & platform-specifics
+
+The project intends to keep dependencies for the target platform minimal. The major dependencies of the project are:
+
+* **C++ compiler**
+* **zlib**, **pixman** and **libpng** as dependencies to below
+* **freetype** for font rendering
+* **cairo** for accelerated 2D drawing
+
+With these libraries available on the target platform, porting the project requires implementing a set of platform-specific type definitions and functions.
+The headers for these definitions are found in `libfenster/inc/platform/platform.hpp` and `server/src/platform/platform.hpp`.
+Each header includes documentation explaining the required functions and their expected behavior.
+
+Currently, two platform implementations exist:
+* **ghost**, the actual implementation for Ghost OS;
+* **windows-mingw-sim** a WinAPI-based simulation layer for debugging and testing on Windows
+
+These implementations serve as examples for creating new platform integrations.
+
 ## Client library
 
 `libfenster` offers a set of component classes and layouts that can be combined to create a UI for your application.
@@ -104,22 +123,3 @@ upwards (to parent components).
 
 Some events, like scroll, drag or mouse-enter/leave events are dispatched upwards, starting
 at the component lowest in the tree.
-
-## Embedding & platform-specifics
-
-The project intends to keep dependencies for the target platform minimal. The major dependencies of the project are:
-
-* **C++ compiler**
-* **zlib**, **pixman** and **libpng** as dependencies to below
-* **freetype** for font rendering
-* **cairo** for accelerated 2D drawing
-
-With these libraries available on the target platform, porting the project requires implementing a set of platform-specific type definitions and functions.
-The headers for these definitions are found in `libfenster/inc/platform/platform.hpp` and `server/src/platform/platform.hpp`.
-Each header includes documentation explaining the required functions and their expected behavior.
-
-Currently, two platform implementations exist:
-* **ghost**, the actual implementation for Ghost OS;
-* **windows-mingw-sim** a WinAPI-based simulation layer for debugging and testing on Windows
-
-These implementations serve as examples for creating new platform integrations.
