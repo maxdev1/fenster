@@ -2,15 +2,15 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef FENSTER_SERVER_LAYOUT_GRIDLAYOUTMANAGER
-#define FENSTER_SERVER_LAYOUT_GRIDLAYOUTMANAGER
+#ifndef FENSTER_SERVER_LAYOUT_GRIDLAYOUT
+#define FENSTER_SERVER_LAYOUT_GRIDLAYOUT
 
-#include "layout_manager.hpp"
 #include <libfenster/metrics/insets.hpp>
+#include "layout.hpp"
 
 namespace fensterserver
 {
-    class GridLayoutManager : public LayoutManager
+    class GridLayout : public Layout
     {
         int columns;
         int rows;
@@ -19,15 +19,15 @@ namespace fensterserver
         int colSpace;
 
     public:
-        GridLayoutManager(int columns = 1, int rows = 0, int rowSpace = 0, int columnSpace = 0)
+        GridLayout(int columns = 1, int rows = 0, int rowSpace = 0, int columnSpace = 0)
             : columns(columns), rows(rows), padding(fenster::Insets(0, 0, 0, 0)),
               rowSpace(rowSpace), colSpace(columnSpace)
         {
         }
 
-        void setPadding(fenster::Insets _padding) override
+        void setPadding(fenster::Insets padding)
         {
-            padding = _padding;
+            this->padding = padding;
         }
 
         fenster::Insets getPadding() const

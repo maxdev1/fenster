@@ -4,15 +4,15 @@
 
 #include "test.hpp"
 
-#include <server.hpp>
-#include <sstream>
 #include <components/radio_button.hpp>
 #include <components/radio_group.hpp>
+#include <components/text/text_area.hpp>
 #include <components/tree.hpp>
 #include <components/tree_node.hpp>
-#include <components/text/text_area.hpp>
-#include <layout/flex_layout_manager.hpp>
-#include <layout/stack_layout_manager.hpp>
+#include <layout/flex_layout.hpp>
+#include <layout/stack_layout.hpp>
+#include <server.hpp>
+#include <sstream>
 
 #include "components/button.hpp"
 #include "components/checkbox.hpp"
@@ -20,8 +20,8 @@
 #include "components/scrollpane.hpp"
 #include "components/text/text_field.hpp"
 #include "components/window.hpp"
-#include "layout/flow_layout_manager.hpp"
-#include "layout/grid_layout_manager.hpp"
+#include "layout/flow_layout.hpp"
+#include "layout/grid_layout.hpp"
 
 using namespace fenster;
 
@@ -66,23 +66,23 @@ namespace fensterserver
 		Window* window = new Window;
 		window->setTitle("Components");
 		window->setBounds(fenster::Rectangle(100, 30, 320, 530));
-		window->setLayoutManager(new GridLayoutManager(1, 1));
+		window->setLayout(new GridLayout(1, 1));
 
 		ScrollPane* scroller = new ScrollPane;
 		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
 		scroller->setFixedWidth(true);
 
 		Panel* content = new Panel();
-		auto contentGrid = new GridLayoutManager(1);
+		auto contentGrid = new GridLayout(1);
 		contentGrid->setRowSpace(20);
 		contentGrid->setPadding(Insets(10, 10, 10, 10));
-		content->setLayoutManager(contentGrid);
+		content->setLayout(contentGrid);
 		scroller->setContent(content);
 		window->addChild(scroller);
 
 		{
 			Panel* panel = new Panel();
-			panel->setLayoutManager(new GridLayoutManager(2, 0, 10, 10));
+			panel->setLayout(new GridLayout(2, 0, 10, 10));
 
 			Label* info = new Label();
 			info->setTitle("Buttons:");
@@ -119,7 +119,7 @@ namespace fensterserver
 
 		{
 			Panel* panel = new Panel();
-			panel->setLayoutManager(new GridLayoutManager(1, 0, 10, 10));
+			panel->setLayout(new GridLayout(1, 0, 10, 10));
 
 			Label* info = new Label();
 			info->setTitle("Text fields:");
@@ -139,7 +139,7 @@ namespace fensterserver
 
 		{
 			Panel* panel = new Panel();
-			panel->setLayoutManager(new FlowLayoutManager());
+			panel->setLayout(new FlowLayout());
 
 			Checkbox* check = new Checkbox();
 			check->getLabel().setTitle("Check me");
@@ -167,9 +167,9 @@ namespace fensterserver
 		window->setTitle("Grid layout");
 		window->setBounds(fenster::Rectangle(700, 10, 300, 300));
 
-		auto grid = new GridLayoutManager(3, 3, 10, 10);
+		auto grid = new GridLayout(3, 3, 10, 10);
 		grid->setPadding(Insets(10, 10, 10, 10));
-		window->setLayoutManager(grid);
+		window->setLayout(grid);
 
 		for(int i = 0; i < 9; i++)
 		{
@@ -189,16 +189,16 @@ namespace fensterserver
 		auto window = new Window;
 		window->setTitle("Components");
 		window->setBounds(fenster::Rectangle(530, 30, 320, 530));
-		window->setLayoutManager(new GridLayoutManager(1, 1));
+		window->setLayout(new GridLayout(1, 1));
 
 		auto scroller = new ScrollPane;
 		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
 
 		auto panel = new Panel();
-		auto stackLayout = new StackLayoutManager();
+		auto stackLayout = new StackLayout();
 		stackLayout->setPadding(Insets(10, 10, 10, 10));
 		stackLayout->setSpace(10);
-		panel->setLayoutManager(stackLayout);
+		panel->setLayout(stackLayout);
 
 		auto jsonInput = new TextArea();
 		jsonInput->setMinimumSize(Dimension(500, 300));

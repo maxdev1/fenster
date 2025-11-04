@@ -3,15 +3,15 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/component.hpp"
+#include "component_registry.hpp"
 #include "components/window.hpp"
 #include "events/key_event.hpp"
 #include "events/locatable.hpp"
 #include "events/mouse_event.hpp"
-#include "layout/flow_layout_manager.hpp"
-#include "layout/grid_layout_manager.hpp"
-#include "layout/flex_layout_manager.hpp"
-#include "layout/stack_layout_manager.hpp"
-#include "component_registry.hpp"
+#include "layout/flex_layout.hpp"
+#include "layout/flow_layout.hpp"
+#include "layout/grid_layout.hpp"
+#include "layout/stack_layout.hpp"
 #include "libfenster/json/json.hpp"
 #include "server.hpp"
 
@@ -32,14 +32,14 @@ namespace fensterserver
 		requirements(COMPONENT_REQUIREMENT_ALL),
 		childRequirements(COMPONENT_REQUIREMENT_ALL),
 		parent(nullptr),
-		layoutManager(nullptr)
+		_layout(nullptr)
 	{
 		id = ComponentRegistry::add(this);
 	}
 
 	Component::~Component()
 	{
-		delete layoutManager;
+		delete _layout;
 	}
 
 	void Component::setBoundsInternal(const fenster::Rectangle& newBounds)
@@ -102,9 +102,9 @@ namespace fensterserver
 
 	void Component::layout()
 	{
-		if(layoutManager)
+		if(_layout)
 		{
-			layoutManager->layout();
+			_layout->layout();
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 		}
 	}
@@ -428,10 +428,10 @@ namespace fensterserver
 		markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
-	void Component::setLayoutManager(LayoutManager* newMgr)
+	void Component::setLayout(Layout* newMgr)
 	{
 		newMgr->setComponent(this);
-		this->layoutManager = newMgr;
+		this->_layout = newMgr;
 		markFor(COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
@@ -590,7 +590,7 @@ namespace fensterserver
 		}
 		else if(property == FENSTER_UI_PROPERTY_CHECKED)
 		{
-			auto checkableComponent = dynamic_cast<CheckableComponent*>(getLayoutManager());
+			auto checkableComponent = dynamic_cast<CheckableComponent*>(getLayout());
 			if(checkableComponent)
 			{
 				*out = checkableComponent->isChecked();
@@ -607,26 +607,26 @@ namespace fensterserver
 
 	bool Component::setNumericProperty(int property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_LAYOUT_MANAGER)
+		if(property == FENSTER_UI_PROPERTY_LAYOUT)
 		{
-			if(value == FENSTER_LAYOUT_MANAGER_FLOW)
+			if(value == FENSTER_LAYOUT_FLOW)
 			{
-				setLayoutManager(new FlowLayoutManager());
+				setLayout(new FlowLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_MANAGER_GRID)
+			if(value == FENSTER_LAYOUT_GRID)
 			{
-				setLayoutManager(new GridLayoutManager());
+				setLayout(new GridLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_MANAGER_FLEX)
+			if(value == FENSTER_LAYOUT_FLEX)
 			{
-				setLayoutManager(new FlexLayoutManager());
+				setLayout(new FlexLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_MANAGER_STACK)
+			if(value == FENSTER_LAYOUT_STACK)
 			{
-				setLayoutManager(new StackLayoutManager());
+				setLayout(new StackLayout());
 				return true;
 			}
 		}
@@ -647,13 +647,13 @@ namespace fensterserver
 		else if(property == FENSTER_UI_PROPERTY_LAYOUT_HORIZONTAL)
 		{
 			// TODO abstract into OrientedLayoutManager
-			auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+			auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
 			if(stackLayout)
 			{
 				stackLayout->setHorizontal(value == 1);
 			}
 
-			auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
 			if(flexLayout)
 			{
 				flexLayout->setHorizontal(value == 1);
@@ -662,13 +662,13 @@ namespace fensterserver
 		else if(property == FENSTER_UI_PROPERTY_LAYOUT_SPACE)
 		{
 			// TODO abstract into SpacedLayoutManager
-			auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+			auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
 			if(stackLayout)
 			{
 				stackLayout->setSpace(value);
 			}
 
-			auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+			auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
 			if(flexLayout)
 			{
 				flexLayout->setSpace(value);
@@ -707,13 +707,13 @@ namespace fensterserver
 						);
 
 				// TODO abstract into "PaddedLayoutManager"
-				auto stackLayout = dynamic_cast<StackLayoutManager*>(getLayoutManager());
+				auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
 				if(stackLayout)
 				{
 					stackLayout->setPadding(insets);
 				}
 
-				auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+				auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
 				if(flexLayout)
 				{
 					flexLayout->setPadding(insets);
@@ -740,7 +740,7 @@ namespace fensterserver
 				float shrink = obj["shrink"].asNumber();
 				int basis = obj["basis"].asNumber();
 
-				auto flexLayout = dynamic_cast<FlexLayoutManager*>(getLayoutManager());
+				auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
 				if(flexLayout)
 				{
 					flexLayout->setComponentInfo(child, grow, shrink, basis);

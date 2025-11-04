@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "layout/flex_layout_manager.hpp"
 #include "components/component.hpp"
+#include "layout/flex_layout.hpp"
 
 namespace fensterserver
 {
-	void FlexLayoutManager::setComponentInfo(Component* child, float grow, float shrink, int basis)
+	void FlexLayout::setComponentInfo(Component* child, float grow, float shrink, int basis)
 	{
 		FlexInfo info;
 		info.grow = grow;
@@ -16,7 +16,7 @@ namespace fensterserver
 		flexInfo[child] = info;
 	}
 
-	void FlexLayoutManager::layout()
+	void FlexLayout::layout()
 	{
 		if(component == nullptr)
 			return;

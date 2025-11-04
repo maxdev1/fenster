@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef FENSTER_SERVER_LAYOUT_FLEXLAYOUTMANAGER
-#define FENSTER_SERVER_LAYOUT_FLEXLAYOUTMANAGER
+#ifndef FENSTER_SERVER_LAYOUT_FLEXLAYOUT
+#define FENSTER_SERVER_LAYOUT_FLEXLAYOUT
 
-#include "layout_manager.hpp"
-#include <unordered_map>
 #include <libfenster/metrics/insets.hpp>
+#include <unordered_map>
+#include "layout.hpp"
 
 namespace fensterserver
 {
@@ -18,7 +18,7 @@ namespace fensterserver
         int basis;
     };
 
-    class FlexLayoutManager : public LayoutManager
+    class FlexLayout : public Layout
     {
         std::unordered_map<Component*, FlexInfo> flexInfo;
         bool horizontal = true;
@@ -45,7 +45,7 @@ namespace fensterserver
             this->space = gap;
         }
 
-        void setPadding(fenster::Insets padding) override
+        void setPadding(fenster::Insets padding)
         {
             this->padding = padding;
         }

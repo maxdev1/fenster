@@ -5,15 +5,15 @@
 #include "components/tree.hpp"
 #include "components/tree_node.hpp"
 #include "components/window.hpp"
-#include "layout/stack_layout_manager.hpp"
+#include "layout/stack_layout.hpp"
 #include "libfenster/json/json.hpp"
 
 namespace fensterserver
 {
 	Tree::Tree()
 	{
-		auto layout = new StackLayoutManager();
-		this->Component::setLayoutManager(layout);
+		auto layout = new StackLayout();
+		this->Component::setLayout(layout);
 	}
 
 	void Tree::setModelFromJson(std::string& model)

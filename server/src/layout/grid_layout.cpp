@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "layout/grid_layout_manager.hpp"
 #include "components/component.hpp"
+#include "layout/grid_layout.hpp"
 
 #include <vector>
 
 namespace fensterserver
 {
-	void GridLayoutManager::layout()
+	void GridLayout::layout()
 	{
 		if(component == nullptr)
 			return;

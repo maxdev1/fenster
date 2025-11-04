@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/layout/flex_layout_manager.hpp"
+#include "libfenster/layout/flex_layout.hpp"
 #include "libfenster/component.hpp"
 #include "libfenster/properties.hpp"
 #include "libfenster/json/json.hpp"
@@ -11,17 +11,17 @@
 
 namespace fenster
 {
-	void FlexLayoutManager::setHorizontal(bool horizontal)
+	void FlexLayout::setHorizontal(bool horizontal)
 	{
 		component->setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_HORIZONTAL, horizontal ? 1 : 0);
 	}
 
-	void FlexLayoutManager::setSpace(int space)
+	void FlexLayout::setSpace(int space)
 	{
 		component->setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_SPACE, space);
 	}
 
-	void FlexLayoutManager::setPadding(fenster::Insets insets)
+	void FlexLayout::setPadding(Insets insets)
 	{
 		std::map<std::string, JsonNode> data;
 		data["top"] = JsonNode((double) insets.top);
@@ -33,7 +33,7 @@ namespace fenster
 		component->setStringProperty(FENSTER_UI_PROPERTY_LAYOUT_PADDING, Json::stringify(node));
 	}
 
-	void FlexLayoutManager::setComponentInfo(Component* child, float grow, float shrink, int basis)
+	void FlexLayout::setComponentInfo(Component* child, float grow, float shrink, int basis)
 	{
 		std::map<std::string, JsonNode> data;
 		data["component"] = JsonNode((double) child->getId());
@@ -45,10 +45,10 @@ namespace fenster
 		component->setStringProperty(FENSTER_UI_PROPERTY_LAYOUT_COMPONENT_INFO, Json::stringify(node));
 	}
 
-	FlexLayoutManager* FlexLayoutManager::create(Component* component)
+	FlexLayout* FlexLayout::create(Component* component)
 	{
-		auto layout = new FlexLayoutManager(component);
-		component->setLayoutManager(layout);
+		auto layout = new FlexLayout(component);
+		component->setLayout(layout);
 		return layout;
 	}
 

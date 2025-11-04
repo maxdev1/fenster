@@ -406,9 +406,9 @@ namespace fenster
 		return false;
 	}
 
-	bool Component::setLayoutManager(LayoutManager* layoutManager)
+	bool Component::setLayout(Layout* layout)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT_MANAGER, layoutManager->getType());
+		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT, layout->getType());
 	}
 
 }

@@ -114,8 +114,8 @@ namespace fensterserver
 
         virtual void close();
 
-        void setLayoutManager(LayoutManager* layoutManager) override;
-        LayoutManager* getLayoutManager() const override;
+        void setLayout(Layout* layout) override;
+        Layout* getLayout() const override;
     };
 }
 

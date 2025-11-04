@@ -7,10 +7,10 @@
 
 #include "components/bounding_component.hpp"
 #include "components/event_listener_info.hpp"
-#include "focusable_component.hpp"
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
-#include "layout/layout_manager.hpp"
+#include "focusable_component.hpp"
+#include "layout/layout.hpp"
 #include "video/graphics.hpp"
 
 #include <libfenster/interface.hpp>
@@ -88,7 +88,7 @@ namespace fensterserver
 
         int zIndex = 1000;
 
-        LayoutManager* layoutManager;
+        Layout* _layout;
         Graphics graphics;
 
         bool visible;
@@ -253,11 +253,11 @@ namespace fensterserver
             // May be implemented by subtypes
         }
 
-        virtual void setLayoutManager(LayoutManager* layoutManager);
+        virtual void setLayout(Layout* layout);
 
-        virtual LayoutManager* getLayoutManager() const
+        virtual Layout* getLayout() const
         {
-            return layoutManager;
+            return _layout;
         }
 
         /**

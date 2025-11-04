@@ -19,7 +19,7 @@
 #include "metrics/rectangle.hpp"
 #include "application.hpp"
 #include "color_argb.hpp"
-#include "layout/layout_manager.hpp"
+#include "layout/layout.hpp"
 #include "platform/platform.hpp"
 
 namespace fenster
@@ -29,6 +29,13 @@ namespace fenster
 	 */
 	class Component : public BoundingComponent
 	{
+		friend class FlexLayout;
+		friend class StackLayout;
+		friend class GridLayout;
+		friend class FlowLayout;
+
+		bool setLayout(Layout* layout);
+
 	protected:
 		ComponentId id;
 		bool destroyed = false;
@@ -125,8 +132,6 @@ namespace fenster
 		bool addKeyListener(KeyListenerFunc listener);
 
 		void handle(ComponentEventHeader* header);
-
-		bool setLayoutManager(LayoutManager* layoutManager);
 	};
 }
 

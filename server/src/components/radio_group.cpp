@@ -4,7 +4,7 @@
 
 #include "components/radio_group.hpp"
 
-#include <layout/stack_layout_manager.hpp>
+#include <layout/stack_layout.hpp>
 #include <libfenster/properties.hpp>
 
 #include "radio_button.hpp"
@@ -14,7 +14,7 @@ namespace fensterserver
 	RadioGroup::RadioGroup():
 		background(ARGB(0, 0, 0, 0))
 	{
-		Component::setLayoutManager(new StackLayoutManager(5));
+		Component::setLayout(new StackLayout(5));
 	}
 
 	void RadioGroup::addChild(Component* comp, ComponentChildReferenceType type)

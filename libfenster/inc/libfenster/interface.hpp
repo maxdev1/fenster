@@ -107,11 +107,11 @@ namespace fenster
 	/**
 	 *
 	 */
-	typedef uint8_t LayoutManagerType;
-#define FENSTER_LAYOUT_MANAGER_GRID (0)
-#define FENSTER_LAYOUT_MANAGER_FLOW (1)
-#define FENSTER_LAYOUT_MANAGER_FLEX (2)
-#define FENSTER_LAYOUT_MANAGER_STACK (3)
+	typedef uint8_t LayoutType;
+#define FENSTER_LAYOUT_GRID (0)
+#define FENSTER_LAYOUT_FLOW (1)
+#define FENSTER_LAYOUT_FLEX (2)
+#define FENSTER_LAYOUT_STACK (3)
 
 	/**
 	 *

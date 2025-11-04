@@ -2,31 +2,28 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef FENSTER_SERVER_LAYOUT_STACKLAYOUTMANAGER
-#define FENSTER_SERVER_LAYOUT_STACKLAYOUTMANAGER
+#ifndef FENSTER_SERVER_LAYOUT_STACKLAYOUT
+#define FENSTER_SERVER_LAYOUT_STACKLAYOUT
 
-#include "layout_manager.hpp"
+#include "layout.hpp"
 
 namespace fensterserver
 {
-    /**
-     *
-     */
-    class StackLayoutManager : public LayoutManager
+    class StackLayout : public Layout
     {
         bool horizontal = false;
         fenster::Insets padding;
         int space = 0;
 
     public:
-        StackLayoutManager() = default;
-        explicit StackLayoutManager(int space) : space(space)
+        StackLayout() = default;
+        explicit StackLayout(int space) : space(space)
         {
         }
 
         void layout() override;
 
-        void setPadding(fenster::Insets insets) override
+        void setPadding(fenster::Insets insets)
         {
             padding = insets;
         }

@@ -2,15 +2,15 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "layout/stack_layout_manager.hpp"
 #include "components/component.hpp"
+#include "layout/stack_layout.hpp"
 
 namespace fensterserver
 {
 	/**
 	 *
 	 */
-	void StackLayoutManager::layout()
+	void StackLayout::layout()
 	{
 		if(!component)
 			return;

@@ -54,14 +54,14 @@ namespace fensterserver
 		panel.addChild(component);
 	}
 
-	void Window::setLayoutManager(LayoutManager* layoutManager)
+	void Window::setLayout(Layout* layout)
 	{
-		panel.setLayoutManager(layoutManager);
+		panel.setLayout(layout);
 	}
 
-	LayoutManager* Window::getLayoutManager() const
+	Layout* Window::getLayout() const
 	{
-		return panel.getLayoutManager();
+		return panel.getLayout();
 	}
 
 	void roundedRectangle(cairo_t* cr, double x, double y, double width, double height, double radius)

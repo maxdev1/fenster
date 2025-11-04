@@ -19,8 +19,8 @@
 
 #include <components/checkbox.hpp>
 
-#include "layout/grid_layout_manager.hpp"
-#include "layout/flex_layout_manager.hpp"
+#include "layout/flex_layout.hpp"
+#include "layout/grid_layout.hpp"
 
 using namespace fenster;
 
