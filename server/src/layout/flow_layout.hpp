@@ -6,20 +6,15 @@
 #define FENSTER_SERVER_LAYOUT_FLOWLAYOUT
 
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
 
 namespace fensterserver
 {
-    class FlowLayout : public Layout
+    class FlowLayout : public Layout, public PaddingSupport, public SingleSpacingSupport
     {
-        fenster::Insets padding;
-
     public:
         void layout() override;
-
-        void setPadding(fenster::Insets padding)
-        {
-            this->padding = padding;
-        }
     };
 }
 

@@ -6,21 +6,21 @@
 #define LIBFENSTER_LAYOUT_FLEXLAYOUT
 
 #include "layout.hpp"
+#include "support/orientation_support.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
 
 namespace fenster
 {
-	class FlexLayout : public Layout
+	class FlexLayout : public Layout, public PaddingSupport, public SingleSpacingSupport, public OrientationSupport
 	{
 	protected:
 		explicit FlexLayout(Component* component):
-			Layout(component)
+			Layout(component), PaddingSupport(component), SingleSpacingSupport(component), OrientationSupport(component)
 		{
 		}
 
 	public:
-		void setPadding(Insets insets);
-		void setSpace(int space);
-		void setHorizontal(bool horizontal);
 		void setComponentInfo(Component* component, float grow, float shrink, int basis);
 
 		static FlexLayout* create(Component* component);

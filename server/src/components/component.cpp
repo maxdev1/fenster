@@ -581,14 +581,14 @@ namespace fensterserver
 		return false;
 	}
 
-	bool Component::getNumericProperty(int property, uint32_t* out)
+	bool Component::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_VISIBLE)
+		if(property == fenster::ComponentProperty::Visible)
 		{
 			*out = this->isVisible() ? 1 : 0;
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_CHECKED)
+		else if(property == fenster::ComponentProperty::Checked)
 		{
 			auto checkableComponent = dynamic_cast<CheckableComponent*>(getLayout());
 			if(checkableComponent)
@@ -605,9 +605,9 @@ namespace fensterserver
 		return false;
 	}
 
-	bool Component::setNumericProperty(int property, uint32_t value)
+	bool Component::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_LAYOUT)
+		if(property == fenster::ComponentProperty::Layout)
 		{
 			if(value == FENSTER_LAYOUT_FLOW)
 			{
@@ -630,12 +630,12 @@ namespace fensterserver
 				return true;
 			}
 		}
-		else if(property == FENSTER_UI_PROPERTY_VISIBLE)
+		else if(property == fenster::ComponentProperty::Visible)
 		{
 			setVisible(value == 1);
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_CHECKED)
+		else if(property == fenster::ComponentProperty::Checked)
 		{
 			auto checkableComponent = dynamic_cast<CheckableComponent*>(this);
 			if(checkableComponent)
@@ -644,34 +644,39 @@ namespace fensterserver
 				return true;
 			}
 		}
-		else if(property == FENSTER_UI_PROPERTY_LAYOUT_HORIZONTAL)
+		else if(property == fenster::ComponentProperty::LayoutOrientation)
 		{
-			// TODO abstract into OrientedLayoutManager
-			auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
-			if(stackLayout)
+			auto layoutWithOrientation = dynamic_cast<OrientationSupport*>(getLayout());
+			if(layoutWithOrientation)
 			{
-				stackLayout->setHorizontal(value == 1);
-			}
-
-			auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
-			if(flexLayout)
-			{
-				flexLayout->setHorizontal(value == 1);
+				layoutWithOrientation->setOrientation((fenster::Orientation) value);
 			}
 		}
-		else if(property == FENSTER_UI_PROPERTY_LAYOUT_SPACE)
+		else if(property == fenster::ComponentProperty::LayoutSpace)
 		{
-			// TODO abstract into SpacedLayoutManager
-			auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
-			if(stackLayout)
+			auto layoutWithSingleSpacing = dynamic_cast<SingleSpacingSupport*>(getLayout());
+			if(layoutWithSingleSpacing)
 			{
-				stackLayout->setSpace(value);
+				layoutWithSingleSpacing->setSpace(value);
+				return true;
 			}
-
-			auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
-			if(flexLayout)
+		}
+		else if(property == fenster::ComponentProperty::LayoutSpaceHorizontal)
+		{
+			auto layoutWithSpacing = dynamic_cast<SpacingSupport*>(getLayout());
+			if(layoutWithSpacing)
 			{
-				flexLayout->setSpace(value);
+				layoutWithSpacing->setHorizontalSpace(value);
+				return true;
+			}
+		}
+		else if(property == fenster::ComponentProperty::LayoutSpaceVertical)
+		{
+			auto layoutWithSpacing = dynamic_cast<SpacingSupport*>(getLayout());
+			if(layoutWithSpacing)
+			{
+				layoutWithSpacing->setVerticalSpace(value);
+				return true;
 			}
 		}
 
@@ -682,9 +687,9 @@ namespace fensterserver
 		return false;
 	}
 
-	bool Component::setStringProperty(int property, std::string text)
+	bool Component::setStringProperty(fenster::ComponentProperty property, std::string text)
 	{
-		if(property == FENSTER_UI_PROPERTY_TITLE)
+		if(property == fenster::ComponentProperty::Title)
 		{
 			if(auto titled = dynamic_cast<TitledComponent*>(this))
 			{
@@ -692,7 +697,7 @@ namespace fensterserver
 				return true;
 			}
 		}
-		else if(property == FENSTER_UI_PROPERTY_LAYOUT_PADDING)
+		else if(property == fenster::ComponentProperty::LayoutPadding)
 		{
 			fenster::JsonNode result = fenster::Json::parse(text);
 
@@ -706,21 +711,15 @@ namespace fensterserver
 						(int) obj["right"].asNumber()
 						);
 
-				// TODO abstract into "PaddedLayoutManager"
-				auto stackLayout = dynamic_cast<StackLayout*>(getLayout());
-				if(stackLayout)
+				auto layoutWithPaddingSupport = dynamic_cast<PaddingSupport*>(getLayout());
+				if(layoutWithPaddingSupport)
 				{
-					stackLayout->setPadding(insets);
-				}
-
-				auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
-				if(flexLayout)
-				{
-					flexLayout->setPadding(insets);
+					layoutWithPaddingSupport->setPadding(insets);
+					return true;
 				}
 			}
 		}
-		else if(property == FENSTER_UI_PROPERTY_LAYOUT_COMPONENT_INFO)
+		else if(property == fenster::ComponentProperty::LayoutFlexComponentInfo)
 		{
 			fenster::JsonNode result = fenster::Json::parse(text);
 
@@ -744,6 +743,7 @@ namespace fensterserver
 				if(flexLayout)
 				{
 					flexLayout->setComponentInfo(child, grow, shrink, basis);
+					return true;
 				}
 			}
 		}
@@ -751,9 +751,9 @@ namespace fensterserver
 		return false;
 	}
 
-	bool Component::getStringProperty(int property, std::string& out)
+	bool Component::getStringProperty(fenster::ComponentProperty property, std::string& out)
 	{
-		if(property == FENSTER_UI_PROPERTY_TITLE)
+		if(property == fenster::ComponentProperty::Title)
 		{
 			if(auto titled = dynamic_cast<TitledComponent*>(this))
 			{

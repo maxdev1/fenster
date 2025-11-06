@@ -35,9 +35,9 @@ namespace fensterserver
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
-	bool Image::setStringProperty(int property, std::string text)
+	bool Image::setStringProperty(fenster::ComponentProperty property, std::string text)
 	{
-		if(property == FENSTER_UI_PROPERTY_IMAGE_SOURCE)
+		if(property == fenster::ComponentProperty::ImageSource)
 		{
 			this->loadImage(text);
 			return true;

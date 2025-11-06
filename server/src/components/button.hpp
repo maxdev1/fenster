@@ -13,6 +13,7 @@
 
 #include <libfenster/button.hpp>
 #include <libfenster/metrics/insets.hpp>
+#include <libfenster/properties.hpp>
 #include <string>
 
 namespace fensterserver
@@ -38,8 +39,8 @@ namespace fensterserver
         void setTitleInternal(std::string title) override;
         std::string getTitle() override;
 
-        bool getNumericProperty(int property, uint32_t* out) override;
-        bool setNumericProperty(int property, uint32_t value) override;
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out) override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
 
         bool isFocusableDefault() const override;
         void setFocusedInternal(bool focused) override;

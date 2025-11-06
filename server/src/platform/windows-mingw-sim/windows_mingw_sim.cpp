@@ -307,9 +307,9 @@ namespace fensterserver
 		while((entry = readdir(dir)) != NULL)
 		{
 			std::string path = std::string("../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
-			fensterserver::Cursor::load(path);
+			Cursor::load(path);
 		}
-		fensterserver::Cursor::set("default");
+		Cursor::set("default");
 		closedir(dir);
 	}
 }

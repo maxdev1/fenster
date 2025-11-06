@@ -30,8 +30,8 @@ namespace fensterserver
         void setBackground(fenster::ColorArgb color);
         fenster::ColorArgb getBackground();
 
-        bool setNumericProperty(int property, uint32_t value) override;
-        bool getNumericProperty(int property, uint32_t* out) override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out) override;
     };
 }
 

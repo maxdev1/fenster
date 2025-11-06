@@ -15,6 +15,7 @@ namespace fensterserver
 		if(!component)
 			return;
 
+		bool horizontal = orientation == fenster::Orientation::Horizontal;
 		int max = 0;
 		int pos = horizontal ? padding.left : padding.top;
 		bool first = true;

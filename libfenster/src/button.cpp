@@ -15,25 +15,25 @@ namespace fenster
 
 	void Button::setEnabled(bool enabled)
 	{
-		setNumericProperty(FENSTER_UI_PROPERTY_ENABLED, enabled);
+		setNumericProperty(ComponentProperty::Enabled, enabled);
 	}
 
 	bool Button::isEnabled()
 	{
 		uint32_t value;
-		getNumericProperty(FENSTER_UI_PROPERTY_ENABLED, &value);
+		getNumericProperty(ComponentProperty::Enabled, &value);
 		return value;
 	}
 
 	void Button::setStyle(ButtonStyle style)
 	{
-		setNumericProperty(FENSTER_UI_PROPERTY_STYLE, style);
+		setNumericProperty(ComponentProperty::Style, style);
 	}
 
 	ButtonStyle Button::getStyle()
 	{
 		uint32_t value;
-		getNumericProperty(FENSTER_UI_PROPERTY_STYLE, &value);
+		getNumericProperty(ComponentProperty::Style, &value);
 		return value;
 	}
 }

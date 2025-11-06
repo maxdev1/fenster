@@ -4,14 +4,15 @@ LIB := libfenster.a
 CXXFLAGS := -Iinc -I$(FREETYPE_INC) -I$(CAIRO_INC) -std=c++17 # -Wall -Wextra
 
 SRC := $(shell find src -name '*.cpp')
-OBJ := $(patsubst src/%.cpp,obj/%.o,$(SRC))
+OBJTGT := obj/$(target)
+OBJ := $(patsubst src/%.cpp,$(OBJTGT)/%.o,$(SRC))
 
 all: $(LIB)
 
 $(LIB): $(OBJ)
 	$(AR) rcs $@ $^
 
-obj/%.o: src/%.cpp
+$(OBJTGT)/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -24,6 +25,6 @@ install-headers:
 	cp -r inc/* $(SYSROOT)/system/include/
 
 clean:
-	rm -rf obj $(LIB)
+	rm -rf $(OBJTGT) $(LIB)
 
 .PHONY: all install clean install-headers

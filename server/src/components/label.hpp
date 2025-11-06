@@ -43,7 +43,7 @@ namespace fensterserver
         void setAlignment(fenster::TextAlignment alignment);
         fenster::TextAlignment getAlignment();
 
-        bool setNumericProperty(int property, uint32_t value) override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
     };
 }
 

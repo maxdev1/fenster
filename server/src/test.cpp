@@ -74,7 +74,7 @@ namespace fensterserver
 
 		Panel* content = new Panel();
 		auto contentGrid = new GridLayout(1);
-		contentGrid->setRowSpace(20);
+		contentGrid->setVerticalSpace(20);
 		contentGrid->setPadding(Insets(10, 10, 10, 10));
 		content->setLayout(contentGrid);
 		scroller->setContent(content);

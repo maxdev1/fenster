@@ -38,14 +38,14 @@ namespace fensterserver
 	}
 
 
-	bool FocusableComponent::setNumericProperty(int property, uint32_t value)
+	bool FocusableComponent::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_FOCUSABLE)
+		if(property == fenster::ComponentProperty::Focusable)
 		{
 			this->focusable = value == 1;
 			return true;
 		}
-		if(property == FENSTER_UI_PROPERTY_DISPATCHES_FOCUS)
+		if(property == fenster::ComponentProperty::DispatchesFocus)
 		{
 			this->dispatchesFocus = value == 1;
 			return true;
@@ -53,14 +53,14 @@ namespace fensterserver
 		return false;
 	}
 
-	bool FocusableComponent::getNumericProperty(int property, uint32_t* out)
+	bool FocusableComponent::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_FOCUSABLE)
+		if(property == fenster::ComponentProperty::Focusable)
 		{
 			*out = this->focusable ? 1 : 0;
 			return true;
 		}
-		if(property == FENSTER_UI_PROPERTY_DISPATCHES_FOCUS)
+		if(property == fenster::ComponentProperty::DispatchesFocus)
 		{
 			*out = this->dispatchesFocus ? 1 : 0;
 			return true;

@@ -12,13 +12,13 @@ namespace fenster
 {
 	bool TitledComponent::setTitle(std::string title)
 	{
-		return setStringProperty(FENSTER_UI_PROPERTY_TITLE, title);
+		return setStringProperty(ComponentProperty::Title, title);
 	}
 
 	std::string TitledComponent::getTitle()
 	{
 		std::string out;
-		getStringProperty(FENSTER_UI_PROPERTY_TITLE, out);
+		getStringProperty(ComponentProperty::Title, out);
 		return out;
 	}
 

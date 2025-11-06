@@ -251,14 +251,14 @@ namespace fensterserver
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
-	bool Button::getNumericProperty(int property, uint32_t* out)
+	bool Button::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_ENABLED)
+		if(property == fenster::ComponentProperty::Enabled)
 		{
 			*out = enabled;
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_STYLE)
+		else if(property == fenster::ComponentProperty::Style)
 		{
 			*out = style;
 			return true;
@@ -267,15 +267,15 @@ namespace fensterserver
 		return false;
 	}
 
-	bool Button::setNumericProperty(int property, uint32_t value)
+	bool Button::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_ENABLED)
+		if(property == fenster::ComponentProperty::Enabled)
 		{
 			setEnabled(value);
 			markFor(COMPONENT_REQUIREMENT_ALL);
 			return true;
 		}
-		else if(property == FENSTER_UI_PROPERTY_STYLE)
+		else if(property == fenster::ComponentProperty::Style)
 		{
 			style = value;
 			markFor(COMPONENT_REQUIREMENT_ALL);

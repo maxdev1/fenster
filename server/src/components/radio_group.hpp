@@ -33,8 +33,8 @@ namespace fensterserver
 
         void addChild(Component* comp, ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
 
-        bool setNumericProperty(int property, uint32_t value) override;
-        bool getNumericProperty(int property, uint32_t* out) override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out) override;
     };
 }
 

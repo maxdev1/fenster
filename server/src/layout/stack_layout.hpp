@@ -6,37 +6,22 @@
 #define FENSTER_SERVER_LAYOUT_STACKLAYOUT
 
 #include "layout.hpp"
+#include "support/orientation_support.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
 
 namespace fensterserver
 {
-    class StackLayout : public Layout
+    class StackLayout : public Layout, public PaddingSupport, public SingleSpacingSupport, public OrientationSupport
     {
-        bool horizontal = false;
-        fenster::Insets padding;
-        int space = 0;
-
     public:
         StackLayout() = default;
-        explicit StackLayout(int space) : space(space)
+
+        explicit StackLayout(int space): SingleSpacingSupport(space)
         {
         }
 
         void layout() override;
-
-        void setPadding(fenster::Insets insets)
-        {
-            padding = insets;
-        }
-
-        void setSpace(int space)
-        {
-            this->space = space;
-        }
-
-        void setHorizontal(bool horizontal)
-        {
-            this->horizontal = horizontal;
-        }
     };
 }
 

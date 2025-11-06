@@ -417,6 +417,11 @@ namespace fensterserver
 			return this;
 		}
 
+		if(me.type != FENSTER_MOUSE_EVENT_SCROLL)
+		{
+			// Swallow other events so we can handle the cursor
+			return this;
+		}
 		return nullptr;
 	}
 
@@ -465,9 +470,9 @@ namespace fensterserver
 		return fenster::Range(marker, cursor);
 	}
 
-	bool TextField::getNumericProperty(int property, uint32_t* out)
+	bool TextField::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_SECURE)
+		if(property == fenster::ComponentProperty::Secure)
 		{
 			*out = secure;
 			return true;
@@ -476,9 +481,9 @@ namespace fensterserver
 		return false;
 	}
 
-	bool TextField::setNumericProperty(int property, uint32_t value)
+	bool TextField::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_SECURE)
+		if(property == fenster::ComponentProperty::Secure)
 		{
 			secure = value;
 			return true;

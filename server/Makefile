@@ -17,14 +17,15 @@ CXXFLAGS := -Isrc -I$(FREETYPE_INC) -Wall -Wextra -std=c++17 $(EXTRA_CXXFLAGS) -
 LDFLAGS := $(LDEPS) $(EXTRA_LDFLAGS)
 
 SRC := $(shell find src -name '*.cpp')
-OBJ := $(patsubst src/%.cpp,obj/%.o,$(SRC))
+OBJTGT := obj/$(target)
+OBJ := $(patsubst src/%.cpp,$(OBJTGT)/%.o,$(SRC))
 
 all: $(EXE)
 
 $(EXE): $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-obj/%.o: src/%.cpp
+$(OBJTGT)/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
@@ -33,6 +34,6 @@ install: $(EXE)
 	cp $(EXE) $(SYSROOT)/applications/
 
 clean:
-	rm -rf obj $(EXE)
+	rm -rf $(OBJTGT) $(EXE)
 
 .PHONY: all install clean

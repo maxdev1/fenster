@@ -14,13 +14,13 @@ namespace fenster
 
 	void TextField::setSecure(bool secure)
 	{
-		Component::setNumericProperty(FENSTER_UI_PROPERTY_SECURE, secure);
+		Component::setNumericProperty(ComponentProperty::Secure, secure);
 	}
 
 	bool TextField::isSecure()
 	{
 		uint32_t value;
-		Component::getNumericProperty(FENSTER_UI_PROPERTY_SECURE, &value);
+		Component::getNumericProperty(ComponentProperty::Secure, &value);
 		return value;
 	}
 }

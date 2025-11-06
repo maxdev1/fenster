@@ -6,14 +6,16 @@
 #define LIBFENSTER_LAYOUT_GRIDLAYOUT
 
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/spacing_support.hpp"
 
 namespace fenster
 {
-	class GridLayout : public Layout
+	class GridLayout : public Layout, public PaddingSupport, public SpacingSupport
 	{
 	protected:
 		explicit GridLayout(Component* component):
-			Layout(component)
+			Layout(component), PaddingSupport(component), SpacingSupport(component)
 		{
 		}
 

@@ -21,6 +21,8 @@ namespace fensterserver
 		if(component == nullptr)
 			return;
 
+		bool horizontal = orientation == fenster::Orientation::Horizontal;
+
 		fenster::Rectangle bounds = component->getBounds();
 		bounds.x = padding.left;
 		bounds.y = padding.top;
@@ -40,7 +42,9 @@ namespace fensterserver
 
 			int basis = (flex.basis >= 0)
 				            ? flex.basis
-				            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
+				            : (horizontal
+					               ? child->getPreferredSize().width
+					               : child->getPreferredSize().height);
 			totalFixedSpace += basis;
 			totalFlexGrow += flex.grow;
 		}
@@ -59,7 +63,9 @@ namespace fensterserver
 
 			int basis = (flex.basis >= 0)
 				            ? flex.basis
-				            : (horizontal ? child->getPreferredSize().width : child->getPreferredSize().height);
+				            : (horizontal
+					               ? child->getPreferredSize().width
+					               : child->getPreferredSize().height);
 			int allocatedSize = basis;
 
 			if(remainingSize > 0 && flex.grow > 0)

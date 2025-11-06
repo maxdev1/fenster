@@ -12,7 +12,6 @@ namespace fensterserver
 		if(component == nullptr)
 			return;
 
-
 		fenster::Rectangle bounds = component->getBounds();
 		bounds.x = padding.left;
 		bounds.y = padding.top;

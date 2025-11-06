@@ -10,13 +10,13 @@ namespace fenster
 {
 	bool CheckableComponent::setChecked(bool checked)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_CHECKED, checked ? 1 : 0);
+		return setNumericProperty(ComponentProperty::Checked, checked ? 1 : 0);
 	}
 
 	bool CheckableComponent::isChecked()
 	{
 		uint32_t out;
-		getNumericProperty(FENSTER_UI_PROPERTY_CHECKED, &out);
+		getNumericProperty(ComponentProperty::Checked, &out);
 		return out == 1;
 	}
 

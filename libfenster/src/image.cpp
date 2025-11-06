@@ -14,6 +14,6 @@ namespace fenster
 
 	bool Image::loadImage(std::string path)
 	{
-		return setStringProperty(FENSTER_UI_PROPERTY_IMAGE_SOURCE, path);
+		return setStringProperty(ComponentProperty::ImageSource, path);
 	}
 }

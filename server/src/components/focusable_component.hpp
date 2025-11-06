@@ -6,6 +6,7 @@
 #define FENSTER_SERVER_COMPONENTS_FOCUSABLECOMPONENT
 
 #include <cstdint>
+#include <libfenster/properties.hpp>
 
 namespace fensterserver
 {
@@ -62,8 +63,8 @@ namespace fensterserver
 
         Component* setFocused(bool focused);
 
-        bool getNumericProperty(int property, uint32_t* out);
-        bool setNumericProperty(int property, uint32_t value);
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out);
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value);
     };
 }
 

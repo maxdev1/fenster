@@ -114,7 +114,7 @@ namespace fenster
 		return result;
 	}
 
-	bool Component::setNumericProperty(int property, uint32_t value)
+	bool Component::setNumericProperty(ComponentProperty property, uint32_t value)
 	{
 		if(!ApplicationInitialized)
 			return false;
@@ -145,7 +145,7 @@ namespace fenster
 		return success;
 	}
 
-	bool Component::getNumericProperty(int property, uint32_t* out)
+	bool Component::getNumericProperty(ComponentProperty property, uint32_t* out)
 	{
 		if(!ApplicationInitialized)
 			return false;
@@ -181,7 +181,7 @@ namespace fenster
 	}
 
 
-	bool Component::setStringProperty(int property, std::string value)
+	bool Component::setStringProperty(ComponentProperty property, std::string value)
 	{
 		if(!ApplicationInitialized)
 			return false;
@@ -213,7 +213,7 @@ namespace fenster
 		return success;
 	}
 
-	bool Component::getStringProperty(int property, std::string& out)
+	bool Component::getStringProperty(ComponentProperty property, std::string& out)
 	{
 		if(!ApplicationInitialized)
 			return false;
@@ -317,13 +317,13 @@ namespace fenster
 
 	bool Component::setBackground(ColorArgb argb)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_BACKGROUND, argb);
+		return setNumericProperty(ComponentProperty::Background, argb);
 	}
 
 	bool Component::isVisible()
 	{
 		uint32_t visible;
-		if(getNumericProperty(FENSTER_UI_PROPERTY_VISIBLE, &visible))
+		if(getNumericProperty(ComponentProperty::Visible, &visible))
 		{
 			return visible == 1;
 		}
@@ -332,14 +332,14 @@ namespace fenster
 
 	bool Component::setVisible(bool visible)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_VISIBLE, visible ? 1 : 0);
+		return setNumericProperty(ComponentProperty::Visible, visible ? 1 : 0);
 	}
 
 
 	bool Component::isFocusable()
 	{
 		uint32_t focusable;
-		if(getNumericProperty(FENSTER_UI_PROPERTY_FOCUSABLE, &focusable))
+		if(getNumericProperty(ComponentProperty::Focusable, &focusable))
 		{
 			return focusable == 1;
 		}
@@ -348,14 +348,14 @@ namespace fenster
 
 	bool Component::setFocusable(bool focusable)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_FOCUSABLE, focusable ? 1 : 0);
+		return setNumericProperty(ComponentProperty::Focusable, focusable ? 1 : 0);
 	}
 
 
 	bool Component::isDispatchesFocus()
 	{
 		uint32_t d;
-		if(getNumericProperty(FENSTER_UI_PROPERTY_DISPATCHES_FOCUS, &d))
+		if(getNumericProperty(ComponentProperty::DispatchesFocus, &d))
 		{
 			return d == 1;
 		}
@@ -364,7 +364,7 @@ namespace fenster
 
 	bool Component::setDispatchesFocus(bool d)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_DISPATCHES_FOCUS, d ? 1 : 0);
+		return setNumericProperty(ComponentProperty::DispatchesFocus, d ? 1 : 0);
 	}
 
 	bool Component::setPreferredSize(const Dimension& size)
@@ -408,7 +408,7 @@ namespace fenster
 
 	bool Component::setLayout(Layout* layout)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_LAYOUT, layout->getType());
+		return setNumericProperty(ComponentProperty::Layout, layout->getType());
 	}
 
 }

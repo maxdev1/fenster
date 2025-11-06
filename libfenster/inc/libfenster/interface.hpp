@@ -5,6 +5,7 @@
 #ifndef LIBFENSTER_INTERFACE
 #define LIBFENSTER_INTERFACE
 
+#include "properties.hpp"
 #include "platform/platform.hpp"
 #include "metrics/dimension.hpp"
 #include "metrics/rectangle.hpp"
@@ -258,7 +259,7 @@ namespace fenster
 	{
 		MessageHeader header;
 		ComponentId id;
-		int property;
+		ComponentProperty property;
 	} __attribute__((packed)) CommandGetNumericPropertyRequest;
 
 	typedef struct
@@ -275,7 +276,7 @@ namespace fenster
 	{
 		MessageHeader header;
 		ComponentId id;
-		int property;
+		ComponentProperty property;
 		uint32_t value;
 	} __attribute__((packed)) CommandSetNumericPropertyRequest;
 
@@ -292,7 +293,7 @@ namespace fenster
 	{
 		MessageHeader header;
 		ComponentId id;
-		int property;
+		ComponentProperty property;
 		char value[];
 	} __attribute__((packed)) CommandSetStringPropertyRequest;
 
@@ -303,7 +304,7 @@ namespace fenster
 	{
 		MessageHeader header;
 		ComponentId id;
-		int property;
+		ComponentProperty property;
 	} __attribute__((packed)) CommandGetStringPropertyRequest;
 
 	typedef struct

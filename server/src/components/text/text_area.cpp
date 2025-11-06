@@ -152,9 +152,9 @@ namespace fensterserver
 
 		// Paint glyphs
 		pos = 0;
-		for(fenster::PositionedGlyph& g: viewModel->positions)
+		for(pos = 0; pos < viewModel->positions.size(); pos++)
 		{
-
+			auto g = viewModel->positions[pos];
 			fenster::Rectangle onView = glyphToView(g);
 			fenster::ColorArgb color = textColor;
 			if(focused && first != second && pos >= first && pos < second)
@@ -162,13 +162,22 @@ namespace fensterserver
 				color = _RGB(255, 255, 255);
 			}
 
+			// // TODO test
+			// cairo_save(cr);
+			// cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(pos == cursor ? ARGB(50, 255, 155, 55) : ARGB(50, 55, 155, 255)));
+			// fenster::Rectangle before = positionToCursorBounds(pos);
+			// fenster::Rectangle after = positionToCursorBounds(pos + 1);
+			// cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
+			// cairo_stroke(cr);
+			// cairo_restore(cr);
+			// // TODO test
+
 			cairo_save(cr);
 			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(color));
 			cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
 			cairo_glyph_path(cr, g.glyph, g.glyph_count);
 			cairo_fill(cr);
 			cairo_restore(cr);
-			++pos;
 		}
 
 		// Paint cursor
@@ -426,30 +435,40 @@ namespace fensterserver
 			return this;
 		}
 
+		if(me.type != FENSTER_MOUSE_EVENT_SCROLL)
+		{
+			// Swallow other events so we can handle the cursor
+			return this;
+		}
 		return nullptr;
 	}
 
 	int TextArea::viewToPosition(fenster::Point p)
 	{
-		int pos = 0;
-
 		for(int i = 0; i < viewModel->positions.size(); i++)
 		{
-			fenster::PositionedGlyph g = viewModel->positions[i];
-			fenster::Rectangle onView = glyphToView(g);
+			auto bounds = positionToCursorBounds(i);
+			auto bounds2 = positionToCursorBounds(i + 1);
 
-			if(p.x < onView.x + onView.width / 2
-			   // TODO only multiline
-			   && p.y + fontSize / 2 > onView.y
-			   && p.y + fontSize / 2 < onView.y + onView.height / 2
-			)
+			if(bounds2.y == bounds.y) // same line
 			{
-				break;
+				bounds.extend(bounds2.getStart());
+				bounds.extend(bounds2.getEnd());
+				if(bounds.contains(p))
+				{
+					return i;
+				}
 			}
-
-			++pos;
+			else
+			{
+				// new line
+				if(p.y > bounds.y && p.y < bounds.y + bounds.height && p.x > bounds.x)
+				{
+					return i;
+				}
+			}
 		}
-		return pos;
+		return 0;
 	}
 
 	fenster::Rectangle TextArea::glyphToView(fenster::PositionedGlyph& g)
@@ -484,9 +503,9 @@ namespace fensterserver
 		return fenster::Range(marker, cursor);
 	}
 
-	bool TextArea::getNumericProperty(int property, uint32_t* out)
+	bool TextArea::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_SECURE)
+		if(property == fenster::ComponentProperty::Secure)
 		{
 			*out = secure;
 			return true;
@@ -495,9 +514,9 @@ namespace fensterserver
 		return false;
 	}
 
-	bool TextArea::setNumericProperty(int property, uint32_t value)
+	bool TextArea::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_SECURE)
+		if(property == fenster::ComponentProperty::Secure)
 		{
 			secure = value;
 			return true;

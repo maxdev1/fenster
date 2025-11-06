@@ -14,11 +14,11 @@ namespace fenster
 
 	bool Label::setColor(ColorArgb argb)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_COLOR, argb);
+		return setNumericProperty(ComponentProperty::Color, argb);
 	}
 
 	bool Label::setAlignment(TextAlignment alignment)
 	{
-		return setNumericProperty(FENSTER_UI_PROPERTY_ALIGNMENT, (uint32_t) alignment);
+		return setNumericProperty(ComponentProperty::Alignment, (uint32_t) alignment);
 	}
 }

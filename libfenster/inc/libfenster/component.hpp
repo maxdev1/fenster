@@ -20,6 +20,7 @@
 #include "application.hpp"
 #include "color_argb.hpp"
 #include "layout/layout.hpp"
+#include "properties.hpp"
 #include "platform/platform.hpp"
 
 namespace fenster
@@ -117,11 +118,11 @@ namespace fenster
 		bool setMinimumSize(const Dimension& size);
 		bool setMaximumSize(const Dimension& size);
 
-		bool setNumericProperty(int property, uint32_t value);
-		bool getNumericProperty(int property, uint32_t* out);
+		bool setNumericProperty(ComponentProperty property, uint32_t value);
+		bool getNumericProperty(ComponentProperty property, uint32_t* out);
 
-		bool setStringProperty(int property, std::string value);
-		bool getStringProperty(int property, std::string& out);
+		bool setStringProperty(ComponentProperty property, std::string value);
+		bool getStringProperty(ComponentProperty property, std::string& out);
 
 		bool addListener(ComponentEventType eventType, Listener* listener);
 		bool addMouseListener(MouseListener* listener);

@@ -243,9 +243,20 @@ namespace fensterserver
          */
         virtual fenster::Point getLocationOnScreen();
 
+        /**
+         * Handles the given mouse event.
+         *
+         * @return the pointer to the component that has effectively handled the event or nullptr
+         */
         virtual Component* handleMouseEvent(MouseEvent& event);
 
+        /**
+         * Handles the given key event.
+         *
+         * @return the pointer to the component that has effectively handled the event or nullptr
+         */
         virtual Component* handleKeyEvent(KeyEvent& event);
+
         bool sendKeyEventToListener(KeyEvent& event);
 
         virtual void handleBoundChanged(const fenster::Rectangle& oldBounds)
@@ -329,11 +340,11 @@ namespace fensterserver
 
         void clearSurface();
 
-        virtual bool getNumericProperty(int property, uint32_t* out);
-        virtual bool setNumericProperty(int property, uint32_t value);
+        virtual bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out);
+        virtual bool setNumericProperty(fenster::ComponentProperty property, uint32_t value);
 
-        virtual bool getStringProperty(int property, std::string& out);
-        virtual bool setStringProperty(int property, std::string value);
+        virtual bool getStringProperty(fenster::ComponentProperty property, std::string& out);
+        virtual bool setStringProperty(fenster::ComponentProperty property, std::string value);
 
         void addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id);
         bool callForListeners(fenster::ComponentEventType eventType,

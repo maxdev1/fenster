@@ -5,57 +5,25 @@
 #ifndef FENSTER_SERVER_LAYOUT_GRIDLAYOUT
 #define FENSTER_SERVER_LAYOUT_GRIDLAYOUT
 
-#include <libfenster/metrics/insets.hpp>
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/spacing_support.hpp"
 
 namespace fensterserver
 {
-    class GridLayout : public Layout
+    class GridLayout : public Layout, public PaddingSupport, public SpacingSupport
     {
-        int columns;
-        int rows;
-        fenster::Insets padding;
-        int rowSpace;
-        int colSpace;
+        int columns = 1;
+        int rows = 0;
 
     public:
-        GridLayout(int columns = 1, int rows = 0, int rowSpace = 0, int columnSpace = 0)
-            : columns(columns), rows(rows), padding(fenster::Insets(0, 0, 0, 0)),
-              rowSpace(rowSpace), colSpace(columnSpace)
+        explicit GridLayout(int columns = 1, int rows = 0, int horizontalSpace = 0, int verticalSpace = 0)
+            : columns(columns), rows(rows), PaddingSupport(fenster::Insets(0, 0, 0, 0)),
+              SpacingSupport(horizontalSpace, verticalSpace)
         {
         }
 
-        void setPadding(fenster::Insets padding)
-        {
-            this->padding = padding;
-        }
-
-        fenster::Insets getPadding() const
-        {
-            return padding;
-        }
-
-        void setRowSpace(int _space)
-        {
-            rowSpace = _space;
-        }
-
-        int getRowSpace() const
-        {
-            return rowSpace;
-        }
-
-        void setColSpace(int _space)
-        {
-            colSpace = _space;
-        }
-
-        int getColSpace() const
-        {
-            return colSpace;
-        }
-
-        virtual void layout();
+        void layout() override;
     };
 }
 

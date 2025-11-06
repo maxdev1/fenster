@@ -58,6 +58,135 @@ namespace fensterserver
 		}
 	}
 
+	void EventProcessor::handlePress(Server* instance, Screen* screen, MouseEvent& event)
+	{
+		event.type = FENSTER_MOUSE_EVENT_PRESS;
+
+		// Multiclicks
+		static uint64_t lastClick = 0;
+		static int clickCount = 0;
+		uint64_t currentClick = fenster::platformMillis();
+		uint64_t diff = currentClick - lastClick;
+		if(diff < multiclickTimespan)
+		{
+			++clickCount;
+		}
+		else
+		{
+			clickCount = 1;
+		}
+		lastClick = currentClick;
+		event.clickCount = clickCount;
+
+		// Send event
+		auto pressedComponent = instance->dispatch(screen, event);
+		if(pressedComponent)
+		{
+			// Prepare drag
+			Cursor::pressedComponent = pressedComponent->id;
+			Cursor::draggedComponent = Cursor::pressedComponent;
+
+			// Switch focus
+			if(Cursor::pressedComponent != Cursor::focusedComponent)
+			{
+				Server::instance()->switchFocus(pressedComponent);
+			}
+		}
+		else
+		{
+			Cursor::pressedComponent = -1;
+		}
+	}
+
+	void EventProcessor::handleRelease(Server* instance, MouseEvent& event)
+	{
+		if(Cursor::draggedComponent != -1)
+		{
+			auto draggedComponent = ComponentRegistry::get(Cursor::draggedComponent);
+
+			if(draggedComponent)
+			{
+				MouseEvent releaseDraggedEvent = event;
+				releaseDraggedEvent.type = FENSTER_MOUSE_EVENT_DRAG_RELEASE;
+				instance->dispatchUpwards(draggedComponent, releaseDraggedEvent);
+			}
+
+			Cursor::draggedComponent = -1;
+		}
+
+		if(Cursor::pressedComponent != -1)
+		{
+			auto pressedComponent = ComponentRegistry::get(Cursor::pressedComponent);
+			if(pressedComponent)
+			{
+				MouseEvent releaseEvent = event;
+				releaseEvent.type = FENSTER_MOUSE_EVENT_RELEASE;
+				instance->dispatchUpwards(pressedComponent, releaseEvent);
+			}
+
+			Cursor::pressedComponent = -1;
+		}
+	}
+
+	void EventProcessor::handleMoveOrDrag(Server* instance, Screen* screen, MouseEvent& event)
+	{
+		if(Cursor::draggedComponent != -1)
+		{
+			auto draggedComponent = ComponentRegistry::get(Cursor::draggedComponent);
+
+			if(draggedComponent)
+			{
+				// Dragging
+				MouseEvent dragEvent = event;
+				dragEvent.type = FENSTER_MOUSE_EVENT_DRAG;
+				instance->dispatchUpwards(draggedComponent, dragEvent);
+			}
+			return;
+		}
+
+		// Moving
+		MouseEvent moveEvent = event;
+		moveEvent.type = FENSTER_MOUSE_EVENT_MOVE;
+
+		Component* newHoveredComponent = instance->dispatch(screen, moveEvent);
+
+		// Scrolling
+		if(event.scroll != 0 && newHoveredComponent)
+		{
+			MouseEvent scrollEvent = event;
+			scrollEvent.type = FENSTER_MOUSE_EVENT_SCROLL;
+			instance->dispatchUpwards(newHoveredComponent, scrollEvent);
+		}
+
+		// Post enter or leave events
+		if(newHoveredComponent && (newHoveredComponent->id != Cursor::hoveredComponent) &&
+		   (Cursor::draggedComponent == -1 || Cursor::draggedComponent != Cursor::hoveredComponent))
+		{
+			// Leave
+			if(Cursor::hoveredComponent != -1)
+			{
+				auto hoveredComponent = ComponentRegistry::get(Cursor::hoveredComponent);
+
+				if(hoveredComponent)
+				{
+					MouseEvent leaveEvent = event;
+					leaveEvent.type = FENSTER_MOUSE_EVENT_LEAVE;
+					instance->dispatchUpwards(hoveredComponent, leaveEvent);
+					Cursor::hoveredComponent = -1;
+				}
+			}
+
+			if(newHoveredComponent)
+			{
+				// Enter
+				MouseEvent enterEvent = event;
+				enterEvent.type = FENSTER_MOUSE_EVENT_ENTER;
+				Cursor::hoveredComponent = newHoveredComponent->id;
+				instance->dispatchUpwards(newHoveredComponent, enterEvent);
+			}
+		}
+	}
+
 	void EventProcessor::processMouseState()
 	{
 		fenster::Point previousPosition = Cursor::position;
@@ -84,146 +213,23 @@ namespace fensterserver
 		baseEvent.scroll = Cursor::nextScroll;
 		Cursor::nextScroll = 0;
 
-		// Press
 		if((!(previousPressedButtons & FENSTER_MOUSE_BUTTON_1) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_1)) ||
 		   (!(previousPressedButtons & FENSTER_MOUSE_BUTTON_2) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_2)) ||
 		   (!(previousPressedButtons & FENSTER_MOUSE_BUTTON_3) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_3)))
 		{
-			// Prepare event
-			MouseEvent pressEvent = baseEvent;
-			pressEvent.type = FENSTER_MOUSE_EVENT_PRESS;
-
-			// Multiclicks
-			static uint64_t lastClick = 0;
-			static int clickCount = 0;
-			uint64_t currentClick = fenster::platformMillis();
-			uint64_t diff = currentClick - lastClick;
-			if(diff < multiclickTimespan)
-			{
-				++clickCount;
-			}
-			else
-			{
-				clickCount = 1;
-			}
-			lastClick = currentClick;
-			pressEvent.clickCount = clickCount;
-
-			// Send event
-			auto pressedComponent = instance->dispatch(screen, pressEvent);
-
-			if(pressedComponent)
-			{
-				// Prepare drag
-				Cursor::pressedComponent = pressedComponent->id;
-				Cursor::draggedComponent = Cursor::pressedComponent;
-
-				// Switch focus
-				if(Cursor::pressedComponent != Cursor::focusedComponent)
-				{
-					Server::instance()->switchFocus(pressedComponent);
-				}
-			}
-			else
-			{
-				Cursor::pressedComponent = -1;
-			}
-
-			// Release
+			handlePress(instance, screen, baseEvent);
 		}
 		else if(
 			((previousPressedButtons & FENSTER_MOUSE_BUTTON_1) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_1)) ||
 			((previousPressedButtons & FENSTER_MOUSE_BUTTON_2) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_2)) ||
 			((previousPressedButtons & FENSTER_MOUSE_BUTTON_3) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_3)))
 		{
-
-			if(Cursor::draggedComponent != -1)
-			{
-				auto draggedComponent = ComponentRegistry::get(Cursor::draggedComponent);
-
-				if(draggedComponent)
-				{
-					MouseEvent releaseDraggedEvent = baseEvent;
-					releaseDraggedEvent.type = FENSTER_MOUSE_EVENT_DRAG_RELEASE;
-					instance->dispatchUpwards(draggedComponent, releaseDraggedEvent);
-				}
-
-				Cursor::draggedComponent = -1;
-			}
-
-			if(Cursor::pressedComponent != -1)
-			{
-				auto pressedComponent = ComponentRegistry::get(Cursor::pressedComponent);
-				if(pressedComponent)
-				{
-					MouseEvent releaseEvent = baseEvent;
-					releaseEvent.type = FENSTER_MOUSE_EVENT_RELEASE;
-					instance->dispatchUpwards(pressedComponent, releaseEvent);
-				}
-
-				Cursor::pressedComponent = -1;
-			}
-
-			// Move or drag
+			handleRelease(instance, baseEvent);
 		}
 		else if(Cursor::position != previousPosition || baseEvent.scroll != 0)
 		{
-			if(Cursor::draggedComponent != -1)
-			{
-				auto draggedComponent = ComponentRegistry::get(Cursor::draggedComponent);
-
-				if(draggedComponent)
-				{
-					// Dragging
-					MouseEvent dragEvent = baseEvent;
-					dragEvent.type = FENSTER_MOUSE_EVENT_DRAG;
-					instance->dispatchUpwards(draggedComponent, dragEvent);
-				}
-			}
-			else
-			{
-				// Moving
-				MouseEvent moveEvent = baseEvent;
-				moveEvent.type = FENSTER_MOUSE_EVENT_MOVE;
-
-				Component* newHoveredComponent = instance->dispatch(screen, moveEvent);
-
-				// Scrolling
-				if(baseEvent.scroll != 0 && newHoveredComponent)
-				{
-					MouseEvent scrollEvent = baseEvent;
-					scrollEvent.type = FENSTER_MOUSE_EVENT_SCROLL;
-					instance->dispatchUpwards(newHoveredComponent, scrollEvent);
-				}
-
-				// Post enter or leave events
-				if(newHoveredComponent && (newHoveredComponent->id != Cursor::hoveredComponent) &&
-				   (Cursor::draggedComponent == -1 || Cursor::draggedComponent != Cursor::hoveredComponent))
-				{
-					// Leave
-					if(Cursor::hoveredComponent != -1)
-					{
-						auto hoveredComponent = ComponentRegistry::get(Cursor::hoveredComponent);
-
-						if(hoveredComponent)
-						{
-							MouseEvent leaveEvent = baseEvent;
-							leaveEvent.type = FENSTER_MOUSE_EVENT_LEAVE;
-							instance->dispatchUpwards(hoveredComponent, leaveEvent);
-							Cursor::hoveredComponent = -1;
-						}
-					}
-
-					if(newHoveredComponent)
-					{
-						// Enter
-						MouseEvent enterEvent = baseEvent;
-						enterEvent.type = FENSTER_MOUSE_EVENT_ENTER;
-						Cursor::hoveredComponent = newHoveredComponent->id;
-						instance->dispatchUpwards(newHoveredComponent, enterEvent);
-					}
-				}
-			}
+			handleMoveOrDrag(instance, screen, baseEvent);
 		}
+
 	}
 }

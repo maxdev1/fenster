@@ -36,9 +36,9 @@ namespace fensterserver
 		return background;
 	}
 
-	bool Panel::getNumericProperty(int property, uint32_t* out)
+	bool Panel::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_BACKGROUND)
+		if(property == fenster::ComponentProperty::Background)
 		{
 			*out = background;
 			return true;
@@ -47,9 +47,9 @@ namespace fensterserver
 		return Component::getNumericProperty(property, out);
 	}
 
-	bool Panel::setNumericProperty(int property, uint32_t value)
+	bool Panel::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_BACKGROUND)
+		if(property == fenster::ComponentProperty::Background)
 		{
 			setBackground(value);
 			return true;

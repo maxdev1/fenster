@@ -31,10 +31,10 @@ namespace fensterserver
 
 		// Compute cell dimensions
 		int actualRows = (int) children.size() / columns;
-		int columnWidth = (columns > 0) ? (bounds.width - (columns - 1) * colSpace) / columns : 0;
+		int columnWidth = (columns > 0) ? (bounds.width - (columns - 1) * horizontalSpace) / columns : 0;
 		int rowHeight = (rows > 0)
-							? (bounds.height - (rows - 1) * rowSpace) / rows
-							: (bounds.height - (actualRows - 1) * rowSpace) / actualRows;
+			                ? (bounds.height - (rows - 1) * verticalSpace) / rows
+			                : (bounds.height - (actualRows - 1) * verticalSpace) / actualRows;
 
 		// If parent has no width or height, calculate expected size from children
 		if(bounds.width == 0 || bounds.height == 0)
@@ -65,8 +65,8 @@ namespace fensterserver
 			int cellHeight = (rowHeight > 0) ? rowHeight : childSize.height;
 
 			// Calculate position based on cell index and spacing
-			int x = bounds.x + currentColumn * (columnWidth + colSpace);
-			int y = bounds.y + currentRow * (rowHeight + rowSpace);
+			int x = bounds.x + currentColumn * (columnWidth + horizontalSpace);
+			int y = bounds.y + currentRow * (rowHeight + verticalSpace);
 
 			child->setBounds(fenster::Rectangle(x, y, cellWidth, cellHeight));
 
@@ -84,10 +84,10 @@ namespace fensterserver
 		// Set preferred size if parent has no bounds
 		if(bounds.width == 0 || bounds.height == 0)
 		{
-			int contentWidth = columns * columnWidth + (columns - 1) * colSpace + padding.left + padding.right;
+			int contentWidth = columns * columnWidth + (columns - 1) * horizontalSpace + padding.left + padding.right;
 			int contentHeight = (rows > 0)
-									? rows * rowHeight + (rows - 1) * rowSpace + padding.top + padding.bottom
-									: (currentRow + 1) * rowHeight;
+				                    ? rows * rowHeight + (rows - 1) * verticalSpace + padding.top + padding.bottom
+				                    : (currentRow + 1) * rowHeight;
 
 			component->setPreferredSize(fenster::Dimension(contentWidth, contentHeight));
 		}

@@ -56,8 +56,8 @@ namespace fensterserver
         Component* handleKeyEvent(KeyEvent& e) override;
         Component* handleMouseEvent(MouseEvent& e) override;
 
-        bool getNumericProperty(int property, uint32_t* out) override;
-        bool setNumericProperty(int property, uint32_t value) override;
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out) override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
 
         void setText(std::string text) override;
         std::string getText() override;

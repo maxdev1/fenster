@@ -113,6 +113,11 @@ static std::map<uint8_t, std::string> VK_MAP = {
 		{VK_OEM_102, "KEY_SMALLER"},
 		{VK_F11, "KEY_F11"},
 		{VK_F12, "KEY_F12"},
+
+		{VK_UP, "KEY_ARROW_UP"},
+		{VK_DOWN, "KEY_ARROW_DOWN"},
+		{VK_LEFT, "KEY_ARROW_LEFT"},
+		{VK_RIGHT, "KEY_ARROW_RIGHT"},
 };
 
 
@@ -243,6 +248,7 @@ namespace fensterserver
 {
 	std::string platformKeyForVKey(uint8_t scancode)
 	{
+		fenster::platformLog("KEY %i -> %s", scancode, VK_MAP[scancode].c_str());
 		return VK_MAP[scancode];
 	}
 

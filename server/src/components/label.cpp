@@ -127,15 +127,15 @@ namespace fensterserver
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
-	bool Label::setNumericProperty(int property, uint32_t value)
+	bool Label::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_COLOR)
+		if(property == fenster::ComponentProperty::Color)
 		{
 			this->setColor(value);
 			return true;
 		}
 
-		if(property == FENSTER_UI_PROPERTY_ALIGNMENT)
+		if(property == fenster::ComponentProperty::Alignment)
 		{
 			this->setAlignment((fenster::TextAlignment) value);
 			return true;

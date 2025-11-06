@@ -6,22 +6,21 @@
 #define LIBFENSTER_LAYOUT_STACKLAYOUT
 
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
+#include "support/orientation_support.hpp"
 
 namespace fenster
 {
-	class StackLayout : public Layout
+	class StackLayout : public Layout, public PaddingSupport, public SingleSpacingSupport, public OrientationSupport
 	{
 	protected:
 		explicit StackLayout(Component* component):
-			Layout(component)
+			Layout(component), PaddingSupport(component), SingleSpacingSupport(component), OrientationSupport(component)
 		{
 		}
 
 	public:
-		void setPadding(Insets insets);
-		void setSpace(int space);
-		void setHorizontal(bool horizontal);
-
 		static StackLayout* create(Component* component);
 
 		LayoutType getType() override

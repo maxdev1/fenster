@@ -13,7 +13,7 @@ namespace fenster
 	bool FocusableComponent::isFocused()
 	{
 		uint32_t out;
-		getNumericProperty(FENSTER_UI_PROPERTY_FOCUSED, &out);
+		getNumericProperty(ComponentProperty::Focused, &out);
 		return out == 1;
 	}
 

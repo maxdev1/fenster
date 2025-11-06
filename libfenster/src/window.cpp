@@ -39,13 +39,13 @@ namespace fenster
 	bool Window::isResizable()
 	{
 		uint32_t value;
-		getNumericProperty(FENSTER_UI_PROPERTY_RESIZABLE, &value);
+		getNumericProperty(ComponentProperty::Resizable, &value);
 		return value;
 	}
 
 	void Window::setResizable(bool resizable)
 	{
-		setNumericProperty(FENSTER_UI_PROPERTY_RESIZABLE, resizable);
+		setNumericProperty(ComponentProperty::Resizable, resizable);
 	}
 
 	bool Window::onClose(std::function<void()> func)

@@ -15,13 +15,13 @@ namespace fenster
 
 	void Checkbox::setEnabled(bool enabled)
 	{
-		setNumericProperty(FENSTER_UI_PROPERTY_ENABLED, enabled);
+		setNumericProperty(ComponentProperty::Enabled, enabled);
 	}
 
 	bool Checkbox::isEnabled()
 	{
 		uint32_t value;
-		getNumericProperty(FENSTER_UI_PROPERTY_ENABLED, &value);
+		getNumericProperty(ComponentProperty::Enabled, &value);
 		return value;
 	}
 

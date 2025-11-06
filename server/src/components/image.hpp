@@ -24,7 +24,7 @@ namespace fensterserver
 
         void loadImage(std::string path);
 
-        bool setStringProperty(int property, std::string text) override;
+        bool setStringProperty(fenster::ComponentProperty property, std::string text) override;
     };
 }
 

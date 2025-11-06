@@ -6,20 +6,20 @@
 #define LIBFENSTER_LAYOUT_FLOWLAYOUT
 
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
 
 namespace fenster
 {
-	class FlowLayout : public Layout
+	class FlowLayout : public Layout, public PaddingSupport, public SingleSpacingSupport
 	{
 	protected:
 		explicit FlowLayout(Component* component):
-			Layout(component)
+			Layout(component), PaddingSupport(component), SingleSpacingSupport(component)
 		{
 		}
 
 	public:
-		void setPadding(fenster::Insets insets);
-
 		static FlowLayout* create(Component* component);
 
 		LayoutType getType() override

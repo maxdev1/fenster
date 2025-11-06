@@ -13,13 +13,19 @@
 
 namespace fensterserver
 {
+    class Server;
+    class Screen;
+    class MouseEvent;
 
     /**
-     * The event queue is used to store any incoming events for
-     * later processing.
+     * Event processor buffers and processes incoming events.
      */
     class EventProcessor
     {
+        void handlePress(Server* instance, Screen* screen, MouseEvent& event);
+        void handleRelease(Server* instance, MouseEvent& event);
+        void handleMoveOrDrag(Server* instance, Screen* screen, MouseEvent& event);
+
     public:
         uint32_t multiclickTimespan;
 

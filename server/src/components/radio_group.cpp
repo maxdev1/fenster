@@ -80,9 +80,9 @@ namespace fensterserver
 		return background;
 	}
 
-	bool RadioGroup::getNumericProperty(int property, uint32_t* out)
+	bool RadioGroup::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_BACKGROUND)
+		if(property == fenster::ComponentProperty::Background)
 		{
 			*out = background;
 			return true;
@@ -91,9 +91,9 @@ namespace fensterserver
 		return Component::getNumericProperty(property, out);
 	}
 
-	bool RadioGroup::setNumericProperty(int property, uint32_t value)
+	bool RadioGroup::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_BACKGROUND)
+		if(property == fenster::ComponentProperty::Background)
 		{
 			setBackground(value);
 			return true;

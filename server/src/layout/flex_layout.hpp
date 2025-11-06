@@ -5,9 +5,11 @@
 #ifndef FENSTER_SERVER_LAYOUT_FLEXLAYOUT
 #define FENSTER_SERVER_LAYOUT_FLEXLAYOUT
 
-#include <libfenster/metrics/insets.hpp>
 #include <unordered_map>
 #include "layout.hpp"
+#include "support/padding_support.hpp"
+#include "support/single_spacing_support.hpp"
+#include "support/orientation_support.hpp"
 
 namespace fensterserver
 {
@@ -18,37 +20,14 @@ namespace fensterserver
         int basis;
     };
 
-    class FlexLayout : public Layout
+    class FlexLayout : public Layout, public PaddingSupport, public SingleSpacingSupport, public OrientationSupport
     {
-        std::unordered_map<Component*, FlexInfo> flexInfo;
-        bool horizontal = true;
-        fenster::Insets padding = fenster::Insets(0, 0, 0, 0);
-        int space = 0;
+        std::unordered_map<Component*, FlexInfo> flexInfo{};
 
     public:
         void layout() override;
 
         void setComponentInfo(Component* child, float grow, float shrink, int basis);
-
-        void setHorizontal(bool horizontal)
-        {
-            this->horizontal = horizontal;
-        }
-
-        int getSpace()
-        {
-            return space;
-        }
-
-        void setSpace(int gap)
-        {
-            this->space = gap;
-        }
-
-        void setPadding(fenster::Insets padding)
-        {
-            this->padding = padding;
-        }
     };
 }
 

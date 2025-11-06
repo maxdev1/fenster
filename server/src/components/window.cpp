@@ -276,7 +276,7 @@ namespace fensterserver
 				crossHovered = crossBounds.contains(me.position);
 				markFor(COMPONENT_REQUIREMENT_PAINT);
 			}
-			else
+			else if(resizeMode != RESIZE_MODE_NONE)
 			{
 				dragOrResize(me);
 			}
@@ -402,6 +402,7 @@ namespace fensterserver
 		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
 		{
 			Cursor::set("default");
+			fenster::platformLog("Window sets default cursor");
 		}
 
 		return this;
@@ -420,15 +421,15 @@ namespace fensterserver
 		setVisible(false);
 	}
 
-	bool Window::getNumericProperty(int property, uint32_t* out)
+	bool Window::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
-		if(property == FENSTER_UI_PROPERTY_RESIZABLE)
+		if(property == fenster::ComponentProperty::Resizable)
 		{
 			*out = resizable;
 			return true;
 		}
 
-		if(property == FENSTER_UI_PROPERTY_FOCUSED)
+		if(property == fenster::ComponentProperty::Focused)
 		{
 			*out = focused ? 1 : 0;
 			return true;
@@ -437,15 +438,15 @@ namespace fensterserver
 		return Component::getNumericProperty(property, out);
 	}
 
-	bool Window::setNumericProperty(int property, uint32_t value)
+	bool Window::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == FENSTER_UI_PROPERTY_RESIZABLE)
+		if(property == fenster::ComponentProperty::Resizable)
 		{
 			resizable = value;
 			return true;
 		}
 
-		if(property == FENSTER_UI_PROPERTY_BACKGROUND)
+		if(property == fenster::ComponentProperty::Background)
 		{
 			backgroundColor = value;
 
