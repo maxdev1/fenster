@@ -45,7 +45,7 @@ These implementations serve as examples for creating new platform integrations.
 `libfenster` offers a set of component classes and layouts that can be combined to create a UI for your application.
 Starting interaction with the server works by initializing the application. This operation returns a status code:
 
-    if(fenster::Application::open() != FENSTER_APPLICATION_STATUS_SUCCESSFUL)
+    if(fenster::Application::open() != fenster::ApplicationOpenStatus::Success)
         return -1;
 
 For creating components, there is usually always a static factory method that will create an instance:

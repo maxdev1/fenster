@@ -15,11 +15,12 @@ namespace fenster
 	class Listener;
 	class Canvas;
 
-	typedef int ApplicationOpenStatus;
-#define FENSTER_APPLICATION_STATUS_SUCCESSFUL 0
-#define FENSTER_APPLICATION_STATUS_COMMUNICATION_FAILED 1
-#define FENSTER_APPLICATION_STATUS_FAILED 2
-#define FENSTER_APPLICATION_STATUS_EXISTING 3
+	enum ApplicationOpenStatus: int {
+		Success = 0,
+		CommunicationFailed = 1,
+		Error = 2,
+		Existing = 3,
+	};
 
 	struct ApplicationEventDispatchData
 	{

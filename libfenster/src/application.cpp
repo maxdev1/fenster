@@ -34,7 +34,7 @@ namespace fenster
 		// check if already open
 		if(ApplicationInitialized)
 		{
-			return FENSTER_APPLICATION_STATUS_EXISTING;
+			return Existing;
 		}
 
 		// get window managers id
@@ -42,7 +42,7 @@ namespace fenster
 		if(windowserverRegistryTask == SYS_TID_NONE)
 		{
 			platformLog("failed to retrieve task id of window server with identifier '%s'", G_UI_REGISTRY_NAME);
-			return FENSTER_APPLICATION_STATUS_COMMUNICATION_FAILED;
+			return CommunicationFailed;
 		}
 
 		// start event dispatcher
@@ -63,7 +63,7 @@ namespace fenster
 		if(platformReceiveMessage(buf, buflen, init_tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			platformLog("failed to communicate with the window server");
-			return FENSTER_APPLICATION_STATUS_COMMUNICATION_FAILED;
+			return CommunicationFailed;
 		}
 
 		// check response
@@ -71,13 +71,13 @@ namespace fenster
 		if(response->status != FENSTER_PROTOCOL_SUCCESS)
 		{
 			platformLog("failed to open UI");
-			return FENSTER_APPLICATION_STATUS_FAILED;
+			return Error;
 		}
 
 		// mark UI as ready
 		ApplicationInitialized = true;
 		DelegateTaskId = response->window_server_delegate;
-		return FENSTER_APPLICATION_STATUS_SUCCESSFUL;
+		return Success;
 	}
 
 	/**
