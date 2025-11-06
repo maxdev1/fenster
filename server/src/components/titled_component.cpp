@@ -12,10 +12,10 @@ namespace fensterserver
 	{
 		setTitleInternal(title);
 
-		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_TITLE, [title](EventListenerInfo& info)
+		this->callForListeners(fenster::ComponentEventType::Title, [title](EventListenerInfo& info)
 		{
 			auto event = new fenster::ComponentTitleEvent;
-			event->header.type = FENSTER_COMPONENT_EVENT_TYPE_TITLE;
+			event->header.type = fenster::ComponentEventType::Title;
 			event->header.component_id = info.component_id;
 			strncpy(event->title, title.c_str(), G_UI_COMPONENT_TITLE_MAXIMUM);
 			platformSendMessage(info.target_thread, event, sizeof(fenster::ComponentTitleEvent), SYS_TX_NONE);

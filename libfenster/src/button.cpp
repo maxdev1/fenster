@@ -10,7 +10,7 @@ namespace fenster
 {
 	Button* Button::create()
 	{
-		return createComponent<Button, FENSTER_COMPONENT_TYPE_BUTTON>();
+		return createComponent<Button, ComponentType::Button>();
 	}
 
 	void Button::setEnabled(bool enabled)
@@ -25,9 +25,9 @@ namespace fenster
 		return value;
 	}
 
-	void Button::setVariant(ButtonVariant style)
+	void Button::setVariant(ButtonVariant variant)
 	{
-		setNumericProperty(ComponentProperty::Variant, style);
+		setNumericProperty(ComponentProperty::Variant, (uint32_t) variant);
 	}
 
 	ButtonVariant Button::getVariant()

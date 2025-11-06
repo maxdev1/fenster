@@ -15,7 +15,7 @@ namespace fenster
 	class Listener;
 	class Canvas;
 
-	enum ApplicationOpenStatus: int {
+	enum class ApplicationOpenStatus: int {
 		Success = 0,
 		CommunicationFailed = 1,
 		Error = 2,
@@ -45,7 +45,6 @@ namespace fenster
 	class Application
 	{
 		static void eventDispatchThread();
-		static void eventDispatchQueueAdd(const ApplicationEventDispatchData& data);
 
 	public:
 		static ApplicationOpenStatus open();

@@ -31,13 +31,13 @@ namespace fensterserver
 
 	Component* Scrollbar::handleMouseEvent(MouseEvent& me)
 	{
-		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
+		if(me.type == fenster::MouseEventType::Enter)
 		{
 			Cursor::set("default");
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		else if(me.type == fenster::MouseEventType::Press)
 		{
 			fenster::Rectangle knob = calculateKnob();
 			if(knob.contains(me.position))
@@ -56,7 +56,7 @@ namespace fensterserver
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_DRAG)
+		else if(me.type == fenster::MouseEventType::Drag)
 		{
 
 			int mousePosition;

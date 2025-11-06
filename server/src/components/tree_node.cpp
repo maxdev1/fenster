@@ -78,7 +78,7 @@ namespace fensterserver
 		if(handledByChild)
 			return handledByChild;
 
-		if(event.type == FENSTER_MOUSE_EVENT_PRESS)
+		if(event.type == fenster::MouseEventType::Press)
 		{
 			this->open = !this->open;
 			markFor(COMPONENT_REQUIREMENT_ALL);

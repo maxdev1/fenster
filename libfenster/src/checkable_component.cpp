@@ -22,6 +22,6 @@ namespace fenster
 
 	void CheckableComponent::addCheckedListener(std::function<void(bool)> func)
 	{
-		this->addListener(FENSTER_COMPONENT_EVENT_TYPE_CHECKED, new CheckedListenerDispatcher(std::move(func)));
+		this->addListener(ComponentEventType::Checked, new CheckedListenerDispatcher(std::move(func)));
 	}
 }

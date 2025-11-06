@@ -60,7 +60,7 @@ namespace fensterserver
 
 	void EventProcessor::handlePress(Server* instance, Screen* screen, MouseEvent& event)
 	{
-		event.type = FENSTER_MOUSE_EVENT_PRESS;
+		event.type = fenster::MouseEventType::Press;
 
 		// Multiclicks
 		static uint64_t lastClick = 0;
@@ -107,7 +107,7 @@ namespace fensterserver
 			if(draggedComponent)
 			{
 				MouseEvent releaseDraggedEvent = event;
-				releaseDraggedEvent.type = FENSTER_MOUSE_EVENT_DRAG_RELEASE;
+				releaseDraggedEvent.type = fenster::MouseEventType::DragRelease;
 				instance->dispatchUpwards(draggedComponent, releaseDraggedEvent);
 			}
 
@@ -120,7 +120,7 @@ namespace fensterserver
 			if(pressedComponent)
 			{
 				MouseEvent releaseEvent = event;
-				releaseEvent.type = FENSTER_MOUSE_EVENT_RELEASE;
+				releaseEvent.type = fenster::MouseEventType::Release;
 				instance->dispatchUpwards(pressedComponent, releaseEvent);
 			}
 
@@ -138,7 +138,7 @@ namespace fensterserver
 			{
 				// Dragging
 				MouseEvent dragEvent = event;
-				dragEvent.type = FENSTER_MOUSE_EVENT_DRAG;
+				dragEvent.type = fenster::MouseEventType::Drag;
 				instance->dispatchUpwards(draggedComponent, dragEvent);
 			}
 			return;
@@ -146,7 +146,7 @@ namespace fensterserver
 
 		// Moving
 		MouseEvent moveEvent = event;
-		moveEvent.type = FENSTER_MOUSE_EVENT_MOVE;
+		moveEvent.type = fenster::MouseEventType::Move;
 
 		Component* newHoveredComponent = instance->dispatch(screen, moveEvent);
 
@@ -154,7 +154,7 @@ namespace fensterserver
 		if(event.scroll != 0 && newHoveredComponent)
 		{
 			MouseEvent scrollEvent = event;
-			scrollEvent.type = FENSTER_MOUSE_EVENT_SCROLL;
+			scrollEvent.type = fenster::MouseEventType::Scroll;
 			instance->dispatchUpwards(newHoveredComponent, scrollEvent);
 		}
 
@@ -170,7 +170,7 @@ namespace fensterserver
 				if(hoveredComponent)
 				{
 					MouseEvent leaveEvent = event;
-					leaveEvent.type = FENSTER_MOUSE_EVENT_LEAVE;
+					leaveEvent.type = fenster::MouseEventType::Leave;
 					instance->dispatchUpwards(hoveredComponent, leaveEvent);
 					Cursor::hoveredComponent = -1;
 				}
@@ -180,7 +180,7 @@ namespace fensterserver
 			{
 				// Enter
 				MouseEvent enterEvent = event;
-				enterEvent.type = FENSTER_MOUSE_EVENT_ENTER;
+				enterEvent.type = fenster::MouseEventType::Enter;
 				Cursor::hoveredComponent = newHoveredComponent->id;
 				instance->dispatchUpwards(newHoveredComponent, enterEvent);
 			}
@@ -213,16 +213,16 @@ namespace fensterserver
 		baseEvent.scroll = Cursor::nextScroll;
 		Cursor::nextScroll = 0;
 
-		if((!(previousPressedButtons & FENSTER_MOUSE_BUTTON_1) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_1)) ||
-		   (!(previousPressedButtons & FENSTER_MOUSE_BUTTON_2) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_2)) ||
-		   (!(previousPressedButtons & FENSTER_MOUSE_BUTTON_3) && (Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_3)))
+		if((!(previousPressedButtons & fenster::MouseButton::Button1) && (Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
+		   (!(previousPressedButtons & fenster::MouseButton::Button2) && (Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
+		   (!(previousPressedButtons & fenster::MouseButton::Button3) && (Cursor::pressedButtons & fenster::MouseButton::Button3)))
 		{
 			handlePress(instance, screen, baseEvent);
 		}
 		else if(
-			((previousPressedButtons & FENSTER_MOUSE_BUTTON_1) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_1)) ||
-			((previousPressedButtons & FENSTER_MOUSE_BUTTON_2) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_2)) ||
-			((previousPressedButtons & FENSTER_MOUSE_BUTTON_3) && !(Cursor::pressedButtons & FENSTER_MOUSE_BUTTON_3)))
+			((previousPressedButtons & fenster::MouseButton::Button1) && !(Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
+			((previousPressedButtons & fenster::MouseButton::Button2) && !(Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
+			((previousPressedButtons & fenster::MouseButton::Button3) && !(Cursor::pressedButtons & fenster::MouseButton::Button3)))
 		{
 			handleRelease(instance, baseEvent);
 		}

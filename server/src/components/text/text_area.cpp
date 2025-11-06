@@ -385,21 +385,21 @@ namespace fensterserver
 
 	Component* TextArea::handleMouseEvent(MouseEvent& me)
 	{
-		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
+		if(me.type == fenster::MouseEventType::Enter)
 		{
 			visualStatus = TextAreaVisualStatus::HOVERED;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			Cursor::set("text");
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
+		else if(me.type == fenster::MouseEventType::Leave)
 		{
 			visualStatus = TextAreaVisualStatus::NORMAL;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			Cursor::set("default");
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		else if(me.type == fenster::MouseEventType::Press)
 		{
 
 			fenster::Point p = me.position;
@@ -427,7 +427,7 @@ namespace fensterserver
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_DRAG)
+		else if(me.type == fenster::MouseEventType::Drag)
 		{
 			fenster::Point p = me.position;
 			cursor = viewToPosition(p);
@@ -435,7 +435,7 @@ namespace fensterserver
 			return this;
 		}
 
-		if(me.type != FENSTER_MOUSE_EVENT_SCROLL)
+		if(me.type != fenster::MouseEventType::Scroll)
 		{
 			// Swallow other events so we can handle the cursor
 			return this;

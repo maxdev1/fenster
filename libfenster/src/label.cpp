@@ -9,7 +9,7 @@ namespace fenster
 {
 	Label* Label::create()
 	{
-		return createComponent<Label, FENSTER_COMPONENT_TYPE_LABEL>();
+		return createComponent<Label, ComponentType::Label>();
 	}
 
 	bool Label::setColor(ColorArgb argb)

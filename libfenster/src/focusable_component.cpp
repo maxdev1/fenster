@@ -25,7 +25,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandFocusRequest request;
-		request.header.id = FENSTER_PROTOCOL_FOCUS;
+		request.header.id = fenster::ProtocolCommandId::Focus;
 		request.id = this->id;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFocusRequest), tx);
 		platformYieldTo(DelegateTaskId);
@@ -37,7 +37,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandFocusResponse*) SYS_MESSAGE_CONTENT(buffer);
-			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+			success = (response->status == ProtocolStatus::Success);
 		}
 
 		return success;
@@ -45,7 +45,7 @@ namespace fenster
 
 	void FocusableComponent::addFocusListener(std::function<void(bool)> func)
 	{
-		this->addListener(FENSTER_COMPONENT_EVENT_TYPE_FOCUS, new FocusListenerDispatcher(std::move(func)));
+		this->addListener(ComponentEventType::Focus, new FocusListenerDispatcher(std::move(func)));
 	}
 }
 

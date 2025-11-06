@@ -44,75 +44,86 @@ namespace fenster
 	/**
 	 * A protocol message always starts with the header, the message id
 	 */
-	typedef uint8_t ProtocolCommandId;
-#define FENSTER_PROTOCOL_INITIALIZATION				(1)
-#define FENSTER_PROTOCOL_CREATE_COMPONENT			(2)
-#define FENSTER_PROTOCOL_ADD_COMPONENT				(3)
-
-#define FENSTER_PROTOCOL_SET_BOUNDS					(6)
-#define FENSTER_PROTOCOL_FOCUS        				(7)
-#define FENSTER_PROTOCOL_ADD_LISTENER				(8)
-#define FENSTER_PROTOCOL_SET_NUMERIC_PROPERTY		(9)
-#define FENSTER_PROTOCOL_GET_NUMERIC_PROPERTY		(10)
-#define FENSTER_PROTOCOL_GET_BOUNDS					(11)
-#define FENSTER_PROTOCOL_CANVAS_BLIT				(12)
-#define FENSTER_PROTOCOL_REGISTER_DESKTOP_CANVAS	(13)
-#define FENSTER_PROTOCOL_GET_SCREEN_DIMENSION		(14)
-#define FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT		(18)
-#define FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED		(19)
-#define FENSTER_PROTOCOL_SET_PREFERRED_SIZE			(20)
-#define FENSTER_PROTOCOL_DESTROY_COMPONENT		    (21)
-#define FENSTER_PROTOCOL_SET_MINIMUM_SIZE			(22)
-#define FENSTER_PROTOCOL_SET_MAXIMUM_SIZE			(23)
-#define FENSTER_PROTOCOL_SET_STRING_PROPERTY		(24)
-#define FENSTER_PROTOCOL_GET_STRING_PROPERTY		(25)
+	enum class ProtocolCommandId: uint8_t
+	{
+		Initialization = 0,
+		CreateComponent = 1,
+		AddComponent = 2,
+		SetBounds = 3,
+		Focus = 4,
+		AddListener = 5,
+		SetNumericProperty = 6,
+		GetNumericProperty = 7,
+		SetStringProperty = 8,
+		GetStringProperty = 9,
+		GetBounds = 10,
+		CanvasBlit = 11,
+		RegisterDesktopCanvas = 12,
+		GetScreenDimension = 13,
+		ScrollPaneSetContent = 18,
+		ScrollPaneSetFixed = 19,
+		SetPreferredSize = 20,
+		DestroyComponent = 21,
+		SetMinimumSize = 22,
+		SetMaximumSize = 23,
+	};
 
 	/**
 	 * Common status for requests
 	 */
-	typedef uint8_t ProtocolStatus;
-#define FENSTER_PROTOCOL_SUCCESS 0
-#define FENSTER_PROTOCOL_FAIL 1
+	enum class ProtocolStatus: uint8_t
+	{
+		Success = 0,
+		Error = 1
+	};
 
 	/**
 	 * Component types
 	 */
-	typedef uint32_t ComponentType;
-#define FENSTER_COMPONENT_TYPE_WINDOW 0
-#define FENSTER_COMPONENT_TYPE_BUTTON 1
-#define FENSTER_COMPONENT_TYPE_LABEL 2
-#define FENSTER_COMPONENT_TYPE_TEXTFIELD 3
-#define FENSTER_COMPONENT_TYPE_CANVAS 4
-#define FENSTER_COMPONENT_TYPE_SELECTION 5
-#define FENSTER_COMPONENT_TYPE_PANEL 6
-#define FENSTER_COMPONENT_TYPE_SCROLLPANE 7
-#define FENSTER_COMPONENT_TYPE_IMAGE 8
-#define FENSTER_COMPONENT_TYPE_CHECKBOX 9
+	enum class ComponentType: uint16_t
+	{
+		Window = 0,
+		Button = 1,
+		Label = 2,
+		TextField = 3,
+		Canvas = 4,
+		Selection = 5,
+		Panel = 6,
+		ScrollPane = 7,
+		Image = 8,
+		Checkbox = 9,
+		RadioButton = 10,
+		RadioGroup = 11,
+	};
 
 	/**
 	 * Types of events that can be listened to
 	 */
-	typedef uint32_t ComponentEventType;
-#define FENSTER_COMPONENT_EVENT_TYPE_ACTION 0
-#define FENSTER_COMPONENT_EVENT_TYPE_BOUNDS 1
-#define FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER 2
-#define FENSTER_COMPONENT_EVENT_TYPE_KEY 3
-#define FENSTER_COMPONENT_EVENT_TYPE_FOCUS 4
-#define FENSTER_COMPONENT_EVENT_TYPE_MOUSE 5
-#define FENSTER_COMPONENT_EVENT_TYPE_CLOSE 6
-#define FENSTER_COMPONENT_EVENT_TYPE_WINDOWS 7
-#define FENSTER_COMPONENT_EVENT_TYPE_TITLE 8
-#define FENSTER_COMPONENT_EVENT_TYPE_VISIBLE 9
-#define FENSTER_COMPONENT_EVENT_TYPE_CHECKED 10
+	enum class ComponentEventType: uint16_t
+	{
+		Action = 0,
+		Bounds = 1,
+		CanvasNewBuffer = 2,
+		Key = 3,
+		Focus = 4,
+		Mouse = 5,
+		Close = 6,
+		Window = 7,
+		Title = 8,
+		Visible = 9,
+		Checked = 10,
+	};
 
 	/**
-	 *
+	 * Different types of layouts
 	 */
-	typedef uint8_t LayoutType;
-#define FENSTER_LAYOUT_GRID (0)
-#define FENSTER_LAYOUT_FLOW (1)
-#define FENSTER_LAYOUT_FLEX (2)
-#define FENSTER_LAYOUT_STACK (3)
+	enum class LayoutType: uint8_t
+	{
+		Grid = 0,
+		Flow = 1,
+		Flex = 2,
+		Stack = 3,
+	};
 
 	/**
 	 *
@@ -465,24 +476,42 @@ namespace fenster
 	} __attribute__((packed)) ComponentVisibleEvent;
 
 	/**
-	 * Mouse events
+	 * Mouse buttons
 	 */
-	typedef uint8_t MouseButton;
-#define FENSTER_MOUSE_BUTTON_NONE ( 0x0)
-#define FENSTER_MOUSE_BUTTON_1 ( 0x1)
-#define FENSTER_MOUSE_BUTTON_2 ( 0x2)
-#define FENSTER_MOUSE_BUTTON_3 ( 0x4)
+	enum class MouseButton: uint8_t
+	{
+		None = 0b0000,
+		Button1 = 0b0001,
+		Button2 = 0b0010,
+		Button3 = 0b0100,
+	};
 
-	typedef uint8_t MouseEventType;
-#define FENSTER_MOUSE_EVENT_NONE ( 0)
-#define FENSTER_MOUSE_EVENT_MOVE ( 1)
-#define FENSTER_MOUSE_EVENT_PRESS ( 2)
-#define FENSTER_MOUSE_EVENT_RELEASE ( 3)
-#define FENSTER_MOUSE_EVENT_DRAG_RELEASE ( 4)
-#define FENSTER_MOUSE_EVENT_DRAG ( 5)
-#define FENSTER_MOUSE_EVENT_ENTER ( 6)
-#define FENSTER_MOUSE_EVENT_LEAVE ( 7)
-#define FENSTER_MOUSE_EVENT_SCROLL ( 8)
+	inline MouseButton& operator|=(MouseButton& lhs, MouseButton rhs)
+	{
+		lhs = (MouseButton) ((uint8_t) lhs | (uint8_t) rhs);
+		return lhs;
+	}
+
+	inline bool operator&(MouseButton& lhs, MouseButton rhs)
+	{
+		return ((uint8_t) lhs & (uint8_t) rhs);
+	}
+
+	/**
+	 * Types of mouse events
+	 */
+	enum class MouseEventType: uint8_t
+	{
+		None = 0,
+		Move = 1,
+		Press = 2,
+		Release = 3,
+		DragRelease = 4,
+		Drag = 5,
+		Enter = 6,
+		Leave = 7,
+		Scroll = 8,
+	};
 
 	typedef struct
 	{

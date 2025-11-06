@@ -86,18 +86,18 @@ void inputReceiverStartReceiveMouseEvents()
 			fensterserver::Cursor::nextPosition.y = resolution.height - 2;
 		}
 
-		fensterserver::Cursor::nextPressedButtons = FENSTER_MOUSE_BUTTON_NONE;
+		fensterserver::Cursor::nextPressedButtons = fenster::MouseButton::None;
 		if(info.button1)
 		{
-			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_1;
+			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button1;
 		}
 		if(info.button2)
 		{
-			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_2;
+			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button2;
 		}
 		if(info.button3)
 		{
-			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_3;
+			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button3;
 		}
 
 		fensterserver::Cursor::nextScroll += info.scroll;

@@ -28,7 +28,7 @@ namespace fenster
 
 	Window* Window::create()
 	{
-		return createComponent<Window, FENSTER_COMPONENT_TYPE_WINDOW>();
+		return createComponent<Window, ComponentType::Window>();
 	}
 
 	Window* Window::attach(ComponentId id)
@@ -50,6 +50,6 @@ namespace fenster
 
 	bool Window::onClose(std::function<void()> func)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_CLOSE, new WindowCloseDispatcher(std::move(func)));
+		return addListener(ComponentEventType::Close, new WindowCloseDispatcher(std::move(func)));
 	}
 }

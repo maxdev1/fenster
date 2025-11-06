@@ -38,7 +38,7 @@ namespace fensterserver
 
 	Component* ScrollPane::handleMouseEvent(MouseEvent& event)
 	{
-		if(event.type == FENSTER_MOUSE_EVENT_SCROLL)
+		if(event.type == fenster::MouseEventType::Scroll)
 		{
 			verticalScrollbar.setModelPosition(verticalScrollbar.getModelPosition() + event.scroll * 50);
 			handleScroll(&verticalScrollbar);

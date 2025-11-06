@@ -9,7 +9,7 @@ namespace fenster
 {
 	TextField* TextField::create()
 	{
-		return createComponent<TextField, FENSTER_COMPONENT_TYPE_TEXTFIELD>();
+		return createComponent<TextField, ComponentType::TextField>();
 	}
 
 	void TextField::setSecure(bool secure)

@@ -59,57 +59,57 @@ namespace fensterserver
 		void* responseMessage = nullptr;
 		int responseLength = 0;
 
-		if(requestUiMessage->id == FENSTER_PROTOCOL_CREATE_COMPONENT)
+		if(requestUiMessage->id == fenster::ProtocolCommandId::CreateComponent)
 		{
 			auto createRequest = (CommandCreateComponentRequest*) requestUiMessage;
 
 			Component* component = nullptr;
 			switch(createRequest->type)
 			{
-				case FENSTER_COMPONENT_TYPE_WINDOW:
+				case ComponentType::Window:
 					component = new Window();
-				Server::instance()->screen->addChild(component);
-				break;
+					Server::instance()->screen->addChild(component);
+					break;
 
-				case FENSTER_COMPONENT_TYPE_LABEL:
+				case ComponentType::Label:
 					component = new Label();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_BUTTON:
+				case ComponentType::Button:
 					component = new Button();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_TEXTFIELD:
+				case ComponentType::TextField:
 					component = new TextField();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_CANVAS:
+				case ComponentType::Canvas:
 					component = new Canvas(SYS_MESSAGE_SENDER(requestMessage));
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_SELECTION:
+				case ComponentType::Selection:
 					component = new Selection();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_PANEL:
+				case ComponentType::Panel:
 					component = new Panel();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_SCROLLPANE:
+				case ComponentType::ScrollPane:
 					component = new ScrollPane();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_IMAGE:
+				case ComponentType::Image:
 					component = new Image();
-				break;
+					break;
 
-				case FENSTER_COMPONENT_TYPE_CHECKBOX:
+				case ComponentType::Checkbox:
 					component = new Checkbox();
-				break;
+					break;
 
 				default:
 					fenster::platformLog("don't know how to create a component of type %i", createRequest->type);
-				break;
+					break;
 			}
 
 			ComponentId component_id = -1;
@@ -121,14 +121,16 @@ namespace fensterserver
 
 			// create response message
 			auto response = new CommandCreateComponentResponse;
-			response->header.id = FENSTER_PROTOCOL_CREATE_COMPONENT;
+			response->header.id = fenster::ProtocolCommandId::CreateComponent;
 			response->id = component_id;
-			response->status = (component != nullptr ? FENSTER_PROTOCOL_SUCCESS : FENSTER_PROTOCOL_FAIL);
+			response->status = (component != nullptr
+				                    ? fenster::ProtocolStatus::Success
+				                    : fenster::ProtocolStatus::Error);
 
 			responseMessage = response;
 			responseLength = sizeof(CommandCreateComponentResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_ADD_COMPONENT)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::AddComponent)
 		{
 			auto request = (CommandAddChildRequest*) requestUiMessage;
 			Component* parent = ComponentRegistry::get(request->parent);
@@ -138,18 +140,18 @@ namespace fensterserver
 			auto response = new CommandAddChildResponse;
 			if(parent == nullptr || child == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				parent->addChild(child);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandAddChildResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_DESTROY_COMPONENT)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::DestroyComponent)
 		{
 			auto request = (CommandDestroyComponentRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -162,7 +164,7 @@ namespace fensterserver
 				// TODO deferred component deletion
 			}
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_BOUNDS)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetBounds)
 		{
 			auto request = (CommandSetBoundsRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -170,18 +172,18 @@ namespace fensterserver
 			auto response = new CommandSimpleResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				component->setBounds(request->bounds);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_GET_BOUNDS)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::GetBounds)
 		{
 			auto request = (CommandGetBoundsRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -189,18 +191,18 @@ namespace fensterserver
 			auto response = new CommandGetBoundsResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				response->bounds = component->getBounds();
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandGetBoundsResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_ADD_LISTENER)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::AddListener)
 		{
 			auto request = (CommandAddListenerRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -209,18 +211,18 @@ namespace fensterserver
 			if(component == nullptr)
 			{
 				fenster::platformLog("failed to attach listener since component doesn't exist");
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				component->addListener(request->event_type, request->target_thread, request->id);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandAddListenerResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_NUMERIC_PROPERTY)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetNumericProperty)
 		{
 			auto request = (CommandSetNumericPropertyRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -228,24 +230,24 @@ namespace fensterserver
 			auto response = new CommandSetStringPropertyResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				if(component->setNumericProperty(request->property, request->value))
 				{
-					response->status = FENSTER_PROTOCOL_SUCCESS;
+					response->status = fenster::ProtocolStatus::Success;
 				}
 				else
 				{
-					response->status = FENSTER_PROTOCOL_FAIL;
+					response->status = fenster::ProtocolStatus::Error;
 				}
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSetStringPropertyResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_GET_NUMERIC_PROPERTY)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::GetNumericProperty)
 		{
 			auto request = (CommandGetNumericPropertyRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -253,7 +255,7 @@ namespace fensterserver
 			auto response = new CommandGetNumericPropertyResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
@@ -261,18 +263,18 @@ namespace fensterserver
 				if(component->getNumericProperty(request->property, &value))
 				{
 					response->value = value;
-					response->status = FENSTER_PROTOCOL_SUCCESS;
+					response->status = fenster::ProtocolStatus::Success;
 				}
 				else
 				{
-					response->status = FENSTER_PROTOCOL_FAIL;
+					response->status = fenster::ProtocolStatus::Error;
 				}
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandGetNumericPropertyResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_FOCUS)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::Focus)
 		{
 			auto request = (CommandFocusRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -280,18 +282,18 @@ namespace fensterserver
 			auto response = new CommandFocusResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				Server::instance()->switchFocus(component);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSetStringPropertyResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_STRING_PROPERTY)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetStringProperty)
 		{
 			auto request = (CommandSetStringPropertyRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -299,18 +301,18 @@ namespace fensterserver
 			auto response = new CommandSimpleResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
 				component->setStringProperty(request->property, std::string(request->value));
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_GET_STRING_PROPERTY)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::GetStringProperty)
 		{
 			auto request = (CommandGetStringPropertyRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -319,7 +321,7 @@ namespace fensterserver
 			if(component == nullptr)
 			{
 				response = new CommandGetStringPropertyResponse;
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 				responseLength = sizeof(CommandGetStringPropertyResponse);
 			}
 			else
@@ -332,19 +334,19 @@ namespace fensterserver
 						operator new(responseLength)
 					);
 					strcpy(response->value, value.c_str());
-					response->status = FENSTER_PROTOCOL_SUCCESS;
+					response->status = fenster::ProtocolStatus::Success;
 				}
 				else
 				{
 					response = new CommandGetStringPropertyResponse;
-					response->status = FENSTER_PROTOCOL_FAIL;
+					response->status = fenster::ProtocolStatus::Error;
 					responseLength = sizeof(CommandGetStringPropertyResponse);
 				}
 			}
 
 			responseMessage = response;
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_CANVAS_BLIT)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::CanvasBlit)
 		{
 			auto request = (CommandCanvasBlitRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
@@ -358,7 +360,7 @@ namespace fensterserver
 				}
 			}
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_REGISTER_DESKTOP_CANVAS)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::RegisterDesktopCanvas)
 		{
 			auto request = (CommandRegisterDesktopCanvasRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->canvas_id);
@@ -366,11 +368,11 @@ namespace fensterserver
 			auto response = new CommandRegisterDesktopCanvasResponse;
 			if(component == nullptr)
 			{
-				response->status = FENSTER_PROTOCOL_FAIL;
+				response->status = fenster::ProtocolStatus::Error;
 			}
 			else
 			{
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 
 				auto canvas = dynamic_cast<Canvas*>(component);
 				if(canvas)
@@ -379,7 +381,7 @@ namespace fensterserver
 
 					Screen* screen = Server::instance()->screen;
 					screen->addChild(canvas);
-					screen->addListener(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, request->target_thread, canvas->id);
+					screen->addListener(fenster::ComponentEventType::Window, request->target_thread, canvas->id);
 					canvas->setBounds(screen->getBounds());
 				}
 			}
@@ -387,7 +389,7 @@ namespace fensterserver
 			responseMessage = response;
 			responseLength = sizeof(CommandRegisterDesktopCanvasResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_GET_SCREEN_DIMENSION)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::GetScreenDimension)
 		{
 			auto response = new CommandGetScreenDimensionResponse;
 			response->size = Server::instance()->screen->getBounds().getSize();
@@ -395,10 +397,10 @@ namespace fensterserver
 			responseMessage = response;
 			responseLength = sizeof(CommandGetScreenDimensionResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::ScrollPaneSetContent)
 		{
 			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
+			response->status = fenster::ProtocolStatus::Error;
 
 			auto request = (CommandScrollPaneSetContent*) requestUiMessage;
 			ScrollPane* scrollpane = dynamic_cast<ScrollPane*>(ComponentRegistry::get(request->scrollpane));
@@ -406,16 +408,16 @@ namespace fensterserver
 			if(scrollpane && content)
 			{
 				scrollpane->setContent(content);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::ScrollPaneSetFixed)
 		{
 			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
+			response->status = fenster::ProtocolStatus::Error;
 
 			auto request = (CommandScrollPaneSetFixed*) requestUiMessage;
 			ScrollPane* scrollpane = dynamic_cast<ScrollPane*>(ComponentRegistry::get(request->scrollpane));
@@ -423,55 +425,55 @@ namespace fensterserver
 			{
 				scrollpane->setFixedHeight(request->height);
 				scrollpane->setFixedWidth(request->width);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_PREFERRED_SIZE)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetPreferredSize)
 		{
 			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
+			response->status = fenster::ProtocolStatus::Error;
 
 			auto request = (CommandSetSizeRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
 			if(component)
 			{
 				component->setPreferredSize(request->size);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_MINIMUM_SIZE)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetMinimumSize)
 		{
 			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
+			response->status = fenster::ProtocolStatus::Error;
 
 			auto request = (CommandSetSizeRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
 			if(component)
 			{
 				component->setMinimumSize(request->size);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
 			responseLength = sizeof(CommandSimpleResponse);
 		}
-		else if(requestUiMessage->id == FENSTER_PROTOCOL_SET_MAXIMUM_SIZE)
+		else if(requestUiMessage->id == fenster::ProtocolCommandId::SetMaximumSize)
 		{
 			auto response = new CommandSimpleResponse;
-			response->status = FENSTER_PROTOCOL_FAIL;
+			response->status = fenster::ProtocolStatus::Error;
 
 			auto request = (CommandSetSizeRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
 			if(component)
 			{
 				component->setMaximumSize(request->size);
-				response->status = FENSTER_PROTOCOL_SUCCESS;
+				response->status = fenster::ProtocolStatus::Success;
 			}
 
 			responseMessage = response;
@@ -482,7 +484,9 @@ namespace fensterserver
 
 		if(responseMessage)
 		{
-			fenster::platformSendMessage(SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength, SYS_MESSAGE_TRANSACTION(requestMessage));
+			fenster::platformSendMessage(
+					SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength,
+					SYS_MESSAGE_TRANSACTION(requestMessage));
 			fenster::platformYieldTo(SYS_MESSAGE_SENDER(requestMessage));
 		}
 	}

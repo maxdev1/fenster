@@ -25,7 +25,7 @@ namespace fenster
 
 		LayoutType getType() override
 		{
-			return FENSTER_LAYOUT_STACK;
+			return LayoutType::Stack;
 		}
 	};
 }

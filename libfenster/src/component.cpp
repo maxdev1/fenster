@@ -23,7 +23,7 @@ namespace fenster
 		destroyed = true;
 
 		CommandDestroyComponentRequest request;
-		request.header.id = FENSTER_PROTOCOL_DESTROY_COMPONENT;
+		request.header.id = fenster::ProtocolCommandId::DestroyComponent;
 		request.id = this->id;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandDestroyComponentRequest), SYS_TX_NONE);
 		platformYieldTo(DelegateTaskId);
@@ -38,7 +38,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandAddChildRequest request;
-		request.header.id = FENSTER_PROTOCOL_ADD_COMPONENT;
+		request.header.id = fenster::ProtocolCommandId::AddComponent;
 		request.parent = this->id;
 		request.child = child->id;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandAddChildRequest), tx);
@@ -50,7 +50,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandAddChildResponse*) SYS_MESSAGE_CONTENT(buffer);
-			if(response->status == FENSTER_PROTOCOL_SUCCESS)
+			if(response->status == ProtocolStatus::Success)
 			{
 				return true;
 			}
@@ -68,7 +68,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandSetBoundsRequest request;
-		request.header.id = FENSTER_PROTOCOL_SET_BOUNDS;
+		request.header.id = fenster::ProtocolCommandId::SetBounds;
 		request.id = this->id;
 		request.bounds = rect;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandSetBoundsRequest), tx);
@@ -80,7 +80,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
+			return response->status == ProtocolStatus::Success;
 		}
 		return false;
 	}
@@ -94,7 +94,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandGetBoundsRequest request;
-		request.header.id = FENSTER_PROTOCOL_GET_BOUNDS;
+		request.header.id = fenster::ProtocolCommandId::GetBounds;
 		request.id = this->id;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetBoundsRequest), tx);
 		platformYieldTo(DelegateTaskId);
@@ -107,7 +107,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandGetBoundsResponse*) SYS_MESSAGE_CONTENT(buffer);
-			if(response->status == FENSTER_PROTOCOL_SUCCESS)
+			if(response->status == ProtocolStatus::Success)
 				result = response->bounds;
 		}
 
@@ -123,7 +123,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandSetNumericPropertyRequest request;
-		request.header.id = FENSTER_PROTOCOL_SET_NUMERIC_PROPERTY;
+		request.header.id = fenster::ProtocolCommandId::SetNumericProperty;
 		request.id = this->id;
 		request.property = property;
 		request.value = value;
@@ -139,7 +139,7 @@ namespace fenster
 		{
 			auto response = (CommandSetStringPropertyResponse*)
 					SYS_MESSAGE_CONTENT(buffer);
-			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+			success = (response->status == ProtocolStatus::Success);
 		}
 
 		return success;
@@ -154,7 +154,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandGetNumericPropertyRequest request;
-		request.header.id = FENSTER_PROTOCOL_GET_NUMERIC_PROPERTY;
+		request.header.id = fenster::ProtocolCommandId::GetNumericProperty;
 		request.id = this->id;
 		request.property = property;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetNumericPropertyRequest), tx);
@@ -170,7 +170,7 @@ namespace fenster
 			auto response = (CommandGetNumericPropertyResponse*)
 					SYS_MESSAGE_CONTENT(buffer);
 
-			if(response->status == FENSTER_PROTOCOL_SUCCESS)
+			if(response->status == ProtocolStatus::Success)
 			{
 				*out = response->value;
 				success = true;
@@ -192,7 +192,7 @@ namespace fenster
 		auto request = static_cast<CommandSetStringPropertyRequest*>(
 			operator new(sizeof(CommandSetStringPropertyRequest) + value.length() + 1)
 		);
-		request->header.id = FENSTER_PROTOCOL_SET_STRING_PROPERTY;
+		request->header.id = fenster::ProtocolCommandId::SetStringProperty;
 		request->id = this->id;
 		request->property = property;
 		strcpy(request->value, value.c_str());
@@ -206,7 +206,7 @@ namespace fenster
 		if(platformReceiveMessage(responseBuffer, responseBufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(responseBuffer);
-			success = (response->status == FENSTER_PROTOCOL_SUCCESS);
+			success = (response->status == ProtocolStatus::Success);
 		}
 
 		delete request;
@@ -221,7 +221,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandGetStringPropertyRequest request;
-		request.header.id = FENSTER_PROTOCOL_GET_STRING_PROPERTY;
+		request.header.id = fenster::ProtocolCommandId::GetStringProperty;
 		request.id = this->id;
 		request.property = property;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetStringPropertyRequest), tx);
@@ -236,7 +236,7 @@ namespace fenster
 			if(receiveStatus == SYS_MESSAGE_RECEIVE_SUCCESS)
 			{
 				auto response = (CommandGetStringPropertyResponse*) SYS_MESSAGE_CONTENT(buffer);
-				if(response->status == FENSTER_PROTOCOL_SUCCESS)
+				if(response->status == ProtocolStatus::Success)
 				{
 					success = true;
 					out = std::string(response->value);
@@ -287,32 +287,32 @@ namespace fenster
 
 	bool Component::addMouseListener(MouseListener* listener)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_MOUSE, listener);
+		return addListener(ComponentEventType::Mouse, listener);
 	}
 
 	bool Component::addMouseListener(MouseListenerFunc func)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_MOUSE, new MouseListenerDispatcher(std::move(func)));
+		return addListener(ComponentEventType::Mouse, new MouseListenerDispatcher(std::move(func)));
 	}
 
 	bool Component::addKeyListener(KeyListener* listener)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_KEY, listener);
+		return addListener(ComponentEventType::Key, listener);
 	}
 
 	bool Component::addKeyListener(KeyListenerFunc func)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_KEY, new KeyListenerDispatcher(std::move(func)));
+		return addListener(ComponentEventType::Key, new KeyListenerDispatcher(std::move(func)));
 	}
 
 	bool Component::addVisibleListener(VisibleListener* listener)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, listener);
+		return addListener(ComponentEventType::Visible, listener);
 	}
 
 	bool Component::addVisibleListener(VisibleListenerFunc func)
 	{
-		return addListener(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, new VisibleListenerDispatcher(std::move(func)));
+		return addListener(ComponentEventType::Visible, new VisibleListenerDispatcher(std::move(func)));
 	}
 
 	bool Component::setBackground(ColorArgb argb)
@@ -369,17 +369,17 @@ namespace fenster
 
 	bool Component::setPreferredSize(const Dimension& size)
 	{
-		return setSize(FENSTER_PROTOCOL_SET_PREFERRED_SIZE, size);
+		return setSize(fenster::ProtocolCommandId::SetPreferredSize, size);
 	}
 
 	bool Component::setMinimumSize(const Dimension& size)
 	{
-		return setSize(FENSTER_PROTOCOL_SET_MINIMUM_SIZE, size);
+		return setSize(fenster::ProtocolCommandId::SetMinimumSize, size);
 	}
 
 	bool Component::setMaximumSize(const Dimension& size)
 	{
-		return setSize(FENSTER_PROTOCOL_SET_MAXIMUM_SIZE, size);
+		return setSize(fenster::ProtocolCommandId::SetMaximumSize, size);
 	}
 
 	bool Component::setSize(ProtocolCommandId command, const Dimension& size)
@@ -401,14 +401,14 @@ namespace fenster
 		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
+			return response->status == ProtocolStatus::Success;
 		}
 		return false;
 	}
 
 	bool Component::setLayout(Layout* layout)
 	{
-		return setNumericProperty(ComponentProperty::Layout, layout->getType());
+		return setNumericProperty(ComponentProperty::Layout, (uint32_t) layout->getType());
 	}
 
 }

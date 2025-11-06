@@ -54,7 +54,7 @@ namespace fenster
 
 			SYS_TX_T tx = platformCreateMessageTransaction();
 			CommandCreateComponentRequest request;
-			request.header.id = FENSTER_PROTOCOL_CREATE_COMPONENT;
+			request.header.id = fenster::ProtocolCommandId::CreateComponent;
 			request.type = COMPONENT_CONSTANT;
 			platformSendMessage(DelegateTaskId, &request, sizeof(CommandCreateComponentRequest), tx);
 			// g_yield_t(DelegateTaskId);
@@ -67,7 +67,7 @@ namespace fenster
 			{
 				auto response = (CommandCreateComponentResponse*) SYS_MESSAGE_CONTENT(buffer);
 
-				if (response->status == FENSTER_PROTOCOL_SUCCESS)
+				if (response->status == ProtocolStatus::Success)
 				{
 					component = attachComponent<COMPONENT_TYPE>(response->id);
 				}

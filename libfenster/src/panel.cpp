@@ -8,6 +8,6 @@ namespace fenster
 {
 	Panel* Panel::create()
 	{
-		return createComponent<Panel, FENSTER_COMPONENT_TYPE_PANEL>();
+		return createComponent<Panel, ComponentType::Panel>();
 	}
 }

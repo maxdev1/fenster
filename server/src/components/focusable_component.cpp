@@ -15,10 +15,10 @@ namespace fensterserver
 		{
 			setFocusedInternal(focused);
 
-			self->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_FOCUS, [focused](EventListenerInfo& info)
+			self->callForListeners(fenster::ComponentEventType::Focus, [focused](EventListenerInfo& info)
 			{
 				fenster::ComponentFocusEvent event;
-				event.header.type = FENSTER_COMPONENT_EVENT_TYPE_FOCUS;
+				event.header.type = fenster::ComponentEventType::Focus;
 				event.header.component_id = info.component_id;
 				event.now_focused = focused;
 				fenster::platformSendMessage(info.target_thread, &event, sizeof(fenster::ComponentFocusEvent),

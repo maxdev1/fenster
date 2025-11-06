@@ -170,19 +170,19 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			return 0;
 		}
 		case WM_LBUTTONDOWN:
-			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_1;
+			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button1;
 			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_LBUTTONUP:
-			fensterserver::Cursor::nextPressedButtons &= ~FENSTER_MOUSE_BUTTON_1;
+			fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button1;
 			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_RBUTTONDOWN:
-			fensterserver::Cursor::nextPressedButtons |= FENSTER_MOUSE_BUTTON_2;
+			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button2;
 			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_RBUTTONUP:
-			fensterserver::Cursor::nextPressedButtons &= ~FENSTER_MOUSE_BUTTON_2;
+			fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button2;
 			fensterserver::Server::instance()->requestUpdateImmediately();
 			return 0;
 		case WM_MOUSEWHEEL:

@@ -9,7 +9,7 @@ namespace fenster
 {
 	void CanvasBufferListenerInternal::process(ComponentEventHeader* header)
 	{
-		if(header->type == FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER)
+		if(header->type == ComponentEventType::CanvasNewBuffer)
 		{
 			auto event = (ComponentCanvasWaitForAcknowledgeEvent*) header;
 			canvas->acknowledgeNewBuffer(event->newBufferAddress, event->width, event->height);

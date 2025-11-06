@@ -15,7 +15,7 @@ namespace fensterserver
 
 		if(comp->isWindow())
 		{
-			this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](EventListenerInfo& info)
+			this->callForListeners(fenster::ComponentEventType::Window, [this, comp](EventListenerInfo& info)
 			{
 				auto window = dynamic_cast<Window*>(comp);
 				sendWindowEvent(info.component_id, window, info.target_thread, true);
@@ -27,7 +27,7 @@ namespace fensterserver
 	{
 		if(comp->isWindow())
 		{
-			this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, [this, comp](EventListenerInfo& info)
+			this->callForListeners(fenster::ComponentEventType::Window, [this, comp](EventListenerInfo& info)
 			{
 				sendWindowEvent(info.component_id, dynamic_cast<Window*>(comp), info.target_thread,
 				                false);
@@ -41,7 +41,7 @@ namespace fensterserver
 	                             bool present)
 	{
 		fenster::WindowsEvent windowEvent;
-		windowEvent.header.type = FENSTER_COMPONENT_EVENT_TYPE_WINDOWS;
+		windowEvent.header.type = fenster::ComponentEventType::Window;
 		windowEvent.header.component_id = observerId;
 		windowEvent.window_id = window->id;
 		windowEvent.present = present;

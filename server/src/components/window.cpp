@@ -269,7 +269,7 @@ namespace fensterserver
 
 	Component* Window::handleMouseEvent(MouseEvent& me)
 	{
-		if(me.type == FENSTER_MOUSE_EVENT_DRAG)
+		if(me.type == fenster::MouseEventType::Drag)
 		{
 			if(crossPressed)
 			{
@@ -289,7 +289,7 @@ namespace fensterserver
 			return handledByChild;
 
 		// Handle mouse events
-		if(me.type == FENSTER_MOUSE_EVENT_MOVE)
+		if(me.type == fenster::MouseEventType::Move)
 		{
 			if(resizable)
 			{
@@ -367,7 +367,7 @@ namespace fensterserver
 				crossHovered = false;
 			}
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		else if(me.type == fenster::MouseEventType::Press)
 		{
 			// Press on the cross
 			if(crossBounds.contains(me.position))
@@ -381,7 +381,7 @@ namespace fensterserver
 				startDragOrResize(me);
 			}
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
+		else if(me.type == fenster::MouseEventType::DragRelease)
 		{
 			crossPressed = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
@@ -389,7 +389,7 @@ namespace fensterserver
 
 			resizeMode = RESIZE_MODE_NONE;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE)
+		else if(me.type == fenster::MouseEventType::Release)
 		{
 			if(crossBounds.contains(me.position))
 			{
@@ -399,7 +399,7 @@ namespace fensterserver
 
 			resizeMode = RESIZE_MODE_NONE;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
+		else if(me.type == fenster::MouseEventType::Leave)
 		{
 			Cursor::set("default");
 			fenster::platformLog("Window sets default cursor");
@@ -410,10 +410,10 @@ namespace fensterserver
 
 	void Window::close()
 	{
-		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_CLOSE, [](EventListenerInfo& info)
+		this->callForListeners(fenster::ComponentEventType::Close, [](EventListenerInfo& info)
 		{
 			fenster::ComponentCloseEvent posted_event;
-			posted_event.header.type = FENSTER_COMPONENT_EVENT_TYPE_CLOSE;
+			posted_event.header.type = fenster::ComponentEventType::Close;
 			posted_event.header.component_id = info.component_id;
 			platformSendMessage(info.target_thread, &posted_event, sizeof(fenster::ComponentCloseEvent), SYS_TX_NONE);
 		});

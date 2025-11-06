@@ -10,7 +10,7 @@ namespace fenster
 {
 	Checkbox* Checkbox::create()
 	{
-		return createComponent<Checkbox, FENSTER_COMPONENT_TYPE_CHECKBOX>();
+		return createComponent<Checkbox, ComponentType::Checkbox>();
 	}
 
 	void Checkbox::setEnabled(bool enabled)

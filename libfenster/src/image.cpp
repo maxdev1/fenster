@@ -9,7 +9,7 @@ namespace fenster
 {
 	Image* Image::create()
 	{
-		return createComponent<Image, FENSTER_COMPONENT_TYPE_IMAGE>();
+		return createComponent<Image, ComponentType::Image>();
 	}
 
 	bool Image::loadImage(std::string path)

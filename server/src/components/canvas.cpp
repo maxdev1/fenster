@@ -145,7 +145,7 @@ namespace fensterserver
 	void Canvas::notifyClientAboutNewBuffer()
 	{
 		fenster::ComponentCanvasWaitForAcknowledgeEvent event;
-		event.header.type = FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER;
+		event.header.type = fenster::ComponentEventType::CanvasNewBuffer;
 		event.header.component_id = this->id;
 		event.newBufferAddress = (uintptr_t) buffer.remoteMapping;
 		event.width = buffer.paintableWidth;

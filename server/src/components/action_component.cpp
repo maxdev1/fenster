@@ -16,10 +16,10 @@ namespace fensterserver
 		}
 
 		// otherwise send message to registered thread
-		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_ACTION, [](EventListenerInfo& info)
+		this->callForListeners(fenster::ComponentEventType::Action, [](EventListenerInfo& info)
 		{
 			fenster::ComponentActionEvent actionEvent;
-			actionEvent.header.type = FENSTER_COMPONENT_EVENT_TYPE_ACTION;
+			actionEvent.header.type = fenster::ComponentEventType::Action;
 			actionEvent.header.component_id = info.component_id;
 			platformSendMessage(info.target_thread, &actionEvent, sizeof(fenster::ComponentActionEvent), SYS_TX_NONE);
 		});

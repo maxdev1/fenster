@@ -107,7 +107,7 @@ namespace fenster
 	{
 		SYS_TX_T tx = platformCreateMessageTransaction();
 		CommandCanvasBlitRequest request;
-		request.header.id = FENSTER_PROTOCOL_CANVAS_BLIT;
+		request.header.id = fenster::ProtocolCommandId::CanvasBlit;
 		request.id = this->id;
 		request.area = rect;
 		platformSendMessage(DelegateTaskId, &request, sizeof(CommandCanvasBlitRequest), tx);

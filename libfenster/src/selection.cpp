@@ -8,6 +8,6 @@ namespace fenster
 {
 	Selection* Selection::create()
 	{
-		return createComponent<Selection, FENSTER_COMPONENT_TYPE_SELECTION>();
+		return createComponent<Selection, ComponentType::Selection>();
 	}
 }

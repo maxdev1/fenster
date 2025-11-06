@@ -9,11 +9,11 @@ namespace fenster
 {
 	bool ActionComponent::setActionListener(ActionListener* new_listener)
 	{
-		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_ACTION, new_listener);
+		return self->addListener(ComponentEventType::Action, new_listener);
 	}
 
 	bool ActionComponent::setActionListener(ActionListenerFunc func)
 	{
-		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_ACTION, new ActionListenerDispatcher(func));
+		return self->addListener(ComponentEventType::Action, new ActionListenerDispatcher(func));
 	}
 }

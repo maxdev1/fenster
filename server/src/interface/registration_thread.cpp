@@ -36,8 +36,8 @@ namespace fensterserver
 								new ApplicationExitCleanupHandler(fenster::platformGetPidForTid(SYS_MESSAGE_SENDER(buf))));
 
 				fenster::CommandApplicationInitializeResponse response;
-				response.header.id = FENSTER_PROTOCOL_INITIALIZATION;
-				response.status = FENSTER_PROTOCOL_SUCCESS;
+				response.header.id = fenster::ProtocolCommandId::Initialization;
+				response.status = fenster::ProtocolStatus::Success;
 				response.window_server_delegate = receiverTid;
 				platformSendMessage(SYS_MESSAGE_SENDER(buf), &response, sizeof(fenster::CommandApplicationInitializeResponse),
 								 SYS_MESSAGE_TRANSACTION(buf));

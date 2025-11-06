@@ -11,7 +11,7 @@
 
 namespace fenster
 {
-	enum ButtonVariant: uint32_t
+	enum class ButtonVariant: uint32_t
 	{
 		Default = 0,
 		Ghost = 1
@@ -30,7 +30,7 @@ namespace fenster
 		void setEnabled(bool enabled);
 		bool isEnabled();
 
-		void setVariant(ButtonVariant style);
+		void setVariant(ButtonVariant variant);
 		ButtonVariant getVariant();
 	};
 }

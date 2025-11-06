@@ -14,7 +14,7 @@ namespace fensterserver
     class MouseEvent : public Event, public Locatable
     {
     public:
-        MouseEvent() : type(FENSTER_MOUSE_EVENT_NONE), buttons(FENSTER_MOUSE_BUTTON_NONE), clickCount(1)
+        MouseEvent() : type(fenster::MouseEventType::None), buttons(fenster::MouseButton::None), clickCount(1)
         {
         }
 

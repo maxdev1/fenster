@@ -11,11 +11,11 @@ namespace fenster
 {
 	bool BoundingComponent::setBoundsListener(BoundsListener* new_listener)
 	{
-		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_BOUNDS, new_listener);
+		return self->addListener(ComponentEventType::Bounds, new_listener);
 	}
 
 	bool BoundingComponent::setBoundsListener(BoundsListenerFunc func)
 	{
-		return self->addListener(FENSTER_COMPONENT_EVENT_TYPE_BOUNDS, new BoundsListenerDispatcher(std::move(func)));
+		return self->addListener(ComponentEventType::Bounds, new BoundsListenerDispatcher(std::move(func)));
 	}
 }

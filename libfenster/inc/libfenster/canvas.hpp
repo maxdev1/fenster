@@ -52,9 +52,9 @@ namespace fenster
 		template<typename COMPONENT_TYPE>
 		static COMPONENT_TYPE* createCanvasComponent()
 		{
-			auto instance = createComponent<COMPONENT_TYPE, FENSTER_COMPONENT_TYPE_CANVAS>();
+			auto instance = createComponent<COMPONENT_TYPE, ComponentType::Canvas>();
 			if(instance)
-				instance->addListener(FENSTER_COMPONENT_EVENT_TYPE_CANVAS_NEW_BUFFER,
+				instance->addListener(ComponentEventType::CanvasNewBuffer,
 				                      new CanvasBufferListenerInternal(instance));
 			return instance;
 		}
@@ -93,12 +93,12 @@ namespace fenster
 
 		void setDesktopListener(DesktopCanvasListener* l)
 		{
-			this->addListener(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS, l);
+			this->addListener(ComponentEventType::Window, l);
 		}
 
 		void setDesktopListener(DesktopCanvasListenerFunc func)
 		{
-			this->addListener(FENSTER_COMPONENT_EVENT_TYPE_WINDOWS,
+			this->addListener(ComponentEventType::Window,
 			                  new DesktopCanvasListenerDispatcher(std::move(func)));
 		}
 	};

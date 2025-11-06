@@ -24,7 +24,7 @@ namespace fenster
 
 		LayoutType getType() override
 		{
-			return FENSTER_LAYOUT_GRID;
+			return LayoutType::Grid;
 		}
 	};
 }

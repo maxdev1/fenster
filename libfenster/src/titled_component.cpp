@@ -24,6 +24,6 @@ namespace fenster
 
 	void TitledComponent::addTitleListener(std::function<void(std::string)> func)
 	{
-		this->addListener(FENSTER_COMPONENT_EVENT_TYPE_TITLE, new TitleListenerDispatcher(std::move(func)));
+		this->addListener(ComponentEventType::Title, new TitleListenerDispatcher(std::move(func)));
 	}
 }

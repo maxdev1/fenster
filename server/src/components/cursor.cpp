@@ -16,8 +16,8 @@ namespace fensterserver
 	fenster::Point Cursor::position;
 	fenster::Point Cursor::nextPosition;
 
-	fenster::MouseButton Cursor::pressedButtons = FENSTER_MOUSE_EVENT_NONE;
-	fenster::MouseButton Cursor::nextPressedButtons = FENSTER_MOUSE_EVENT_NONE;
+	fenster::MouseButton Cursor::pressedButtons = fenster::MouseButton::None;
+	fenster::MouseButton Cursor::nextPressedButtons = fenster::MouseButton::None;
 
 	int Cursor::nextScroll = 0;
 

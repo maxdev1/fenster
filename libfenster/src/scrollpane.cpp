@@ -8,7 +8,7 @@ namespace fenster
 {
 	ScrollPane* ScrollPane::create()
 	{
-		return createComponent<ScrollPane, FENSTER_COMPONENT_TYPE_SCROLLPANE>();
+		return createComponent<ScrollPane, ComponentType::ScrollPane>();
 	}
 
 	bool ScrollPane::setContent(Component* content)
@@ -19,7 +19,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandScrollPaneSetContent request;
-		request.header.id = FENSTER_PROTOCOL_SCROLLPANE_SET_CONTENT;
+		request.header.id = fenster::ProtocolCommandId::ScrollPaneSetContent;
 		request.scrollpane = this->id;
 		request.content = content->getId();
 		platformSendMessage(DelegateTaskId, &request, sizeof(request), tx);
@@ -30,7 +30,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
+			return response->status == ProtocolStatus::Success;
 		}
 		return false;
 	}
@@ -43,7 +43,7 @@ namespace fenster
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandScrollPaneSetFixed request;
-		request.header.id = FENSTER_PROTOCOL_SCROLLPANE_SET_FIXED;
+		request.header.id = fenster::ProtocolCommandId::ScrollPaneSetFixed;
 		request.scrollpane = this->id;
 		request.width = width;
 		request.height = height;
@@ -55,7 +55,7 @@ namespace fenster
 		if(platformReceiveMessage(buffer, buflen, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			auto response = (CommandSimpleResponse*) SYS_MESSAGE_CONTENT(buffer);
-			return response->status == FENSTER_PROTOCOL_SUCCESS;
+			return response->status == ProtocolStatus::Success;
 		}
 		return false;
 	}

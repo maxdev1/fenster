@@ -14,15 +14,15 @@
 
 namespace fensterserver
 {
-	enum ButtonRenderState
+	enum class ButtonRenderState: int
 	{
-		DEFAULT = 0,
-		HOVER = 1,
-		PRESSED = 2,
-		DISABLED = 3
+		Default = 0,
+		Hover = 1,
+		Pressed = 2,
+		Disabled = 3
 	};
 
-	enum ButtonStateColorType
+	enum class ButtonStateColorType: int
 	{
 		BACKGROUND = 0,
 		BORDER = 1,
@@ -36,61 +36,61 @@ namespace fensterserver
 	> BUTTON_STYLES = {
 			{fenster::ButtonVariant::Default, {
 					 {
-							 DEFAULT, {
-									 {BACKGROUND, _RGB(248, 248, 248)},
-									 {BORDER, _RGB(200, 200, 200)},
-									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
+							 ButtonRenderState::Default, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(248, 248, 248)},
+									 {ButtonStateColorType::BORDER, _RGB(200, 200, 200)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
-							 HOVER, {
-									 {BACKGROUND, _RGB(255, 255, 255)},
-									 {BORDER, _RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
+							 ButtonRenderState::Hover, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(255, 255, 255)},
+									 {ButtonStateColorType::BORDER, _RGB(193, 193, 193)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
-							 PRESSED, {
-									 {BACKGROUND, _RGB(230, 230, 230)},
-									 {BORDER, _RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
+							 ButtonRenderState::Pressed, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(230, 230, 230)},
+									 {ButtonStateColorType::BORDER, _RGB(193, 193, 193)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
-							 DISABLED, {
-									 {BACKGROUND, _RGB(249, 249, 249)},
-									 {BORDER, _RGB(234, 234, 234)},
-									 {BORDER_FOCUSED, _RGB(234, 234, 234)}
+							 ButtonRenderState::Disabled, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(249, 249, 249)},
+									 {ButtonStateColorType::BORDER, _RGB(234, 234, 234)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(234, 234, 234)}
 							 }
 					 }
 			 }},
 			{fenster::ButtonVariant::Ghost, {
 					 {
-							 DEFAULT, {
-									 {BACKGROUND, ARGB(0, 0, 0, 0)},
-									 {BORDER, ARGB(0, 0, 0, 0)},
-									 {BORDER_FOCUSED, ARGB(0, 0, 0, 0)}
+							 ButtonRenderState::Default, {
+									 {ButtonStateColorType::BACKGROUND, ARGB(0, 0, 0, 0)},
+									 {ButtonStateColorType::BORDER, ARGB(0, 0, 0, 0)},
+									 {ButtonStateColorType::BORDER_FOCUSED, ARGB(0, 0, 0, 0)}
 							 }
 					 },
 					 {
-							 HOVER, {
-									 {BACKGROUND, _RGB(255, 255, 255)},
-									 {BORDER, _RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
+							 ButtonRenderState::Hover, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(255, 255, 255)},
+									 {ButtonStateColorType::BORDER, _RGB(193, 193, 193)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
-							 PRESSED, {
-									 {BACKGROUND, _RGB(230, 230, 230)},
-									 {BORDER, _RGB(193, 193, 193)},
-									 {BORDER_FOCUSED, _RGB(84, 149, 255)}
+							 ButtonRenderState::Pressed, {
+									 {ButtonStateColorType::BACKGROUND, _RGB(230, 230, 230)},
+									 {ButtonStateColorType::BORDER, _RGB(193, 193, 193)},
+									 {ButtonStateColorType::BORDER_FOCUSED, _RGB(84, 149, 255)}
 							 }
 					 },
 					 {
-							 DISABLED, {
-									 {BACKGROUND, ARGB(0, 0, 0, 0)},
-									 {BORDER, ARGB(0, 0, 0, 0)},
-									 {BORDER_FOCUSED, ARGB(0, 0, 0, 0)}
+							 ButtonRenderState::Disabled, {
+									 {ButtonStateColorType::BACKGROUND, ARGB(0, 0, 0, 0)},
+									 {ButtonStateColorType::BORDER, ARGB(0, 0, 0, 0)},
+									 {ButtonStateColorType::BORDER_FOCUSED, ARGB(0, 0, 0, 0)}
 							 }
 					 }
 			 }}
@@ -146,13 +146,15 @@ namespace fensterserver
 		auto styleData = BUTTON_STYLES[variant];
 		auto stateData = enabled
 			                 ? state.pressed
-				                   ? styleData[PRESSED]
+				                   ? styleData[ButtonRenderState::Pressed]
 				                   : (state.hovered
-					                      ? styleData[HOVER]
-					                      : styleData[DEFAULT])
-			                 : styleData[DISABLED];
-		fenster::ColorArgb background = stateData[BACKGROUND];
-		fenster::ColorArgb border = stateData[focused ? BORDER_FOCUSED : BORDER];
+					                      ? styleData[ButtonRenderState::Hover]
+					                      : styleData[ButtonRenderState::Default])
+			                 : styleData[ButtonRenderState::Disabled];
+		fenster::ColorArgb background = stateData[ButtonStateColorType::BACKGROUND];
+		fenster::ColorArgb border = stateData[focused
+			                                      ? ButtonStateColorType::BORDER_FOCUSED
+			                                      : ButtonStateColorType::BORDER];
 
 		double offsetX = 0.5;
 		double offsetY = 0.5;
@@ -186,30 +188,30 @@ namespace fensterserver
 		if(!enabled)
 			return nullptr;
 
-		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
+		if(me.type == fenster::MouseEventType::Enter)
 		{
 			state.hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
+		else if(me.type == fenster::MouseEventType::Leave)
 		{
 			state.hovered = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		else if(me.type == fenster::MouseEventType::Press)
 		{
 			state.pressed = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE || me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
+		else if(me.type == fenster::MouseEventType::Release || me.type == fenster::MouseEventType::DragRelease)
 		{
 			state.pressed = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 
-			if(me.type == FENSTER_MOUSE_EVENT_RELEASE)
+			if(me.type == fenster::MouseEventType::Release)
 			{
 				if(me.position.x >= 0 && me.position.y >= 0 && me.position.x < getBounds().width && me.position.y <
 				   getBounds().height)
@@ -260,7 +262,7 @@ namespace fensterserver
 		}
 		else if(property == fenster::ComponentProperty::Variant)
 		{
-			*out = variant;
+			*out = (uint32_t) variant;
 			return true;
 		}
 

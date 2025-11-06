@@ -71,32 +71,32 @@ namespace fensterserver
 
 	Component* RadioButton::handleMouseEvent(MouseEvent& me)
 	{
-		if(me.type == FENSTER_MOUSE_EVENT_ENTER)
+		if(me.type == fenster::MouseEventType::Enter)
 		{
 			hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_LEAVE)
+		else if(me.type == fenster::MouseEventType::Leave)
 		{
 			hovered = false;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_PRESS)
+		else if(me.type == fenster::MouseEventType::Press)
 		{
 			pressed = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
-		else if(me.type == FENSTER_MOUSE_EVENT_RELEASE || me.type == FENSTER_MOUSE_EVENT_DRAG_RELEASE)
+		else if(me.type == fenster::MouseEventType::Release || me.type == fenster::MouseEventType::DragRelease)
 		{
 			pressed = false;
 
 			auto bounds = getBounds();
 			bounds.x = 0;
 			bounds.y = 0;
-			if(me.type == FENSTER_MOUSE_EVENT_RELEASE && bounds.contains(me.position))
+			if(me.type == fenster::MouseEventType::Release && bounds.contains(me.position))
 			{
 				setChecked(true, false);
 			}

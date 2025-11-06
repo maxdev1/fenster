@@ -17,10 +17,10 @@ namespace fensterserver
 			return;
 		}
 
-		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_CHECKED, [checked](EventListenerInfo& info)
+		this->callForListeners(fenster::ComponentEventType::Checked, [checked](EventListenerInfo& info)
 		{
 			fenster::ComponentCheckedEvent event;
-			event.header.type = FENSTER_COMPONENT_EVENT_TYPE_CHECKED;
+			event.header.type = fenster::ComponentEventType::Checked;
 			event.header.component_id = info.component_id;
 			event.checked = checked;
 			platformSendMessage(info.target_thread, &event, sizeof(fenster::ComponentCheckedEvent), SYS_TX_NONE);

@@ -135,10 +135,10 @@ namespace fensterserver
 		}
 		markParentFor(COMPONENT_REQUIREMENT_LAYOUT);
 
-		this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_VISIBLE, [visible](EventListenerInfo& info)
+		this->callForListeners(fenster::ComponentEventType::Visible, [visible](EventListenerInfo& info)
 		{
 			fenster::ComponentVisibleEvent e;
-			e.header.type = FENSTER_COMPONENT_EVENT_TYPE_VISIBLE;
+			e.header.type = fenster::ComponentEventType::Visible;
 			e.header.component_id = info.component_id;
 			e.visible = visible;
 			fenster::platformSendMessage(info.target_thread, &e, sizeof(fenster::ComponentVisibleEvent),SYS_TX_NONE);
@@ -331,12 +331,12 @@ namespace fensterserver
 		if(handledByChild)
 			return handledByChild;
 
-		auto handledByListener = this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_MOUSE,
+		auto handledByListener = this->callForListeners(fenster::ComponentEventType::Mouse,
 		                                                [event](EventListenerInfo& info)
 		                                                {
 			                                                fenster::ComponentMouseEvent postedEvent;
 			                                                postedEvent.header.type =
-					                                                FENSTER_COMPONENT_EVENT_TYPE_MOUSE;
+					                                                fenster::ComponentEventType::Mouse;
 			                                                postedEvent.header.component_id = info.component_id;
 			                                                postedEvent.position = event.position;
 			                                                postedEvent.type = event.type;
@@ -384,12 +384,12 @@ namespace fensterserver
 
 	bool Component::sendKeyEventToListener(KeyEvent& event)
 	{
-		return this->callForListeners(FENSTER_COMPONENT_EVENT_TYPE_KEY,
+		return this->callForListeners(fenster::ComponentEventType::Key,
 		                              [event](EventListenerInfo& info)
 		                              {
 			                              fenster::ComponentKeyEvent posted_key_event;
 			                              posted_key_event.header.type =
-					                              FENSTER_COMPONENT_EVENT_TYPE_KEY;
+					                              fenster::ComponentEventType::Key;
 			                              posted_key_event.header.component_id = info.component_id;
 			                              posted_key_event.key_info = event.info;
 			                              fenster::platformSendMessage(
@@ -609,22 +609,22 @@ namespace fensterserver
 	{
 		if(property == fenster::ComponentProperty::Layout)
 		{
-			if(value == FENSTER_LAYOUT_FLOW)
+			if((fenster::LayoutType) value == fenster::LayoutType::Flow)
 			{
 				setLayout(new FlowLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_GRID)
+			if((fenster::LayoutType) value == fenster::LayoutType::Grid)
 			{
 				setLayout(new GridLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_FLEX)
+			if((fenster::LayoutType) value == fenster::LayoutType::Flex)
 			{
 				setLayout(new FlexLayout());
 				return true;
 			}
-			if(value == FENSTER_LAYOUT_STACK)
+			if((fenster::LayoutType) value == fenster::LayoutType::Stack)
 			{
 				setLayout(new StackLayout());
 				return true;
