@@ -29,12 +29,12 @@ namespace fensterserver
 		BORDER_FOCUSED = 2
 	};
 
-	std::map<fenster::ButtonStyle,
+	std::map<fenster::ButtonVariant,
 	         std::map<ButtonRenderState,
 	                  std::map<ButtonStateColorType, fenster::ColorArgb>
 	         >
 	> BUTTON_STYLES = {
-			{FENSTER_BUTTON_STYLE_DEFAULT, {
+			{fenster::ButtonVariant::Default, {
 					 {
 							 DEFAULT, {
 									 {BACKGROUND, _RGB(248, 248, 248)},
@@ -64,7 +64,7 @@ namespace fensterserver
 							 }
 					 }
 			 }},
-			{FENSTER_BUTTON_STYLE_GHOST, {
+			{fenster::ButtonVariant::Ghost, {
 					 {
 							 DEFAULT, {
 									 {BACKGROUND, ARGB(0, 0, 0, 0)},
@@ -143,7 +143,7 @@ namespace fensterserver
 
 		clearSurface();
 
-		auto styleData = BUTTON_STYLES[style];
+		auto styleData = BUTTON_STYLES[variant];
 		auto stateData = enabled
 			                 ? state.pressed
 				                   ? styleData[PRESSED]
@@ -258,9 +258,9 @@ namespace fensterserver
 			*out = enabled;
 			return true;
 		}
-		else if(property == fenster::ComponentProperty::Style)
+		else if(property == fenster::ComponentProperty::Variant)
 		{
-			*out = style;
+			*out = variant;
 			return true;
 		}
 
@@ -275,9 +275,9 @@ namespace fensterserver
 			markFor(COMPONENT_REQUIREMENT_ALL);
 			return true;
 		}
-		else if(property == fenster::ComponentProperty::Style)
+		else if(property == fenster::ComponentProperty::Variant)
 		{
-			style = value;
+			variant = (fenster::ButtonVariant) value;
 			markFor(COMPONENT_REQUIREMENT_ALL);
 			return true;
 		}

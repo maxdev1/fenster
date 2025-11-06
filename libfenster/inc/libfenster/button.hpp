@@ -11,14 +11,17 @@
 
 namespace fenster
 {
-	typedef uint8_t ButtonStyle;
-#define FENSTER_BUTTON_STYLE_DEFAULT  0
-#define FENSTER_BUTTON_STYLE_GHOST    1
+	enum ButtonVariant: uint32_t
+	{
+		Default = 0,
+		Ghost = 1
+	};
 
 	class Button : virtual public Component, virtual public TitledComponent, virtual public ActionComponent
 	{
 	public:
-		explicit Button(ComponentId id) : Component(id), TitledComponent(id), ActionComponent(id)
+		explicit Button(ComponentId id) :
+			Component(id), TitledComponent(id), ActionComponent(id)
 		{
 		}
 
@@ -27,8 +30,8 @@ namespace fenster
 		void setEnabled(bool enabled);
 		bool isEnabled();
 
-		void setStyle(ButtonStyle style);
-		ButtonStyle getStyle();
+		void setVariant(ButtonVariant style);
+		ButtonVariant getVariant();
 	};
 }
 

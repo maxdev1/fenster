@@ -27,7 +27,7 @@ namespace fenster
 		Visible,
 		DispatchesFocus,
 		ImageSource,
-		Style,
+		Variant,
 		Title,
 		Checked,
 

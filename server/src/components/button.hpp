@@ -24,7 +24,7 @@ namespace fensterserver
         Label label;
         fenster::Insets insets;
         bool enabled;
-        fenster::ButtonStyle style = FENSTER_BUTTON_STYLE_DEFAULT;
+        fenster::ButtonVariant variant = fenster::Default;
 
     public:
         Button();

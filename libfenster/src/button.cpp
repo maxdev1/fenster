@@ -25,15 +25,15 @@ namespace fenster
 		return value;
 	}
 
-	void Button::setStyle(ButtonStyle style)
+	void Button::setVariant(ButtonVariant style)
 	{
-		setNumericProperty(ComponentProperty::Style, style);
+		setNumericProperty(ComponentProperty::Variant, style);
 	}
 
-	ButtonStyle Button::getStyle()
+	ButtonVariant Button::getVariant()
 	{
 		uint32_t value;
-		getNumericProperty(ComponentProperty::Style, &value);
-		return value;
+		getNumericProperty(ComponentProperty::Variant, &value);
+		return (ButtonVariant) value;
 	}
 }
