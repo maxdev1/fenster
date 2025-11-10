@@ -297,7 +297,7 @@ namespace fensterserver
 
 	void platformLoadCursors()
 	{
-		const char* path = "../../sysroot/system/graphics/cursor";
+		const char* path = "platform/sim/cursor";
 		DIR* dir = opendir(path);
 		if(!dir)
 		{
@@ -306,7 +306,7 @@ namespace fensterserver
 		struct dirent* entry;
 		while((entry = readdir(dir)) != NULL)
 		{
-			std::string path = std::string("../../sysroot/system/graphics/cursor") + "/" + entry->d_name;
+			std::string path = std::string("platform/sim/cursor") + "/" + entry->d_name;
 			Cursor::load(path);
 		}
 		Cursor::set("default");

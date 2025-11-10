@@ -19,7 +19,7 @@
 namespace fensterserver
 {
 	TextArea::TextArea() :
-		text(""), cursor(0), marker(0), scrollX(0), secure(false),
+		text(""), cursor(0), marker(0), scrollX(0), scrollY(0), secure(false),
 		visualStatus(TextAreaVisualStatus::NORMAL), fontSize(14),
 		textColor(_RGB(0, 0, 0)), insets(fenster::Insets(5, 5, 5, 5))
 	{
@@ -66,7 +66,9 @@ namespace fensterserver
 		fenster::TextLayouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
 		                                             fenster::Rectangle(0, 0, bounds.width, bounds.height),
 		                                             fenster::TextAlignment::LEFT,
-		                                             viewModel, true);
+		                                             viewModel, false);
+
+        this->setPreferredSize(fenster::Dimension(viewModel->textBounds.width + insets.left + insets.right, viewModel->textBounds.height + insets.top + insets.bottom));
 
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 
@@ -121,7 +123,7 @@ namespace fensterserver
 		fenster::TextLayouter::getInstance()->layout(cr, visible_text.c_str(), font, fontSize,
 		                                             fenster::Rectangle(0, 0, bounds.width, bounds.height),
 		                                             fenster::TextAlignment::LEFT,
-		                                             viewModel, true);
+		                                             viewModel, false);
 
 		// Scroll
 		applyScroll();
@@ -142,8 +144,14 @@ namespace fensterserver
 					cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(_RGB(55, 155, 255)));
 					fenster::Rectangle before = positionToCursorBounds(pos);
 					fenster::Rectangle after = positionToCursorBounds(pos + 1);
-					cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
-					cairo_fill(cr);
+
+					if(before.y == after.y) {
+                        cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
+                        cairo_fill(cr);
+					} else { // LF
+                        cairo_rectangle(cr, before.x, before.y, 4, before.height);
+                        cairo_fill(cr);
+					}
 
 					color = _RGB(255, 255, 255);
 				}
@@ -155,29 +163,32 @@ namespace fensterserver
 		for(pos = 0; pos < viewModel->positions.size(); pos++)
 		{
 			auto g = viewModel->positions[pos];
-			fenster::Rectangle onView = glyphToView(g);
-			fenster::ColorArgb color = textColor;
-			if(focused && first != second && pos >= first && pos < second)
-			{
-				color = _RGB(255, 255, 255);
+
+			if(g.controlChar == -1) {
+                fenster::Rectangle onView = glyphToView(g);
+                fenster::ColorArgb color = textColor;
+                if(focused && first != second && pos >= first && pos < second)
+                {
+                    color = _RGB(255, 255, 255);
+                }
+
+                // // TODO test
+                // cairo_save(cr);
+                // cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(pos == cursor ? ARGB(50, 255, 155, 55) : ARGB(50, 55, 155, 255)));
+                // fenster::Rectangle before = positionToCursorBounds(pos);
+                // fenster::Rectangle after = positionToCursorBounds(pos + 1);
+                // cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
+                // cairo_stroke(cr);
+                // cairo_restore(cr);
+                // // TODO test
+
+                cairo_save(cr);
+                cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(color));
+                cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
+                cairo_glyph_path(cr, g.glyph, g.glyph_count);
+                cairo_fill(cr);
+                cairo_restore(cr);
 			}
-
-			// // TODO test
-			// cairo_save(cr);
-			// cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(pos == cursor ? ARGB(50, 255, 155, 55) : ARGB(50, 55, 155, 255)));
-			// fenster::Rectangle before = positionToCursorBounds(pos);
-			// fenster::Rectangle after = positionToCursorBounds(pos + 1);
-			// cairo_rectangle(cr, before.x, before.y, after.x - before.x, before.height);
-			// cairo_stroke(cr);
-			// cairo_restore(cr);
-			// // TODO test
-
-			cairo_save(cr);
-			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(color));
-			cairo_translate(cr, onView.x - g.glyph->x, onView.y - g.glyph->y); // TODO?
-			cairo_glyph_path(cr, g.glyph, g.glyph_count);
-			cairo_fill(cr);
-			cairo_restore(cr);
 		}
 
 		// Paint cursor
@@ -198,46 +209,28 @@ namespace fensterserver
 		fenster::Rectangle bounds = getBounds();
 
 		int textUsableWidth = bounds.width - insets.left - insets.right;
-
 		if(scrollX + cursorPos.x > textUsableWidth)
 			scrollX = textUsableWidth - cursorPos.x;
 		else if(scrollX + cursorPos.x < insets.left)
 			scrollX = -cursorPos.x + insets.left;
-
 		if(viewModel->textBounds.width > textUsableWidth)
 			scrollX = std::max(textUsableWidth - viewModel->textBounds.width,
 			                   std::min(scrollX, 0));
 		else
 			scrollX = 0;
-	}
 
-	fenster::Point TextArea::positionToUnscrolledCursorPoint(int pos)
-	{
-		int cursorX = insets.left;
-		int cursorY = insets.top;
+        int cursorTop  = cursorPos.y - fontSize / 2;
+        int cursorBot  = cursorPos.y + fontSize / 2;
 
-		int positionsCount = viewModel->positions.size();
-		for(int i = 0; i < positionsCount; i++)
-		{
-			fenster::PositionedGlyph& g = viewModel->positions[i];
-			// After last?
-			if(i == positionsCount - 1 && pos == positionsCount)
-			{
-				cursorX = g.position.x + insets.left + g.advance.x;
-				cursorY = g.position.y + insets.top + g.advance.y;
-			}
-			// Anywhere inside
-			if(i == pos)
-			{
-				cursorX = g.position.x + insets.left - 1;
-				cursorY = g.position.y + insets.top + g.advance.y;
-			}
-		}
-
-		fenster::Point cursorPoint;
-		cursorPoint.x = cursorX;
-		cursorPoint.y = cursorY;
-		return cursorPoint;
+		int textUsableHeight = bounds.height - insets.top - insets.bottom;
+		if(scrollY + cursorTop < insets.top)
+            scrollY = -cursorTop + insets.top;
+		else if(scrollY + cursorPos.y > textUsableHeight)
+            scrollY = textUsableHeight - cursorPos.y;
+		if(viewModel->textBounds.height > textUsableHeight)
+			scrollY = std::max(textUsableHeight - viewModel->textBounds.height - fontSize, std::min(scrollY, 0));
+		else
+			scrollY = 0;
 	}
 
 	void TextArea::setCursor(int pos)
@@ -355,6 +348,32 @@ namespace fensterserver
 			{
 				caretMoveStrategy->moveCaret(this, CaretDirection::RIGHT, ke.info);
 			}
+			else if(ke.info.key == "KEY_ARROW_UP")
+			{
+				auto currentBounds = positionToCursorBounds(cursor);
+				if(currentBounds.y - scrollY > fontSize) {
+				    currentBounds.x += 2;
+				    currentBounds.y -= fontSize / 2;
+				    cursor = viewToPosition(currentBounds.getStart());
+				} else {
+				    cursor = 0;
+				}
+                if(!shiftDown) {
+                    marker = cursor;
+                }
+				markFor(COMPONENT_REQUIREMENT_PAINT);
+			}
+			else if(ke.info.key == "KEY_ARROW_DOWN")
+			{
+				auto currentBounds = positionToCursorBounds(cursor);
+                currentBounds.x += 2;
+                currentBounds.y += fontSize / 2;
+                cursor = viewToPosition(currentBounds.getEnd());
+				if(!shiftDown) {
+                    marker = cursor;
+                }
+                markFor(COMPONENT_REQUIREMENT_PAINT);
+			}
 			else if(ke.info.key == "KEY_A" && ke.info.ctrl)
 			{
 				marker = 0;
@@ -468,15 +487,49 @@ namespace fensterserver
 				}
 			}
 		}
-		return 0;
+		return viewModel->positions.size();
 	}
 
 	fenster::Rectangle TextArea::glyphToView(fenster::PositionedGlyph& g)
 	{
 		int yOffset = getBounds().height / 2 - fontSize / 2 - 2;
 		int x = scrollX + g.position.x + insets.left;
-		int y = g.position.y + insets.top; // TODO single-line must use yOffset
+		int y = scrollY + g.position.y + insets.top; // TODO single-line must use yOffset
 		return fenster::Rectangle(x, y, g.size.width, g.size.height);
+	}
+
+	fenster::Point TextArea::positionToUnscrolledCursorPoint(int pos)
+	{
+		int cursorX = insets.left;
+		int cursorY = insets.top;
+
+		int positionsCount = viewModel->positions.size();
+		for(int i = 0; i < positionsCount; i++)
+		{
+			fenster::PositionedGlyph& g = viewModel->positions[i];
+			// After last?
+			if(i == positionsCount - 1 && pos == positionsCount)
+			{
+				cursorX = g.position.x + insets.left + g.advance.x;
+				cursorY = g.position.y + insets.top + g.advance.y;
+
+				if(g.controlChar == '\n') {
+				    cursorX = insets.left;
+				    cursorY = g.position.y + insets.top + fontSize; // TODO line-height not font-size
+				}
+			}
+			// Anywhere inside
+			if(i == pos)
+			{
+				cursorX = g.position.x + insets.left - 1;
+				cursorY = g.position.y + insets.top + g.advance.y;
+			}
+		}
+
+		fenster::Point cursorPoint;
+		cursorPoint.x = cursorX;
+		cursorPoint.y = cursorY;
+		return cursorPoint;
 	}
 
 	fenster::Rectangle TextArea::positionToCursorBounds(int pos)
@@ -488,7 +541,7 @@ namespace fensterserver
 
 		return fenster::Rectangle(
 				cursorPoint.x + scrollX,
-				cursorPoint.y - caretHeight + insets.top, // TODO single line must use + yOffset,
+				cursorPoint.y + scrollY - caretHeight + insets.top, // TODO single line must use + yOffset,
 				1,
 				caretHeight);
 	}

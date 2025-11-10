@@ -22,6 +22,7 @@
 #include "components/window.hpp"
 #include "layout/flow_layout.hpp"
 #include "layout/grid_layout.hpp"
+#include <libfenster/font/font_loader.hpp>
 
 using namespace fenster;
 
@@ -192,7 +193,7 @@ namespace fensterserver
 		window->setLayout(new GridLayout(1, 1));
 
 		auto scroller = new ScrollPane;
-		scroller->setBounds(fenster::Rectangle(0, 0, 300, 200));
+		scroller->setFixedWidth(true);
 
 		auto panel = new Panel();
 		auto stackLayout = new StackLayout();
@@ -201,7 +202,9 @@ namespace fensterserver
 		panel->setLayout(stackLayout);
 
 		auto jsonInput = new TextArea();
-		jsonInput->setMinimumSize(Dimension(500, 300));
+		jsonInput->setFont(fenster::FontLoader::get("monaco"));
+		jsonInput->setMinimumSize(Dimension(0, 100));
+		jsonInput->setMaximumSize(Dimension(999999, 400));
 		jsonInput->setText(R"({
 	"rootNodes": [
 		{

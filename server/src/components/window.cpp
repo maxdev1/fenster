@@ -402,7 +402,6 @@ namespace fensterserver
 		else if(me.type == fenster::MouseEventType::Leave)
 		{
 			Cursor::set("default");
-			fenster::platformLog("Window sets default cursor");
 		}
 
 		return this;

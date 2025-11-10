@@ -4,7 +4,10 @@
 .idea
 ghost-build.log
 CMakeLists.txt
-fenster.exe
-fenster.bin
+/fenster.exe
+/fenster.bin
+/fenster
 platform/windows-mingw-sim/sysroot/**
 !platform/windows-mingw-sim/sysroot/keep.txt
+platform/macos-sdl-sim/sysroot/**
+!platform/macos-sdl-sim/sysroot/keep.txt

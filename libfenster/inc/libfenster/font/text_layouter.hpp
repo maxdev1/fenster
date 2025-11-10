@@ -30,6 +30,7 @@ namespace fenster
 		Dimension size;
 		Point advance;
 
+        char controlChar;
 		cairo_glyph_t* glyph;
 		int glyph_count;
 	};

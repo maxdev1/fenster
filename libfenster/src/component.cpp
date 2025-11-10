@@ -7,7 +7,7 @@
 
 #include <utility>
 #include <cstring>
-#include <malloc.h>
+#include <stdlib.h>
 
 namespace fenster
 {

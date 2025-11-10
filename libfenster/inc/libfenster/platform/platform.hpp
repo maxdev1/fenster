@@ -73,6 +73,40 @@ typedef struct
 
 #define M_PI 3.14159265358979323846
 
+
+/**
+ * MacOS-SDL-specific type definitions
+ */
+#elif __APPLE__
+
+#include <string>
+#include <pthread.h>
+
+#define SYS_TID_T pthread_t
+#define SYS_TID_NONE ((pthread_t)0)
+
+typedef struct mac_mutex_s {
+    pthread_mutex_t m;
+} mac_mutex_t;
+#define SYS_MUTEX_T mac_mutex_s*
+
+#define SYS_PAGE_SIZE 4096
+#define SYS_PAGE_ALIGN_DOWN(value) ((value) & ~(SYS_PAGE_SIZE - 1))
+#define SYS_PAGE_ALIGN_UP(value)                                                                                       \
+	(((value) & (SYS_PAGE_SIZE - 1)) ? (SYS_PAGE_ALIGN_DOWN((value)) + SYS_PAGE_SIZE) : (value))
+
+#define SYS_TX_T int // TODO
+#define SYS_TX_NONE -1 // TODO
+
+#define SYS_MESSAGE_HEADER_SIZE 0 // TODO
+#define SYS_MESSAGE_RECEIVE_SUCCESS 1 // TODO
+#define SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER 2 // TODO
+
+#define SYS_MESSAGE_CONTENT(message) message // TODO
+#define SYS_MESSAGE_SENDER(message) 0 // TODO
+#define SYS_MESSAGE_TRANSACTION(message) 0 // TODO
+
+
 #endif
 
 /**

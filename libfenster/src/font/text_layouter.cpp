@@ -62,7 +62,7 @@ namespace fenster
 		auto scaled_face = cairo_get_scaled_font(cr);
 
 		int line = 0;
-		int lineHeight = size;
+		int lineHeight = size + 3;
 
 		// create glyphs for the text
 		auto previous_glyph_buffer = layout->glyph_buffer;
@@ -95,6 +95,7 @@ namespace fenster
 			// text extents
 			cairo_text_extents_t extents;
 
+            bool lastNewLine = false;
 			for(int i = 0; i < layout->cluster_count; i++)
 			{
 				cairo_text_cluster_t* cluster = &layout->cluster_buffer[i];
@@ -113,20 +114,20 @@ namespace fenster
 
 				// check if newline
 				bool isNewline = false;
-				if(cluster->num_bytes == 1 && text[byte_pos] == '\n')
-				{
-					isNewline = true;
+				char controlChar = -1;
+				if(cluster->num_bytes == 1) {
+                    if(text[byte_pos] == '\n') {
+                        isNewline = true;
+                        controlChar = text[byte_pos];
+                    } else if(text[byte_pos] == '\t') {
+                        controlChar = text[byte_pos];
+                    }
 				}
-				bool invisible = false;
 
 				// Wouldn't match in line or is break character? Start next line
-				if(isNewline || (breakOnOverflow && (x + positioned.size.width > bounds.width)))
+				if(lastNewLine || (breakOnOverflow && (x + positioned.size.width > bounds.width)))
 				{
-					if(isNewline)
-					{
-						invisible = true;
-					}
-
+				    lastNewLine = false;
 					if(alignment == TextAlignment::RIGHT)
 					{
 						rightAlign(layout, line, x - lineStartX, bounds);
@@ -146,6 +147,7 @@ namespace fenster
 				positioned.line = line;
 				positioned.position.x = x;
 				positioned.position.y = y + lineHeight;
+				positioned.controlChar = controlChar;
 
 				// Add position
 				layout->positions.push_back(positioned);
@@ -156,6 +158,8 @@ namespace fenster
 				// increase positions
 				glyph_pos += cluster->num_glyphs;
 				byte_pos += cluster->num_bytes;
+
+				lastNewLine = isNewline;
 			}
 		}
 

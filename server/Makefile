@@ -1,16 +1,23 @@
 include ../platform.mk
 
-ifeq ($(target),windows)
+ifeq ($(target),ghost)
+	LDEPS := -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
+	EXTRA_CXXFLAGS :=
+	EXTRA_LDFLAGS :=
+	EXE := ../fenster.bin
+
+else ifeq ($(target),windows)
 	LDEPS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
 	EXTRA_CXXFLAGS := -I$(SYSROOT)/system/include
 	EXTRA_LDFLAGS := -L$(SYSROOT)/system/lib -lgdi32
 	EXE := ../fenster.exe
 
-else ifeq ($(target),ghost)
-	LDEPS := -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
-	EXTRA_CXXFLAGS :=
-	EXTRA_LDFLAGS :=
-	EXE := ../fenster.bin
+else ifeq ($(target),macos)
+	LDEPS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz -lsdl2
+	EXTRA_CXXFLAGS := -I$(SYSROOT)/system/include -I$(CAIRO_INC)
+	EXTRA_LDFLAGS := -L$(SYSROOT)/system/lib -L/opt/homebrew/lib
+	EXE := ../fenster
+
 endif
 
 CXXFLAGS := -Isrc -I$(FREETYPE_INC) -Wall -Wextra -std=c++17 $(EXTRA_CXXFLAGS) -Wno-unused-parameter

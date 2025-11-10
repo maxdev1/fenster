@@ -18,7 +18,7 @@ namespace fenster
 
 	std::string platformGetFontPath(std::string fontName)
 	{
-		return "../../sysroot/system/graphics/fonts/" + fontName + ".ttf";
+		return "platform/sim/fonts/" + fontName + ".ttf";
 	}
 
 	void platformLog(const char* message, ...)
@@ -83,6 +83,36 @@ namespace fenster
 		}
 	}
 
+
+	DWORD WINAPI _platformThreadEntry(LPVOID arg)
+	{
+		void (*entry)() = (void (*)()) arg;
+		entry();
+		return 0;
+	}
+
+	SYS_TID_T platformCreateThread(void* entry)
+	{
+		return CreateThread(NULL, 0, _platformThreadEntry, entry, 0, NULL);
+	}
+
+	SYS_TID_T platformCreateThreadWithData(void* entry, void* data)
+	{
+		printf("NOT IMPLEMENTED: platformCreateThreadWithData\n");
+	}
+
+	uint64_t platformMillis()
+	{
+		return GetTickCount();
+	}
+
+	void platformSleep(uint64_t time)
+	{
+		Sleep(time);
+	}
+
+	// The following are mostly relevant for interfacing, so for now not implemented in the simulators
+
 	SYS_TX_T platformCreateMessageTransaction()
 	{
 		printf("NOT IMPLEMENTED: platformCreateMessageTransaction\n");
@@ -111,23 +141,6 @@ namespace fenster
 		printf("NOT IMPLEMENTED: platformUnmapSharedMemory\n");
 	}
 
-	DWORD WINAPI _platformThreadEntry(LPVOID arg)
-	{
-		void (*entry)() = (void (*)()) arg;
-		entry();
-		return 0;
-	}
-
-	SYS_TID_T platformCreateThread(void* entry)
-	{
-		return CreateThread(NULL, 0, _platformThreadEntry, entry, 0, NULL);
-	}
-
-	SYS_TID_T platformCreateThreadWithData(void* entry, void* data)
-	{
-		printf("NOT IMPLEMENTED: platformCreateThreadWithData\n");
-	}
-
 	SYS_TID_T platformGetPidForTid(SYS_TID_T tid)
 	{
 		printf("NOT IMPLEMENTED: platformGetPidForTid\n");
@@ -145,11 +158,6 @@ namespace fenster
 		return nullptr;
 	}
 
-	uint64_t platformMillis()
-	{
-		return GetTickCount();
-	}
-
 	void platformJoin(SYS_TID_T tid)
 	{
 		printf("NOT IMPLEMENTED: platformJoin\n");
@@ -165,11 +173,6 @@ namespace fenster
 	{
 		printf("NOT IMPLEMENTED: platformSpawn\n");
 		return nullptr;
-	}
-
-	void platformSleep(uint64_t time)
-	{
-		Sleep(time);
 	}
 
 	SYS_TID_T platformGetTid()

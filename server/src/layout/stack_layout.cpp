@@ -15,6 +15,7 @@ namespace fensterserver
 		if(!component)
 			return;
 
+		fenster::Rectangle bounds = component->getBounds();
 		bool horizontal = orientation == fenster::Orientation::Horizontal;
 		int max = 0;
 		int pos = horizontal ? padding.left : padding.top;
@@ -35,15 +36,17 @@ namespace fensterserver
 
 			if(horizontal)
 			{
-				child->setBounds({pos, padding.top, size.width, size.height});
+			    int usedHeight = bounds.height > 0 ? bounds.height - padding.top - padding.bottom : size.height;
+				child->setBounds({pos, padding.top, size.width, usedHeight});
 				pos += size.width;
-				max = std::max(max, size.height);
+				max = std::max(max, usedHeight);
 			}
 			else
 			{
-				child->setBounds({padding.left, pos, size.width, size.height});
+			    int usedWidth = bounds.width > 0 ? bounds.width - padding.left - padding.right : size.width;
+				child->setBounds({padding.left, pos, usedWidth, size.height});
 				pos += size.height;
-				max = std::max(max, size.width);
+				max = std::max(max, usedWidth);
 			}
 		}
 		component->releaseChildren();

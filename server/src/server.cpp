@@ -97,7 +97,7 @@ namespace fensterserver
 		instance()->stateLabel->setColor(_RGB(255, 255, 255));
 		screen->addChild(stateLabel);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 		Panel* backgroundPanel = new Panel();
 		backgroundPanel->setBounds(screenBounds);
 		backgroundPanel->setBackground(_RGB(0,0,0));

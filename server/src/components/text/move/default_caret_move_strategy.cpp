@@ -57,7 +57,6 @@ namespace fensterserver
 
 	int DefaultCaretMoveStrategy::calculateSkip(std::string text, int position, CaretDirection direction)
 	{
-
 		bool l = (direction == CaretDirection::LEFT);
 
 		if(l ? (position > 0) : (position < text.length()))
@@ -83,7 +82,7 @@ namespace fensterserver
 				{
 					l ? --position : ++position;
 				}
-				else if((!l || !(p == ' ' || p == ',' || p == '.')) && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+				else if((!l || !(p == ' ' || p == ',' || p == '.' || p == '"')) && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
 				{
 					l ? --position : ++position;
 					inFirst = false;

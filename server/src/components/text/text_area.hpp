@@ -31,6 +31,7 @@ namespace fensterserver
         fenster::Font* font;
 
         int scrollX;
+        int scrollY;
         int fontSize;
         fenster::ColorArgb textColor;
         fenster::Insets insets;

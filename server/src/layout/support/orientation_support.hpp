@@ -12,7 +12,7 @@ namespace fensterserver
     class OrientationSupport
     {
     protected:
-        fenster::Orientation orientation = fenster::Orientation::Horizontal;
+        fenster::Orientation orientation = fenster::Orientation::Vertical;
 
     public:
         OrientationSupport() = default;

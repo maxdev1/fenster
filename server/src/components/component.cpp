@@ -32,7 +32,8 @@ namespace fensterserver
 		requirements(COMPONENT_REQUIREMENT_ALL),
 		childRequirements(COMPONENT_REQUIREMENT_ALL),
 		parent(nullptr),
-		_layout(nullptr)
+		_layout(nullptr),
+		maximumSize(-1, -1)
 	{
 		id = ComponentRegistry::add(this);
 	}
@@ -413,6 +414,12 @@ namespace fensterserver
 		auto min = getMinimumSize();
 		preferred.width = std::max(preferred.width, min.width);
 		preferred.height = std::max(preferred.height, min.height);
+
+		auto max = getMaximumSize();
+		if(max.width != -1 && max.height != -1) {
+            preferred.width = std::min(preferred.width, max.width);
+            preferred.height = std::min(preferred.height, max.height);
+		}
 		return preferred;
 	}
 

@@ -13,6 +13,14 @@ else ifeq ($(target),windows)
 	FREETYPE_INC := /usr/x86_64-w64-mingw32/include/freetype2
 	CAIRO_INC := /usr/x86_64-w64-mingw32/include
 
+else ifeq ($(target),macos)
+    SYSROOT := ../platform/macos-sdl-sim/sysroot
+    CXX := g++-15
+    AR := gcc-ar-15
+
+	FREETYPE_INC := /opt/homebrew/include/freetype2
+	CAIRO_INC := /opt/homebrew/include
+
 else ifeq ($(target),)
 $(error Target must be specified (e.g. "make target=ghost"))
 endif

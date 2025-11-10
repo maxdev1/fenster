@@ -492,9 +492,20 @@ namespace fenster
 		return lhs;
 	}
 
+	inline MouseButton& operator&=(MouseButton& lhs, MouseButton rhs)
+	{
+		lhs = (MouseButton) ((uint8_t) lhs & (uint8_t) rhs);
+		return lhs;
+	}
+
 	inline bool operator&(MouseButton& lhs, MouseButton rhs)
 	{
 		return ((uint8_t) lhs & (uint8_t) rhs);
+	}
+
+	inline MouseButton operator~(const MouseButton& lhs)
+	{
+		return (MouseButton) ~((uint8_t) lhs);
 	}
 
 	/**
