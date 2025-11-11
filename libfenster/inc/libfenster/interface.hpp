@@ -519,7 +519,7 @@ namespace fenster
 		Release = 3,
 		DragRelease = 4,
 		Drag = 5,
-		Enter = 6,
+		Enter = 6, // TODO: Components must react on Move events so they also receive Enter/Leave
 		Leave = 7,
 		Scroll = 8,
 	};

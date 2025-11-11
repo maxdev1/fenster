@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "libfenster/focusable_component.hpp"
+#include "libfenster/components/focusable_component.hpp"
 #include "libfenster/properties.hpp"
 #include "libfenster/listener/focus_listener.hpp"
 

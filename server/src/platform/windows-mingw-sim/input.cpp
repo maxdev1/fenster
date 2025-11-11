@@ -188,6 +188,8 @@ std::map<KeyMod, std::string> KeyCharMap = {
 
 		{{"KEY_SPACE", 0}, " "},
 		{{"KEY_SPACE", MOD_SHIFT}, " "},
+		{{"KEY_ENTER", 0}, "\n"},
+		{{"KEY_TAB", 0}, "\t"},
 
 		{{"KEY_1", 0}, "1"},
 		{{"KEY_1", MOD_SHIFT}, "!"},
@@ -248,7 +250,6 @@ namespace fensterserver
 {
 	std::string platformKeyForVKey(uint8_t scancode)
 	{
-		fenster::platformLog("KEY %i -> %s", scancode, VK_MAP[scancode].c_str());
 		return VK_MAP[scancode];
 	}
 

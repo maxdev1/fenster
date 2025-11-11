@@ -5,8 +5,8 @@
 #ifndef LIBFENSTER_CANVAS
 #define LIBFENSTER_CANVAS
 
-#include "libfenster/component.hpp"
-#include "libfenster/focusable_component.hpp"
+#include "libfenster/components/component.hpp"
+#include "libfenster/components/focusable_component.hpp"
 #include "libfenster/listener/canvas_buffer_listener.hpp"
 #include "libfenster/listener/desktop_canvas_listener.hpp"
 #include "libfenster/listener/canvas_buffer_listener_internal.hpp"

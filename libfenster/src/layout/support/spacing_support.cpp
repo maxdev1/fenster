@@ -4,7 +4,7 @@
 
 #include "libfenster/layout/support/spacing_support.hpp"
 #include "libfenster/properties.hpp"
-#include "libfenster/component.hpp"
+#include "libfenster/components/component.hpp"
 
 namespace fenster
 {

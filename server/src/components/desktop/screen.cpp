@@ -4,6 +4,7 @@
 
 #include "components/desktop/screen.hpp"
 #include "components/window.hpp"
+#include "components/menu.hpp"
 
 #include <cstring>
 
@@ -34,6 +35,7 @@ namespace fensterserver
 			});
 		}
 
+		markDirty(comp->getBounds());
 		Component::removeChild(comp);
 	}
 
@@ -92,4 +94,26 @@ namespace fensterserver
 		fenster::platformReleaseMutex(lock);
 		return ret;
 	}
+
+	void Screen::showMenu(Menu* menu, fenster::Point position)
+	{
+		Component::addChild(menu);
+		menu->setZIndex(10000);
+		auto size = menu->getEffectivePreferredSize();
+		menu->setBounds(fenster::Rectangle(position.x, position.y, size.width, size.height));
+		menu->setFocused(true);
+	}
+
+	void Screen::hideMenus()
+	{
+		for(auto child: acquireChildren())
+		{
+			auto childAsMenu = dynamic_cast<Menu*>(child.component);
+			if(childAsMenu)
+				childAsMenu->close();
+		}
+		releaseChildren();
+	}
+
+
 }

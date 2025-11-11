@@ -7,7 +7,7 @@
 
 #include <bits/std_function.h>
 
-#include "interface.hpp"
+#include "libfenster/interface.hpp"
 #include "component.hpp"
 
 namespace fenster

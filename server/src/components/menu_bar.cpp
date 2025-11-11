@@ -2,12 +2,24 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "components/panel.hpp"
+#include "components/menu_bar.hpp"
+
+#include <layout/stack_layout.hpp>
 #include <libfenster/properties.hpp>
+
+#include "radio_button.hpp"
 
 namespace fensterserver
 {
-	void Panel::paint()
+	MenuBar::MenuBar():
+		background(ARGB(255, 250, 252, 255))
+	{
+		auto layout = new StackLayout();
+		layout->setOrientation(fenster::Orientation::Horizontal);
+		Component::setLayout(layout);
+	}
+
+	void MenuBar::paint()
 	{
 		if(!hasGraphics())
 			return;
@@ -25,19 +37,19 @@ namespace fensterserver
 		graphics.releaseContext();
 	}
 
-	void Panel::setBackground(   fenster::ColorArgb color)
+	void MenuBar::setBackground(fenster::ColorArgb color)
 	{
 		background = color;
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 		recheckGraphics();
 	}
 
-	   fenster::ColorArgb Panel::getBackground()
+	fenster::ColorArgb MenuBar::getBackground()
 	{
 		return background;
 	}
 
-	bool Panel::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
+	bool MenuBar::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
 		if(property == fenster::ComponentProperty::Background)
 		{
@@ -48,7 +60,7 @@ namespace fensterserver
 		return Component::getNumericProperty(property, out);
 	}
 
-	bool Panel::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
+	bool MenuBar::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
 		if(property == fenster::ComponentProperty::Background)
 		{

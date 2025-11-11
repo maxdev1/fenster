@@ -14,6 +14,7 @@
 #include <libfenster/color_argb.hpp>
 
 #include "focusable_component.hpp"
+#include "menu_bar.hpp"
 
 /**
  * constants for border sizes
@@ -48,6 +49,7 @@ namespace fensterserver
 
         Label label;
         Panel panel;
+        MenuBar* menuBar = nullptr;
 
         bool crossPressed;
         bool crossHovered;
@@ -89,8 +91,9 @@ namespace fensterserver
             return true;
         }
 
-        void addChild(Component* component,
-                      ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
+        void setMenuBar(MenuBar* menuBar);
+
+        void addChild(Component* component, ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;
 
         void layout() override;
         void paintBackground(cairo_t* cr) const;

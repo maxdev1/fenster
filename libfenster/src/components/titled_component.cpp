@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "libfenster/titled_component.hpp"
+#include "libfenster/components/titled_component.hpp"
 #include "libfenster/listener/title_listener.hpp"
 #include "libfenster/properties.hpp"
 

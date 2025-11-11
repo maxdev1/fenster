@@ -4,8 +4,8 @@
 
 #include <cstdio>
 
-#include "libfenster/canvas.hpp"
-#include "libfenster/component.hpp"
+#include "libfenster/components/canvas.hpp"
+#include "libfenster/components/component.hpp"
 #include "libfenster/application.hpp"
 #include "libfenster/platform/platform.hpp"
 

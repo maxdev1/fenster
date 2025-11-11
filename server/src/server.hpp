@@ -89,7 +89,7 @@ namespace fensterserver
          * Switches the focus from the currently focused component to a different
          * component. Must be used to ensure state is updated correctly.
          */
-        Component* switchFocus(Component* to);
+        Component* switchFocus(Component* pressed);
 
         /**
          * Returns the singleton instance of the window server.

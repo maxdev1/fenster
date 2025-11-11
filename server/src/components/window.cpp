@@ -41,14 +41,26 @@ namespace fensterserver
 	{
 		fenster::Rectangle bounds = getBounds();
 		label.setBounds(fenster::Rectangle(shadowSize + 12, shadowSize, bounds.width - shadowSize - 20, titleHeight));
-		panel.setBounds(fenster::Rectangle(shadowSize, shadowSize + titleHeight, bounds.width - shadowSize * 2,
-		                                   bounds.height - titleHeight - shadowSize * 2));
+
+		int menuBarHeight = 30;
+		if(menuBar)
+			menuBar->setBounds(fenster::Rectangle(shadowSize,
+			                                      shadowSize + titleHeight,
+			                                      bounds.width - shadowSize * 2,
+			                                      menuBarHeight));
+
+		panel.setBounds(fenster::Rectangle(shadowSize, shadowSize + titleHeight + (menuBar ? menuBarHeight : 0),
+		                                   bounds.width - shadowSize * 2,
+		                                   bounds.height - titleHeight - shadowSize * 2 - (menuBar ? menuBarHeight : 0)));
 		crossBounds = fenster::Rectangle(bounds.width - 47, 15, 30, 30);
 	}
 
-	/**
-	 * TODO: Remove subpanel method and let the client do the work here
-	 */
+	void Window::setMenuBar(MenuBar* menuBar)
+	{
+		this->menuBar = menuBar;
+		Component::addChild(menuBar);
+	}
+
 	void Window::addChild(Component* component, ComponentChildReferenceType type)
 	{
 		panel.addChild(component);

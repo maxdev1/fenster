@@ -5,6 +5,8 @@
 #ifndef FENSTER_SERVER_COMPONENTS_DESKTOP_SCREEN
 #define FENSTER_SERVER_COMPONENTS_DESKTOP_SCREEN
 
+#include <components/menu_item.hpp>
+
 #include "components/component.hpp"
 
 #include <libfenster/metrics/rectangle.hpp>
@@ -34,6 +36,16 @@ namespace fensterserver
         virtual void markDirty(fenster::Rectangle rect);
 
         fenster::Rectangle grabInvalid();
+
+        /**
+         * Shows a menu on screen.
+         */
+        void showMenu(Menu* menu, fenster::Point position);
+
+        /**
+         * Hides all open menus.
+         */
+        void hideMenus();
     };
 }
 

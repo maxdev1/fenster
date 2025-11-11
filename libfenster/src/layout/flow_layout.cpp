@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "libfenster/layout/flow_layout.hpp"
-#include "libfenster/component.hpp"
+#include "libfenster/components/component.hpp"
 
 namespace fenster
 {

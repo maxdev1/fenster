@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/panel.hpp"
+#include "libfenster/components/panel.hpp"
 
 namespace fenster
 {

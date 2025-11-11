@@ -6,6 +6,7 @@
 #include "component_registry.hpp"
 #include "components/button.hpp"
 #include "components/cursor.hpp"
+#include "components/menu.hpp"
 #include "events/event.hpp"
 #include "events/locatable.hpp"
 #include "interface/registration_thread.hpp"
@@ -43,7 +44,8 @@ namespace fensterserver
 		std::string keyLayout = "de-DE";
 		if(!platformInitializeKeyboardLayout(keyLayout))
 		{
-			fenster::platformLog(("failed to load keyboard layout '" + keyLayout + "', no keyboard input available").c_str());
+			fenster::platformLog(
+					("failed to load keyboard layout '" + keyLayout + "', no keyboard input available").c_str());
 		}
 
 		platformLoadCursors();
@@ -100,7 +102,7 @@ namespace fensterserver
 #if defined(_WIN32) || defined(__APPLE__)
 		Panel* backgroundPanel = new Panel();
 		backgroundPanel->setBounds(screenBounds);
-		backgroundPanel->setBackground(_RGB(0,0,0));
+		backgroundPanel->setBackground(_RGB(0, 0, 0));
 		screen->addChild(backgroundPanel);
 #endif
 
@@ -193,10 +195,10 @@ namespace fensterserver
 				cairo_set_line_width(cr, 2);
 				cairo_rectangle(cr, invalid.x, invalid.y, invalid.width, invalid.height);
 				cairo_set_source_rgba(cr,
-									  debugBorderCycle % 3 == 0 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
-									  debugBorderCycle % 2 == 0 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
-									  debugBorderCycle % 2 == 1 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
-									  1);
+				                      debugBorderCycle % 3 == 0 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
+				                      debugBorderCycle % 2 == 0 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
+				                      debugBorderCycle % 2 == 1 ? ((double) (debugBorderCycle + 100)) / 255 : 0,
+				                      1);
 				cairo_stroke(cr);
 				cairo_restore(cr);
 				graphics->releaseContext();
@@ -263,39 +265,45 @@ namespace fensterserver
 		return handledBy;
 	}
 
-	Component* Server::switchFocus(Component* to)
+	Component* Server::switchFocus(Component* pressed)
 	{
-		auto from = ComponentRegistry::get(Cursor::focusedComponent);
+		auto source = ComponentRegistry::get(Cursor::focusedComponent);
 
-		auto actualTo = to->setFocused(true);
-		if(actualTo)
+		auto target = pressed->setFocused(true);
+		if(!target)
+			return nullptr;
+		Cursor::focusedComponent = target->id;
+		Window* targetWindow = target->getWindow();
+
+		Window* sourceWindow = nullptr;
+		if(source)
 		{
-			Cursor::focusedComponent = actualTo->id;
-
-			Window* fromWindow = nullptr;
-			if(from && from != actualTo)
+			sourceWindow = source->getWindow();
+			if(source != target)
 			{
-				from->setFocused(false);
-				fromWindow = from->getWindow();
+				source->setFocused(false);
+			}
+			if(sourceWindow && targetWindow != sourceWindow && sourceWindow != source)
+			{
+				sourceWindow->setFocused(false);
 			}
 
-			Window* toWindow = actualTo->getWindow();
-			if(fromWindow && toWindow != fromWindow && fromWindow != from)
-			{
-				fromWindow->setFocused(false);
-			}
-
-			if(toWindow)
-			{
-				toWindow->bringToFront();
-				if(toWindow != actualTo)
-				{
-					toWindow->setFocused(true);
-				}
-			}
-			return actualTo;
+			// Unfocusing a menu or any menu item hides all menus
+			auto targetAsMenu = dynamic_cast<Menu*>(target) || dynamic_cast<Menu*>(target->getParent());
+			if(!targetAsMenu)
+				screen->hideMenus();
 		}
-		return nullptr;
+
+		if(targetWindow)
+		{
+			if(sourceWindow != targetWindow)
+				targetWindow->bringToFront();
+
+			if(targetWindow != target)
+				targetWindow->setFocused(true);
+		}
+
+		return target;
 	}
 
 

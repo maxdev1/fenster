@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "libfenster/listener/canvas_buffer_listener_internal.hpp"
-#include "libfenster/canvas.hpp"
+#include "libfenster/components/canvas.hpp"
 
 namespace fenster
 {

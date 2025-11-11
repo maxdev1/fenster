@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/scrollpane.hpp"
+#include "libfenster/components/scrollpane.hpp"
 
 namespace fenster
 {

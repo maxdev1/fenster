@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "libfenster/properties.hpp"
-#include "libfenster/window.hpp"
+#include "libfenster/components/window.hpp"
 
 namespace fenster
 {

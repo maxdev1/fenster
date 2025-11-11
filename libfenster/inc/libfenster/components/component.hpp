@@ -11,17 +11,17 @@
 #include <string>
 
 #include "bounding_component.hpp"
-#include "component_registry.hpp"
-#include "interface.hpp"
-#include "listener/mouse_listener.hpp"
-#include "listener/visible_listener.hpp"
-#include "listener/key_listener.hpp"
-#include "metrics/rectangle.hpp"
-#include "application.hpp"
-#include "color_argb.hpp"
-#include "layout/layout.hpp"
-#include "properties.hpp"
-#include "platform/platform.hpp"
+#include "libfenster/component_registry.hpp"
+#include "libfenster/interface.hpp"
+#include "libfenster/listener/mouse_listener.hpp"
+#include "libfenster/listener/visible_listener.hpp"
+#include "libfenster/listener/key_listener.hpp"
+#include "libfenster/metrics/rectangle.hpp"
+#include "libfenster/application.hpp"
+#include "libfenster/color_argb.hpp"
+#include "libfenster/layout/layout.hpp"
+#include "libfenster/properties.hpp"
+#include "libfenster/platform/platform.hpp"
 
 namespace fenster
 {

@@ -217,7 +217,7 @@ namespace fensterserver
 
 	void Component::removeChild(Component* comp)
 	{
-		comp->parent = 0;
+		comp->parent = nullptr;
 
 		fenster::platformAcquireMutex(childrenLock);
 		for(auto itr = children.begin(); itr != children.end();)

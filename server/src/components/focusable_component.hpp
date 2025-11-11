@@ -61,6 +61,11 @@ namespace fensterserver
             return this->dispatchesFocus;
         }
 
+        /**
+         * Sets this component focused or dispatches it to the parent.
+         *
+         * @returns which component has actually been focused
+         */
         Component* setFocused(bool focused);
 
         bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out);

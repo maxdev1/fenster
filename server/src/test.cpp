@@ -13,6 +13,8 @@
 #include <layout/stack_layout.hpp>
 #include <server.hpp>
 #include <sstream>
+#include <components/menu_bar.hpp>
+#include <components/menu_item.hpp>
 
 #include "components/button.hpp"
 #include "components/checkbox.hpp"
@@ -191,6 +193,50 @@ namespace fensterserver
 		window->setTitle("Components");
 		window->setBounds(fenster::Rectangle(530, 30, 320, 530));
 		window->setLayout(new GridLayout(1, 1));
+
+		auto menuBar = new MenuBar();
+
+		auto menuItem = new MenuItem();
+		menuItem->setTitle("File");
+		menuBar->addChild(menuItem);
+
+		auto menuSubItemNewFile = new MenuItem();
+		menuSubItemNewFile->setTitle("New...");
+		menuItem->addChild(menuSubItemNewFile);
+
+		auto menuSubItemNewFileSub1 = new MenuItem();
+		menuSubItemNewFileSub1->setTitle("Text");
+		menuSubItemNewFile->addChild(menuSubItemNewFileSub1);
+
+		auto menuSubItemNewFileSub2 = new MenuItem();
+		menuSubItemNewFileSub2->setTitle("Assembly");
+		menuSubItemNewFile->addChild(menuSubItemNewFileSub2);
+
+		auto menuSubItemOpen = new MenuItem();
+		menuSubItemOpen->setTitle("Open...");
+		menuItem->addChild(menuSubItemOpen);
+
+		auto menuSubItemOpenSub1 = new MenuItem();
+		menuSubItemOpenSub1->setTitle("More specific");
+		menuSubItemOpen->addChild(menuSubItemOpenSub1);
+
+		auto menuSubItemOpenSub11 = new MenuItem();
+		menuSubItemOpenSub11->setTitle("Very specific");
+		menuSubItemOpenSub1->addChild(menuSubItemOpenSub11);
+
+		auto menuSubItemOpenSub12 = new MenuItem();
+		menuSubItemOpenSub12->setTitle("Even more specific");
+		menuSubItemOpenSub1->addChild(menuSubItemOpenSub12);
+
+		auto menuSubItemOpenSub2 = new MenuItem();
+		menuSubItemOpenSub2->setTitle("Test 2");
+		menuSubItemOpen->addChild(menuSubItemOpenSub2);
+
+		auto menuSubItemClose = new MenuItem();
+		menuSubItemClose->setTitle("Close");
+		menuItem->addChild(menuSubItemClose);
+
+		window->setMenuBar(menuBar);
 
 		auto scroller = new ScrollPane;
 		scroller->setFixedWidth(true);

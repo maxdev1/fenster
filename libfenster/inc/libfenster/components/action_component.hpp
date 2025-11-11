@@ -5,8 +5,8 @@
 #ifndef LIBFENSTER_ACTIONCOMPONENT
 #define LIBFENSTER_ACTIONCOMPONENT
 
-#include "listener/action_listener.hpp"
-#include "interface.hpp"
+#include "libfenster/listener/action_listener.hpp"
+#include "libfenster/interface.hpp"
 #include "component.hpp"
 
 namespace fenster

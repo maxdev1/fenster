@@ -4,8 +4,8 @@
 
 #include <utility>
 
-#include "libfenster/component.hpp"
-#include "libfenster/bounding_component.hpp"
+#include "libfenster/components/component.hpp"
+#include "libfenster/components/bounding_component.hpp"
 
 namespace fenster
 {

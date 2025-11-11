@@ -5,7 +5,7 @@
 #ifndef LIBFENSTER_BOUNDINGCOMPONENT
 #define LIBFENSTER_BOUNDINGCOMPONENT
 
-#include "listener/bounds_listener.hpp"
+#include "libfenster/listener/bounds_listener.hpp"
 
 namespace fenster
 {

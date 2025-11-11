@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/button.hpp"
-#include "libfenster/component.hpp"
+#include "libfenster/components/button.hpp"
+#include "libfenster/components/component.hpp"
 #include "libfenster/properties.hpp"
 
 namespace fenster

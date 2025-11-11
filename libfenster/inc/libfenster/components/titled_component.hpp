@@ -7,9 +7,9 @@
 
 #include <bits/std_function.h>
 
-#include "interface.hpp"
+#include "libfenster/interface.hpp"
 #include "component.hpp"
-#include "listener/title_listener.hpp"
+#include "libfenster/listener/title_listener.hpp"
 
 namespace fenster
 {

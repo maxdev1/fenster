@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/canvas.hpp"
+#include "libfenster/components/canvas.hpp"
 #include "libfenster/platform/platform.hpp"
 
 namespace fenster
