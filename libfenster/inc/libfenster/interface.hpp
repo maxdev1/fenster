@@ -94,6 +94,7 @@ namespace fenster
 		Checkbox = 9,
 		RadioButton = 10,
 		RadioGroup = 11,
+		TextArea = 12,
 	};
 
 	/**

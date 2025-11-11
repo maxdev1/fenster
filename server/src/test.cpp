@@ -313,8 +313,10 @@ namespace fensterserver
 
 	void Test::createTestComponents()
 	{
+#ifndef _GHOST_
 		createTestWindow();
 		createTestWindow2();
 		createTestWindow3();
+#endif
 	}
 }
