@@ -11,7 +11,7 @@
 #include "components/label.hpp"
 #include "components/titled_component.hpp"
 
-#include <libfenster/button.hpp>
+#include <libfenster/components/button.hpp>
 #include <libfenster/metrics/insets.hpp>
 #include <libfenster/properties.hpp>
 #include <string>
