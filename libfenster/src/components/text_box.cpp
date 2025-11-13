@@ -22,4 +22,10 @@ namespace fenster
 		Component::getNumericProperty(ComponentProperty::Secure, &value);
 		return value;
 	}
+
+	void TextBox::setMultiLine(bool multiLine)
+	{
+		Component::setNumericProperty(ComponentProperty::MultiLine, multiLine);
+	}
+
 }

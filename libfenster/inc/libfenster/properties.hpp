@@ -30,6 +30,7 @@ namespace fenster
 		Variant,
 		Title,
 		Checked,
+		MultiLine,
 
 		/**
 		 * Properties for layout managers that also might have a different meaning

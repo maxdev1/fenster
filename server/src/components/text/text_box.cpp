@@ -549,6 +549,12 @@ namespace fensterserver
 			return true;
 		}
 
+		if (property == fenster::ComponentProperty::MultiLine)
+		{
+			*out = multiline ? 1 : 0;
+			return true;
+		}
+
 		return false;
 	}
 
@@ -556,7 +562,13 @@ namespace fensterserver
 	{
 		if (property == fenster::ComponentProperty::Secure)
 		{
-			secure = value;
+			setSecure(value == 1);
+			return true;
+		}
+
+		if (property == fenster::ComponentProperty::MultiLine)
+		{
+			setMultiLine(value == 1);
 			return true;
 		}
 

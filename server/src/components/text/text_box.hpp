@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef FENSTER_SERVER_COMPONENTS_TEXTAREA
-#define FENSTER_SERVER_COMPONENTS_TEXTAREA
+#ifndef FENSTER_SERVER_COMPONENTS_TEXTBOX
+#define FENSTER_SERVER_COMPONENTS_TEXTBOX
 
 #include "components/text/text_component.hpp"
 #include "components/titled_component.hpp"
