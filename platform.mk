@@ -18,4 +18,5 @@ else ifeq ($(target),macos)
 
 else ifeq ($(target),)
 $(error Target must be specified (e.g. "make target=ghost"))
+
 endif
