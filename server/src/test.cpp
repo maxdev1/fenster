@@ -478,7 +478,7 @@ namespace fensterserver {
 		panel->setLayout(panelLayout);
 
 		auto colorSection = new Panel();
-		panelLayout->setComponentInfo(colorSection, 0, 1, 0);
+		panelLayout->setComponentInfo(colorSection, 0, 1, -1);
 		{
 			colorSection->setLayout(new StackLayout(10));
 

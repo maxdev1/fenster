@@ -70,7 +70,7 @@ namespace fensterserver
 			Component* child = ref.component;
 			FlexInfo flex = flexInfo[child];
 
-			int basis = (flex.basis > 0)
+			int basis = (flex.basis >= 0)
 				            ? flex.basis
 				            : (horizontal
 					               ? child->getEffectivePreferredSize().width
