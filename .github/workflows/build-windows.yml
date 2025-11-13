@@ -40,7 +40,7 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: fenster-nightly-windows-x64.zip
+          name: fenster-nightly-windows-x64
           path: |
             fenster.exe
             platform/sim/
