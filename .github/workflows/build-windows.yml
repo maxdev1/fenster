@@ -1,8 +1,8 @@
-name: Build Windows simulator
+name: Build simulator for Windows
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
 
 jobs:
