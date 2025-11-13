@@ -37,17 +37,11 @@ jobs:
             ghcr.io/maxdev1/mingw-cairo-freetype:latest \
             bash -c "make target=windows clean all"
 
-      - name: Prepare ZIP package
-        run: |
-          mkdir -p fenster/platform/sim
-          cp fenster.exe fenster/fenster.exe
-          cp -r platform/sim/ fenster/platform/sim/
-          zip -r fenster-nightly-windows-x64.zip fenster
-
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
+          name: fenster-nightly-windows-x64.zip
           path: |
-            fenster-nightly-windows-x64.zip
+            fenster.exe
+            platform/sim/
           retention-days: 30
