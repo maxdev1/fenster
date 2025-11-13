@@ -4,7 +4,7 @@
 
 #include "components/scrollpane.hpp"
 
-#include "../../../platform/macos-sdl-sim/sysroot/system/include/libfenster/listener/key_listener.hpp"
+#include <libfenster/listener/key_listener.hpp>
 
 #define SCROLLBAR_SIZE 15
 
