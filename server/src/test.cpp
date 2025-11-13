@@ -372,7 +372,7 @@ namespace fensterserver {
 		panel->addChild(secondArea);
 
 		window->setTitle("Settings");
-		window->setBounds(Rectangle(530, 30, 800, 600));
+		window->setBounds(fenster::Rectangle(530, 30, 800, 600));
 		window->setLayout(new GridLayout(1));
 
 		auto scroller = new ScrollPane;
@@ -573,7 +573,7 @@ namespace fensterserver {
 		panel->addChild(thirdArea);
 
 		window->setTitle("Settings");
-		window->setBounds(Rectangle(530, 30, 800, 600));
+		window->setBounds(fenster::Rectangle(530, 30, 800, 600));
 		window->setLayout(new GridLayout(1));
 
 		// window->addChild(panel);
@@ -590,7 +590,7 @@ namespace fensterserver {
 	void createTestScrollBoth(Point at) {
 		auto window = new Window();
 		window->setTitle("Scroll pane with both directions (size from preferred panel size)");
-		window->setBounds(Rectangle(at.x, at.y, 400, 400));
+		window->setBounds(fenster::Rectangle(at.x, at.y, 400, 400));
 		window->setLayout(new GridLayout(1));
 
 		auto scroller = new ScrollPane();
@@ -619,7 +619,7 @@ namespace fensterserver {
 	void createTestScrollBothSelfSizing() {
 		auto window = new Window();
 		window->setTitle("Scroll pane with both directions (take size from child)");
-		window->setBounds(Rectangle(300, 150, 400, 400));
+		window->setBounds(fenster::Rectangle(300, 150, 400, 400));
 		window->setLayout(new GridLayout(1));
 
 		auto scroller = new ScrollPane();
@@ -647,7 +647,7 @@ namespace fensterserver {
 	void createTestMenu() {
 		auto window = new Window();
 		window->setTitle("Open tests");
-		window->setBounds(Rectangle(1000, 700, 300, 200));
+		window->setBounds(fenster::Rectangle(1000, 700, 300, 200));
 		window->setLayout(new GridLayout(1));
 
 		auto content = window->getPanel();
@@ -679,7 +679,7 @@ namespace fensterserver {
 	void createSingleLabelWindow() {
 		auto window = new Window();
 		window->setTitle("Window with just a label");
-		window->setBounds(Rectangle(150, 800, 300, 200));
+		window->setBounds(fenster::Rectangle(150, 800, 300, 200));
 		window->setLayout(new GridLayout(1));
 
 		auto content = window->getPanel();

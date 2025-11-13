@@ -1,0 +1,53 @@
+name: Build Windows simulator
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-windows:
+    name: Build for Windows (in Docker)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull build image
+        run: docker pull ghcr.io/maxdev1/mingw-cairo-freetype:latest
+
+      - name: Run build inside container
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/build" \
+            -w /build \
+            ghcr.io/maxdev1/mingw-cairo-freetype:latest \
+            bash -c "make target=windows clean all"
+
+      - name: Prepare ZIP package
+        run: |
+          mkdir -p fenster
+          cp fenster.exe fenster/
+          cp -r platform/sim fenster/platform/sim
+          zip -r fenster-win32.zip fenster
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            fenster-win32.zip
+          retention-days: 30

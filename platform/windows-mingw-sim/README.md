@@ -1,20 +1,13 @@
-**NOTE: Those are just dummy scripts to set up tools for MinGW. It will be moved to a Docker image**
+# Docker file
 
-To build with MinGW within WSL:
+The Docker image automatically builds all required libraries for building the Windows binary.
+To build the image:
 
-- First build all dependencies; use mingw-* scripts, in order:
+	docker build -t mingw-freetype-cairo .
+	docker run -it --rm -v C:/Code/ghost/applications/fenster:/build mingw-cairo-freetype
 
-		zlib
-		pixman
-		libpng
-		freetype
-		cairo
+Login:
 
-- They should all install to /usr/x86_64-w64-mingw32
-
-- Then, build the libraries, each with `sudo make clean && make target=windows && make target=windows install`
-
-        libfenster
-        libproperties
-
-- Then, build windowserver with `sudo make clean && make target=windows && make target=windows install`
+    echo <github-token> | docker login ghcr.io -u <user> --password-stdin
+	docker tag mingw-cairo-freetype ghcr.io/<user>/mingw-cairo-freetype:latest
+	docker push ghcr.io/<user>/mingw-cairo-freetype:latest
