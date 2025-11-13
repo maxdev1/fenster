@@ -42,12 +42,12 @@ jobs:
           mkdir -p fenster/platform/sim
           cp fenster.exe fenster/fenster.exe
           cp -r platform/sim/ fenster/platform/sim/
-          zip -r fenster-win32.zip fenster
+          zip -r fenster-nightly-windows-x64.zip fenster
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: |
-            fenster-win32.zip
+            fenster-nightly-windows-x64.zip
           retention-days: 30
