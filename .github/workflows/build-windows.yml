@@ -39,9 +39,9 @@ jobs:
 
       - name: Prepare ZIP package
         run: |
-          mkdir -p fenster
-          cp fenster.exe fenster/
-          cp -r platform/sim fenster/platform/sim
+          mkdir -p fenster/platform/sim
+          cp fenster.exe fenster/fenster.exe
+          cp -r platform/sim/ fenster/platform/sim/
           zip -r fenster-win32.zip fenster
 
       - name: Upload binary
