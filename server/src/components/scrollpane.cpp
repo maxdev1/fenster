@@ -4,6 +4,8 @@
 
 #include "components/scrollpane.hpp"
 
+#include "../../../platform/macos-sdl-sim/sysroot/system/include/libfenster/listener/key_listener.hpp"
+
 #define SCROLLBAR_SIZE 15
 
 namespace fensterserver
@@ -36,12 +38,25 @@ namespace fensterserver
 		}
 	}
 
+	Component *ScrollPane::handleKeyEvent(KeyEvent &event) {
+		if (event.info.key == "KEY_ALT_L") {
+			keyHorizontalScrollDown = event.info.pressed;
+		}
+		return nullptr;
+	}
+
+
 	Component* ScrollPane::handleMouseEvent(MouseEvent& event)
 	{
 		if(event.type == fenster::MouseEventType::Scroll)
 		{
-			verticalScrollbar.setModelPosition(verticalScrollbar.getModelPosition() + event.scroll * 50);
-			handleScroll(&verticalScrollbar);
+			if (keyHorizontalScrollDown) {
+				horizontalScrollbar.setModelPosition(horizontalScrollbar.getModelPosition() + event.scroll * 50);
+				handleScroll(&horizontalScrollbar);
+			}else {
+				verticalScrollbar.setModelPosition(verticalScrollbar.getModelPosition() + event.scroll * 50);
+				handleScroll(&verticalScrollbar);
+			}
 			return this;
 		}
 		return Component::handleMouseEvent(event);
@@ -101,7 +116,7 @@ namespace fensterserver
 		if(!content)
 			return;
 
-		auto contentSize = content->getPreferredSize();
+		auto contentSize = content->getEffectivePreferredSize();
 		if(fixedWidth)
 			contentSize.width = getBounds().width - SCROLLBAR_SIZE;
 		if(fixedHeight)
@@ -143,15 +158,12 @@ namespace fensterserver
 		if(!content)
 			return;
 
-		auto contentSize = content->getPreferredSize();
+		auto contentSize = content->getEffectivePreferredSize();
 		if(fixedWidth)
-		{
-			contentSize.width = getBounds().width;
-		}
+			contentSize.width = getBounds().width - SCROLLBAR_SIZE;
 		if(fixedHeight)
-		{
-			contentSize.height = getBounds().height;
-		}
+			contentSize.height = getBounds().height - SCROLLBAR_SIZE;
+
 		auto viewportSize = calculateViewport(contentSize);
 
 		if(scrollPosition.x > 0)

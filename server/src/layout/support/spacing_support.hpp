@@ -14,8 +14,6 @@ namespace fensterserver
         int verticalSpace = 0;
 
     public:
-        SpacingSupport() = default;
-
         explicit SpacingSupport(int horizontalSpace = 0, int verticalSpace = 0) : horizontalSpace(horizontalSpace),
             verticalSpace(verticalSpace)
         {

@@ -2,26 +2,24 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "libfenster/components/text_field.hpp"
-#include "libfenster/properties.hpp"
+#include "libfenster/components/text_box.hpp"
 
 namespace fenster
 {
-	TextField* TextField::create()
+	TextBox* TextBox::create()
 	{
-		return createComponent<TextField, ComponentType::TextField>();
+		return createComponent<TextBox, ComponentType::TextBox>();
 	}
 
-	void TextField::setSecure(bool secure)
+	void TextBox::setSecure(bool secure)
 	{
 		Component::setNumericProperty(ComponentProperty::Secure, secure);
 	}
 
-	bool TextField::isSecure()
+	bool TextBox::isSecure()
 	{
 		uint32_t value;
 		Component::getNumericProperty(ComponentProperty::Secure, &value);
 		return value;
 	}
 }
-

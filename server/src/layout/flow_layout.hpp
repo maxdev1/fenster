@@ -7,15 +7,17 @@
 
 #include "layout.hpp"
 #include "support/padding_support.hpp"
-#include "support/single_spacing_support.hpp"
+#include "support/spacing_support.hpp"
 
-namespace fensterserver
-{
-    class FlowLayout : public Layout, public PaddingSupport, public SingleSpacingSupport
-    {
-    public:
-        void layout() override;
-    };
+namespace fensterserver {
+	class FlowLayout : public Layout, public PaddingSupport, public SpacingSupport {
+	public:
+		explicit FlowLayout(int horizontalSpace = 0, int verticalSpace = 0) : SpacingSupport(
+			horizontalSpace, verticalSpace) {
+		}
+
+		void layout() override;
+	};
 }
 
 #endif

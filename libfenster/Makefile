@@ -1,7 +1,7 @@
 include ../platform.mk
 
 LIB := libfenster.a
-CXXFLAGS := -Iinc -I$(FREETYPE_INC) -I$(CAIRO_INC) -std=c++17 # -Wall -Wextra
+CXXFLAGS := $(CXXFLAGS) -Iinc -std=c++17
 
 SRC := $(shell find src -name '*.cpp')
 OBJTGT := obj/$(target)
@@ -25,6 +25,6 @@ install-headers:
 	cp -r inc/* $(SYSROOT)/system/include/
 
 clean:
-	rm -rf $(OBJTGT) $(LIB)
+	rm -rf $(OBJTGT) $(LIB) $(TEST_BIN)
 
 .PHONY: all install clean install-headers

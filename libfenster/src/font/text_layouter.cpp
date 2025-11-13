@@ -4,52 +4,45 @@
 
 #include "libfenster/font/text_layouter.hpp"
 
+#include "libfenster/platform/platform.hpp"
+
 #define BOUNDS_EMPTY 0xFFFFFF
 
 namespace fenster
 {
-	static TextLayouter* instance = 0;
-
-	TextLayouter* TextLayouter::getInstance()
-	{
-		if(!instance)
-			instance = new TextLayouter();
-		return instance;
-	}
-
 	void rightAlign(LayoutedText* text, int line, int lineWidth, Rectangle& bounds)
 	{
 		int diff = bounds.width - bounds.x - lineWidth;
-		for(PositionedGlyph& g : text->positions)
+		for (PositionedGlyph& g: text->positions)
 		{
-			if(g.line == line)
-				g.position.x += diff;
+			if (g.line == line)
+				g.renderPosition.x += diff;
 		}
 	}
 
 	void centerAlign(LayoutedText* text, int line, int lineWidth, Rectangle& bounds)
 	{
 		int diff = (bounds.width - bounds.x) / 2 - lineWidth / 2;
-		for(PositionedGlyph& g : text->positions)
+		for (PositionedGlyph& g: text->positions)
 		{
-			if(g.line == line)
-				g.position.x += diff;
+			if (g.line == line)
+				g.renderPosition.x += diff;
 		}
 	}
 
-	LayoutedText* TextLayouter::initializeBuffer()
+	LayoutedText* TextLayouter::initializeLayout()
 	{
 		return new LayoutedText();
 	}
 
-	void TextLayouter::layout(cairo_t* cr, const char* text, Font* font, int size,
-								 Rectangle bounds, TextAlignment alignment,
-								 LayoutedText* layout, bool breakOnOverflow)
+	void TextLayouter::layout(cairo_t* cr, const char* text, Font* font, int fontSize,
+	                          Rectangle bounds, TextAlignment alignment,
+	                          LayoutedText* layout, bool breakOnOverflow)
 	{
-		if(!font)
+		if (!font)
 			return;
 
-		size_t text_len = strlen(text);
+		size_t textLength = strlen(text);
 
 		// starting coordinates
 		int x = bounds.x;
@@ -58,165 +51,141 @@ namespace fenster
 
 		// created the scaled font face
 		cairo_set_font_face(cr, font->getFace());
-		cairo_set_font_size(cr, size);
-		auto scaled_face = cairo_get_scaled_font(cr);
+		cairo_set_font_size(cr, fontSize);
+		auto scaledFace = cairo_get_scaled_font(cr);
 
 		int line = 0;
-		int lineHeight = size + 3;
+		int lineHeight = fontSize + 4;
 
-		// create glyphs for the text
-		auto previous_glyph_buffer = layout->glyph_buffer;
-		auto previous_cluster_buffer = layout->cluster_buffer;
-
+		// Let cairo generate glyph data
+		auto oldGlyphBuffer = layout->glyphBuffer;
+		auto oldClusterBuffer = layout->clusterBuffer;
 		cairo_text_cluster_flags_t cluster_flags;
-		cairo_status_t stat = cairo_scaled_font_text_to_glyphs(scaled_face, 0, 0, text, text_len, &layout->glyph_buffer, &layout->glyph_count,
-															   &layout->cluster_buffer, &layout->cluster_count, &cluster_flags);
+		cairo_status_t stat = cairo_scaled_font_text_to_glyphs(scaledFace, 0, 0, text, textLength,
+		                                                       &layout->glyphBuffer, &layout->glyphCount,
+		                                                       &layout->clusterBuffer, &layout->clusterCount,
+		                                                       &cluster_flags);
+		if (oldGlyphBuffer != nullptr && layout->glyphBuffer != oldGlyphBuffer)
+			cairo_glyph_free(oldGlyphBuffer);
+		if (oldClusterBuffer != nullptr && layout->clusterBuffer != oldClusterBuffer)
+			cairo_text_cluster_free(oldClusterBuffer);
 
-		// free old buffer
-		if(previous_glyph_buffer != nullptr && layout->glyph_buffer != previous_glyph_buffer)
-		{
-			cairo_glyph_free(previous_glyph_buffer);
-		}
-		if(previous_cluster_buffer != nullptr && layout->cluster_buffer != previous_cluster_buffer)
-		{
-			cairo_text_cluster_free(previous_cluster_buffer);
-		}
-
-		// clear layout entries
+		// Clear layout positions
 		layout->positions.clear();
+		if (stat != CAIRO_STATUS_SUCCESS)
+			return;
 
-		// perform layouting
-		if(stat == CAIRO_STATUS_SUCCESS)
+		// positions in bytes and glyphs
+		size_t byteOffset = 0;
+		size_t glyphOffset = 0;
+
+		// text extents
+		cairo_text_extents_t extents;
+
+		bool lastNewLine = false;
+		for (int i = 0; i < layout->clusterCount; i++)
 		{
-			// positions in bytes and glyphs
-			size_t byte_pos = 0;
-			size_t glyph_pos = 0;
+			cairo_text_cluster_t* cluster = &layout->clusterBuffer[i];
+			cairo_glyph_t* glyphs = &layout->glyphBuffer[glyphOffset];
 
-			// text extents
-			cairo_text_extents_t extents;
+			PositionedGlyph positioned;
+			positioned.glyph = glyphs;
+			positioned.glyphCount = cluster->num_glyphs;
+			cairo_scaled_font_glyph_extents(scaledFace, positioned.glyph, positioned.glyphCount, &extents);
 
-            bool lastNewLine = false;
-			for(int i = 0; i < layout->cluster_count; i++)
+			// Check for control characters
+			bool newline = false;
+			char controlChar = -1;
+			if (cluster->num_bytes == 1)
 			{
-				cairo_text_cluster_t* cluster = &layout->cluster_buffer[i];
-				cairo_glyph_t* glyphs = &layout->glyph_buffer[glyph_pos];
-
-				// create new position
-				PositionedGlyph positioned;
-				positioned.glyph = glyphs;
-				positioned.glyph_count = cluster->num_glyphs;
-				cairo_scaled_font_glyph_extents(scaled_face, positioned.glyph, positioned.glyph_count, &extents);
-
-				positioned.advance.x = extents.x_advance;
-				positioned.advance.y = extents.y_advance;
-				positioned.size.width = extents.width;
-				positioned.size.height = extents.height;
-
-				// check if newline
-				bool isNewline = false;
-				char controlChar = -1;
-				if(cluster->num_bytes == 1) {
-                    if(text[byte_pos] == '\n') {
-                        isNewline = true;
-                        controlChar = text[byte_pos];
-                    } else if(text[byte_pos] == '\t') {
-                        controlChar = text[byte_pos];
-                    }
-				}
-
-				// Wouldn't match in line or is break character? Start next line
-				if(lastNewLine || (breakOnOverflow && (x + positioned.size.width > bounds.width)))
+				if (text[byteOffset] == '\n')
 				{
-				    lastNewLine = false;
-					if(alignment == TextAlignment::RIGHT)
-					{
-						rightAlign(layout, line, x - lineStartX, bounds);
-					}
-					else if(alignment == TextAlignment::CENTER)
-					{
-						centerAlign(layout, line, x - lineStartX, bounds);
-					}
-
-					++line;
-					x = bounds.x;
-					lineStartX = x;
-					y += lineHeight;
+					newline = true;
+					controlChar = text[byteOffset];
+				} else if (text[byteOffset] == '\t')
+				{
+					controlChar = text[byteOffset];
 				}
-
-				// Position
-				positioned.line = line;
-				positioned.position.x = x;
-				positioned.position.y = y + lineHeight;
-				positioned.controlChar = controlChar;
-
-				// Add position
-				layout->positions.push_back(positioned);
-
-				// Jump to next
-				x += positioned.advance.x;
-
-				// increase positions
-				glyph_pos += cluster->num_glyphs;
-				byte_pos += cluster->num_bytes;
-
-				lastNewLine = isNewline;
 			}
+
+			// Wouldn't match in line or is break character? Start next line
+			if (lastNewLine || (breakOnOverflow && (x + extents.width > bounds.width)))
+			{
+				if (alignment == TextAlignment::RIGHT)
+					rightAlign(layout, line, x - lineStartX, bounds);
+				else if (alignment == TextAlignment::CENTER)
+					centerAlign(layout, line, x - lineStartX, bounds);
+
+				++line;
+				x = bounds.x;
+				lineStartX = x;
+				y += lineHeight;
+			}
+
+			positioned.bounds.x = x;
+			positioned.bounds.y = y;
+			positioned.bounds.width = std::max(extents.width, extents.x_advance);
+			positioned.bounds.height = lineHeight;
+
+			positioned.renderPosition.x = x - glyphs->x;
+			positioned.renderPosition.y = y + fontSize;
+			positioned.line = line;
+			positioned.controlChar = controlChar;
+
+			// Add position
+			layout->positions.push_back(positioned);
+
+			// Jump to next
+			x += extents.x_advance;
+
+			// increase positions
+			glyphOffset += cluster->num_glyphs;
+			byteOffset += cluster->num_bytes;
+
+			lastNewLine = newline;
 		}
 
-		if(alignment == TextAlignment::RIGHT)
-		{
+		// Align last line
+		if (alignment == TextAlignment::RIGHT)
 			rightAlign(layout, line, x - lineStartX, bounds);
-		}
-		else if(alignment == TextAlignment::CENTER)
-		{
+		else if (alignment == TextAlignment::CENTER)
 			centerAlign(layout, line, x - lineStartX, bounds);
-		}
 
 		// Set text bounds
 		int tbTop = BOUNDS_EMPTY;
 		int tbLeft = BOUNDS_EMPTY;
 		int tbRight = 0;
 		int tbBottom = 0;
-
-		for(PositionedGlyph& p : layout->positions)
+		for (PositionedGlyph& p: layout->positions)
 		{
-			if(p.position.x < tbLeft)
-			{
-				tbLeft = p.position.x;
-			}
-			if(p.position.y < tbTop)
-			{
-				tbTop = p.position.y;
-			}
-
-			// get extents again
-			int r = p.position.x + p.size.width;
-			if(r > tbRight)
-			{
-				tbRight = r;
-			}
-			int b = p.position.y + p.size.height;
-			if(b > tbBottom)
-			{
-				tbBottom = b;
-			}
+			tbLeft = std::min(p.bounds.x, tbLeft);
+			tbTop = std::min(p.bounds.y, tbTop);
+			tbRight = std::max(tbRight, p.bounds.x + p.bounds.width);
+			tbBottom = std::max(tbBottom, p.bounds.y + p.bounds.height);
 		}
 
-		if(tbTop != BOUNDS_EMPTY && tbLeft != BOUNDS_EMPTY)
+		if (tbTop != BOUNDS_EMPTY && tbLeft != BOUNDS_EMPTY)
 		{
 			layout->textBounds.x = tbLeft;
 			layout->textBounds.y = tbTop;
-			layout->textBounds.width = tbRight - tbLeft;
-			layout->textBounds.height = tbBottom - tbTop;
+			layout->textBounds.width = tbRight;
+			layout->textBounds.height = tbBottom;
 		}
 	}
 
 	void TextLayouter::destroyLayout(LayoutedText* layout)
 	{
-		if(layout->glyph_buffer)
-			free(layout->glyph_buffer);
-		if(layout->cluster_buffer)
-			free(layout->cluster_buffer);
+		if (layout->glyphBuffer)
+			free(layout->glyphBuffer);
+		if (layout->clusterBuffer)
+			free(layout->clusterBuffer);
 		delete layout;
+	}
+
+	void TextLayouter::paintChar(cairo_t* cr, const PositionedGlyph& g, Point offset)
+	{
+		cairo_translate(cr, g.renderPosition.x + offset.x, g.renderPosition.y + offset.y);
+		cairo_glyph_path(cr, g.glyph, g.glyphCount);
+		cairo_fill(cr);
 	}
 }

@@ -13,46 +13,33 @@ namespace fensterserver
 {
 	Label::Label()
 	{
-		setFont(fenster::FontLoader::getDefault());
-		alignment = fenster::TextAlignment::LEFT;
-		color = _RGB(0, 0, 0);
+		Label::setFont(fenster::FontLoader::getDefault());
 		graphics.resize(1, 1);
+		viewModel = fenster::TextLayouter::initializeLayout();
 	}
 
 	void Label::setFont(fenster::Font* newFont)
 	{
 		font = newFont;
-		fontSize = 14;
 	}
 
 	void Label::update()
 	{
 		auto cr = graphics.acquireContext();
-		if(!cr)
+		if (!cr)
 			return;
 
-		if(font)
+		if (font)
 		{
-			cairo_save(cr);
-			cairo_set_font_face(cr, font->getFace());
-			cairo_set_font_size(cr, fontSize);
-			cairo_text_extents(cr, this->text.c_str(), &textExtents);
-			cairo_font_extents(cr, &fontExtents);
-			cairo_restore(cr);
+			fenster::TextLayouter::layout(cr, text.c_str(), font, fontSize,
+			                              fenster::Rectangle(0, 0, bounds.width, bounds.height),
+			                              alignment,
+			                              viewModel, false);
+
+			this->setPreferredSize(fenster::Dimension(viewModel->textBounds.width, viewModel->textBounds.height));
 		}
 
 		graphics.releaseContext();
-
-		fenster::Dimension newPreferred(textExtents.width + 3, fontExtents.height + 3);
-
-		// Set new preferred size
-		auto oldPreferred = getPreferredSize();
-		if(oldPreferred != newPreferred)
-		{
-			setPreferredSize(newPreferred);
-			markParentFor(COMPONENT_REQUIREMENT_UPDATE);
-		}
-		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
 	void Label::paint()
@@ -61,35 +48,39 @@ namespace fensterserver
 
 		auto bounds = getBounds();
 
-		int textX;
-		int textY = bounds.height / 2 - fontExtents.height / 2 + fontExtents.ascent;
-		if(alignment == fenster::TextAlignment::CENTER)
-		{
-			textX = bounds.width / 2 - textExtents.width / 2;
-		}
-		else if(alignment == fenster::TextAlignment::RIGHT)
-		{
-			textX = bounds.width - textExtents.width;
-		}
-		else
-		{
-			textX = 0;
-		}
-
 		auto cr = graphics.acquireContext();
-		if(!cr)
+		if (!cr)
 			return;
 
-		if(font)
+		if (font)
 		{
-			cairo_save(cr);
-			cairo_set_source_rgb(cr, ARGB_FR_FROM(color), ARGB_FB_FROM(color), ARGB_FG_FROM(color));
-			cairo_move_to(cr, textX, textY);
-			cairo_set_font_face(cr, font->getFace());
-			cairo_set_font_size(cr, fontSize);
-			cairo_show_text(cr, text.c_str());
-			cairo_restore(cr);
+			fenster::TextLayouter::layout(cr, text.c_str(), font, fontSize,
+			                                             fenster::Rectangle(0, 0, bounds.width, bounds.height),
+			                                             alignment,
+			                                             viewModel, false);
+
+			int yOffset = bounds.height / 2 - viewModel->textBounds.height / 2;
+
+			int pos = 0;
+			for (pos = 0; pos < viewModel->positions.size(); pos++)
+			{
+				auto g = viewModel->positions[pos];
+				// cairo_save(cr);
+				// cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(ARGB(100, 255, 255, 0)));
+				// cairo_rectangle(cr, g.bounds.x, g.bounds.y, g.bounds.width, g.bounds.height);
+				// cairo_stroke(cr);
+				// cairo_restore(cr);
+
+				cairo_save(cr);
+				cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(color));
+				fenster::TextLayouter::paintChar(cr, g, fenster::Point(0, yOffset));
+				cairo_restore(cr);
+			}
 		}
+
+		// cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(ARGB(200, 0, 100, 50)));
+		// cairo_rectangle(cr, 0, 0, bounds.width, bounds.height);
+		// cairo_stroke(cr);
 
 		graphics.releaseContext();
 	}
@@ -129,13 +120,13 @@ namespace fensterserver
 
 	bool Label::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
-		if(property == fenster::ComponentProperty::Color)
+		if (property == fenster::ComponentProperty::Color)
 		{
 			this->setColor(value);
 			return true;
 		}
 
-		if(property == fenster::ComponentProperty::Alignment)
+		if (property == fenster::ComponentProperty::Alignment)
 		{
 			this->setAlignment((fenster::TextAlignment) value);
 			return true;

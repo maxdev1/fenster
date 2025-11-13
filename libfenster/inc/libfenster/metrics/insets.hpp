@@ -28,15 +28,6 @@ namespace fenster
 		{
 		}
 
-		Insets& operator=(const Insets& rhs)
-		{
-			top = rhs.top;
-			left = rhs.left;
-			bottom = rhs.bottom;
-			right = rhs.right;
-			return *this;
-		}
-
 		bool operator==(const Insets& rhs) const
 		{
 			return top == rhs.top && left == rhs.left && bottom == rhs.bottom && right == rhs.right;

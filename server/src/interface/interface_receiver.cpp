@@ -9,14 +9,13 @@
 
 #include "components/button.hpp"
 #include "components/canvas.hpp"
-#include "components/text/text_field.hpp"
 #include "components/window.hpp"
 #include "components/desktop/selection.hpp"
 #include "component_registry.hpp"
 #include "components/scrollpane.hpp"
 #include "components/image.hpp"
 #include "components/checkbox.hpp"
-#include "components/text/text_area.hpp"
+#include "components/text/text_box.hpp"
 #include "interface/interface_receiver.hpp"
 
 using namespace fenster;
@@ -76,8 +75,8 @@ namespace fensterserver
 					component = new Button();
 					break;
 
-				case ComponentType::TextField:
-					component = new TextField();
+				case ComponentType::TextBox:
+					component = new TextBox();
 					break;
 
 				case ComponentType::Canvas:
@@ -102,10 +101,6 @@ namespace fensterserver
 
 				case ComponentType::Checkbox:
 					component = new Checkbox();
-					break;
-
-				case ComponentType::TextArea:
-					component = new TextArea();
 					break;
 
 				default:

@@ -6,6 +6,7 @@
 #define FENSTER_SERVER_COMPONENTS_PANEL
 
 #include "components/component.hpp"
+#include "layout/stack_layout.hpp"
 #include <libfenster/color_argb.hpp>
 
 namespace fensterserver

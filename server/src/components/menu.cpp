@@ -64,11 +64,11 @@ namespace fensterserver
 
 	void Menu::layout()
 	{
-		Component::layout();
-
 		auto size = getEffectivePreferredSize();
 		auto pos = getBounds();
 		this->setBounds(fenster::Rectangle(pos.x, pos.y, size.width, size.height));
+
+		Component::layout();
 	}
 
 

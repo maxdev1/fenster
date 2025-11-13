@@ -5,7 +5,6 @@
 #include "events/event_processor.hpp"
 #include "component_registry.hpp"
 #include "components/cursor.hpp"
-#include "components/text/text_field.hpp"
 #include "components/window.hpp"
 #include "events/event.hpp"
 #include "events/key_event.hpp"

@@ -84,7 +84,7 @@ namespace fensterserver
 			}
 
 			int hiddenLength = contentLength - viewportLength;
-			setModelPosition((viewPosition * hiddenLength) / knobSpace);
+			setModelPosition((int)((float)(viewPosition * hiddenLength) / (float)knobSpace));
 
 			if(scrollHandler)
 				scrollHandler->handleScroll(this);

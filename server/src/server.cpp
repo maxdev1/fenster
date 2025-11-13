@@ -11,7 +11,6 @@
 #include "events/locatable.hpp"
 #include "interface/registration_thread.hpp"
 #include "components/window.hpp"
-#include "components/text/text_field.hpp"
 #include "test.hpp"
 #include "platform/platform.hpp"
 

@@ -2,23 +2,23 @@
 // Copyright (c) 2025 Max Schlüssel
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef LIBFENSTER_TEXTFIELD
-#define LIBFENSTER_TEXTFIELD
+#ifndef LIBFENSTER_TEXTBOX
+#define LIBFENSTER_TEXTAREA
 
 #include "component.hpp"
 #include "titled_component.hpp"
 
 namespace fenster
 {
-	class TextField : virtual public Component, virtual public TitledComponent
+	class TextBox : virtual public Component, virtual public TitledComponent
 	{
 	public:
-		explicit TextField(ComponentId id) :
+		explicit TextBox(ComponentId id) :
 			Component(id), TitledComponent(id)
 		{
 		}
 
-		static TextField* create();
+		static TextBox* create();
 
 		void setSecure(bool secure);
 		bool isSecure();

@@ -13,6 +13,8 @@
 #include <libfenster/properties.hpp>
 #include <cmath>
 
+#include "layout/fill_layout.hpp"
+
 namespace fensterserver
 {
 	Window::Window() :
@@ -35,6 +37,8 @@ namespace fensterserver
 		setMinimumSize(fenster::Dimension(200, 80));
 
 		panel.setBackground(ARGB(0, 0, 0, 0));
+		panel.layoutPolicyHorizontal = LayoutingPolicy::Stretch;
+		panel.layoutPolicyVertical = LayoutingPolicy::Stretch;
 	}
 
 	void Window::layout()

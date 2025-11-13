@@ -23,6 +23,8 @@ namespace fensterserver
         bool showHbar = false;
         bool showVbar = false;
 
+        bool keyHorizontalScrollDown = false;
+
         virtual void updateContent();
 
     protected:
@@ -41,6 +43,7 @@ namespace fensterserver
 
         void layout() override;
 
+        Component *handleKeyEvent(KeyEvent &event) override;
         Component* handleMouseEvent(MouseEvent& event) override;
         void handleScroll(Scrollbar* bar) override;
 
@@ -53,11 +56,19 @@ namespace fensterserver
 
         fenster::Dimension calculateViewport(fenster::Dimension contentPrefSize);
 
+        /**
+         * When fixed width is enabled, the content gets the width of the scrollpane. Otherwise, the preferred size
+         * of the content determines the scrollable width.
+         */
         void setFixedWidth(bool fix)
         {
             this->fixedWidth = fix;
         }
 
+        /**
+         * When fixed height is enabled, the content gets the height of the scrollpane. Otherwise, the preferred size
+         * of the content determines the scrollable height.
+         */
         void setFixedHeight(bool fix)
         {
             this->fixedHeight = fix;

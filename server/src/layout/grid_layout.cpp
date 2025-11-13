@@ -7,73 +7,71 @@
 
 #include <vector>
 
-namespace fensterserver
-{
-	void GridLayout::layout()
-	{
-		if(component == nullptr)
-			return;
+#include "components/scrollpane.hpp"
 
-		if(columns <= 0)
-		{
-			fenster::platformLog("grid layout must have a defined number of columns");
+namespace fensterserver {
+	void GridLayout::layout() {
+		if (component == nullptr || columns <= 0)
 			return;
-		}
 
 		auto& children = component->acquireChildren();
+		auto bounds = component->getBounds();
 
-		// Get component bounds and apply padding
-		fenster::Rectangle bounds = component->getBounds();
-		bounds.x = padding.left;
-		bounds.y = padding.top;
-		bounds.width = std::max(bounds.width - padding.left - padding.right, 0);
-		bounds.height = std::max(bounds.height - padding.top - padding.bottom, 0);
+		// Compute available area
+		int availableWidth = bounds.width - (padding.left + padding.right);
+		int availableHeight = bounds.height - (padding.top + padding.bottom);
 
 		// Compute cell dimensions
 		int actualRows = (int) children.size() / columns;
-		int columnWidth = (columns > 0) ? (bounds.width - (columns - 1) * horizontalSpace) / columns : 0;
-		int rowHeight = (rows > 0)
-			                ? (bounds.height - (rows - 1) * verticalSpace) / rows
-			                : (bounds.height - (actualRows - 1) * verticalSpace) / actualRows;
+		if ((int) children.size() % columns != 0)
+			actualRows++;
 
-		// If parent has no width or height, calculate expected size from children
-		if(bounds.width == 0 || bounds.height == 0)
-		{
-			for(auto& ref: children)
-			{
-				auto childSize = ref.component->getEffectivePreferredSize();
-				if(bounds.width == 0)
-					columnWidth = std::max(columnWidth, childSize.width);
-				if(bounds.height == 0)
-					rowHeight = std::max(rowHeight, childSize.height);
-			}
+		// Calculate preferred cell sizes if not filling
+		int largestPrefWidth = 0;
+		int largestPrefHeight = 0;
+		for (auto& ref: children) {
+			auto childSize = ref.component->getEffectivePreferredSize();
+			largestPrefWidth = std::max(largestPrefWidth, childSize.width);
+			largestPrefHeight = std::max(largestPrefHeight, childSize.height);
+		}
+
+		int cellWidth;
+		if (component->layoutPolicyHorizontal == LayoutingPolicy::Stretch) {
+			cellWidth = (availableWidth - (verticalSpace * (columns - 1))) / columns;
+		} else {
+			cellWidth = largestPrefWidth;
+		}
+		int cellHeight;
+		if (component->layoutPolicyVertical == LayoutingPolicy::Stretch) {
+			cellHeight = (availableHeight - (horizontalSpace * (actualRows - 1))) / actualRows;
+		} else {
+			cellHeight = largestPrefHeight;
 		}
 
 		// Place each child into the grid
 		int currentRow = 0;
 		int currentColumn = 0;
+		int endX = 0;
+		int endY = 0;
 
-		for(auto& childRef: children)
-		{
+		for (auto& childRef: children) {
 			Component* child = childRef.component;
-			if(!child->isVisible())
+			if (!child->isVisible())
 				continue;
-			auto childSize = child->getPreferredSize();
 
-			// Use calculated cell size unless zero (in which case use child's preferred size)
-			int cellWidth = (columnWidth > 0) ? columnWidth : childSize.width;
-			int cellHeight = (rowHeight > 0) ? rowHeight : childSize.height;
+			int x = padding.left + currentColumn * (cellWidth + verticalSpace);
+			int y = padding.top + currentRow * (cellHeight + horizontalSpace);
 
-			// Calculate position based on cell index and spacing
-			int x = bounds.x + currentColumn * (columnWidth + horizontalSpace);
-			int y = bounds.y + currentRow * (rowHeight + verticalSpace);
+			fenster::Rectangle childBounds(x, y, cellWidth, cellHeight);
+			child->setBounds(childBounds);
 
-			child->setBounds(fenster::Rectangle(x, y, cellWidth, cellHeight));
+			auto childBoundsEnd = childBounds.getEnd();
+			endX = std::max(childBoundsEnd.x - padding.left, endX);
+			endY = std::max(childBoundsEnd.y - padding.top, endY);
 
 			// Advance column
 			currentColumn++;
-			if(currentColumn >= columns)
-			{
+			if (currentColumn >= columns) {
 				currentColumn = 0;
 				currentRow++;
 			}
@@ -81,15 +79,6 @@ namespace fensterserver
 
 		component->releaseChildren();
 
-		// Set preferred size if parent has no bounds
-		if(bounds.width == 0 || bounds.height == 0)
-		{
-			int contentWidth = columns * columnWidth + (columns - 1) * horizontalSpace + padding.left + padding.right;
-			int contentHeight = (rows > 0)
-				                    ? rows * rowHeight + (rows - 1) * verticalSpace + padding.top + padding.bottom
-				                    : (currentRow + 1) * rowHeight;
-
-			component->setPreferredSize(fenster::Dimension(contentWidth, contentHeight));
-		}
+		component->setPreferredSize(fenster::Dimension(endX, endY));
 	}
 }

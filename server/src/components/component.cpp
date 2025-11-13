@@ -404,6 +404,11 @@ namespace fensterserver
 		if(preferredSize != size)
 		{
 			preferredSize = size;
+
+			// Sanity check
+			if (preferredSize.width > 10000) preferredSize.width = 10000;
+			if (preferredSize.height > 10000) preferredSize.height = 10000;
+
 			markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 		}
 	}

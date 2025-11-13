@@ -12,18 +12,22 @@
 #include <libfenster/font/text_alignment.hpp>
 #include <libfenster/color_argb.hpp>
 
+#include <libfenster/font/text_layouter.hpp>
+
 namespace fensterserver
 {
     class Label : virtual public Component, virtual public TitledComponent
     {
-        fenster::Font* font;
-        int fontSize;
+        fenster::Font* font = nullptr;
+        int fontSize = 14;
         cairo_text_extents_t textExtents;
         cairo_font_extents_t fontExtents;
 
         std::string text;
-        fenster::TextAlignment alignment;
-        fenster::ColorArgb color;
+        fenster::TextAlignment alignment = fenster::TextAlignment::LEFT;
+        fenster::ColorArgb color = _RGB(0, 0, 0);
+
+        fenster::LayoutedText* viewModel;
 
     public:
         Label();

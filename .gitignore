@@ -7,6 +7,7 @@ CMakeLists.txt
 /fenster.exe
 /fenster.bin
 /fenster
+test_runner
 platform/windows-mingw-sim/sysroot/**
 !platform/windows-mingw-sim/sysroot/keep.txt
 platform/macos-sdl-sim/sysroot/**

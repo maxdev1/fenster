@@ -118,6 +118,33 @@ Once all updates and paints are resolved, visible components are composited (bli
 buffer.
 Finally, only the dirty regions of the screen are copied to the actual output (for example, a framebuffer).
 
+
+## Layouts
+
+There are a bunch of available layouts that can be set onto a component to make it layout its
+child components and possibly calculate its own preferred sized based on it:
+
+    auto layout = fenster::StackLayout::create(panel);
+    layout->setOrientation(fenster::Orientation::Horizontal);
+
+The layouts that are available are:
+- __Flow layout__ that just makes components flow and break
+- __Stack layout__ that stacks components on top or next to each other
+- __Grid layout__ that builds a grid
+- __Flex layout__ that allows adding flex information to each child component for grow, shrink and basis
+
+Each component has two size: the _actual bounds_ and a _preferred size_. A component
+calculates its preferred size based on the contents and with it expresses how large it wants the
+contents to be displayed.
+
+Depending on layout policy, the layout implementations will either respect the preferred size
+of child components or use the component bounds for layouting.  Every container has properties
+`layoutPolicyHorizontal` and `layoutPolicyVertical`.
+- For the policy `Stretch`, the layout will attempt to fill the entire containers actual size. 
+- For the policy `Preferred`, it will attempt to layout based on the preferred size of child components
+and set the containers own preferred sized based on this value.
+
+
 ## Event handling
 
 There is a system for event processing that handles different types of input — such as keyboard and mouse — as well as

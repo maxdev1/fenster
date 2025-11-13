@@ -14,76 +14,46 @@
 
 namespace fenster
 {
-	/**
-	 *
-	 */
 	struct PositionedGlyph
 	{
-		PositionedGlyph() :
-			line(-1), glyph(0), glyph_count(0)
-		{
-		}
-
-		int line;
-		Point position;
-
-		Dimension size;
-		Point advance;
-
-        char controlChar;
-		cairo_glyph_t* glyph;
-		int glyph_count;
+		int line = -1;
+		Point renderPosition;
+		Rectangle bounds;
+		char controlChar = -1;
+		cairo_glyph_t* glyph = nullptr;
+		int glyphCount = 0;
 	};
 
-	/**
-	 *
-	 */
 	struct LayoutedText
 	{
-		// List of glyphs with their positions
 		std::vector<PositionedGlyph> positions;
-
-		// Bounds of the entire layouted text
 		Rectangle textBounds;
 
-		// Buffers
-		cairo_glyph_t* glyph_buffer = nullptr;
-		int glyph_count;
-		cairo_text_cluster_t* cluster_buffer = nullptr;
-		int cluster_count;
+		cairo_glyph_t* glyphBuffer = nullptr;
+		int glyphCount;
+		cairo_text_cluster_t* clusterBuffer = nullptr;
+		int clusterCount;
 	};
 
-	/**
-	 *
-	 */
 	class TextLayouter
 	{
-		TextLayouter()
-		{
-		}
-
 	public:
-		/**
-		 * @return the instance of the font manager singleton
-		 */
-		static TextLayouter* getInstance();
+		static LayoutedText* initializeLayout();
 
-		/**
-		 *
-		 */
-		LayoutedText* initializeBuffer();
+		static void layout(
+			cairo_t* cr,
+			const char* text,
+			Font* font,
+			int fontSize,
+			Rectangle bounds,
+			TextAlignment alignment,
+			LayoutedText* layout,
+			bool breakOnOverflow = true
+		);
 
-		/**
-		 *
-		 */
-		void layout(cairo_t* cr, const char* text, Font* font, int size, Rectangle bounds, TextAlignment alignment,
-					LayoutedText* layout,
-					bool breakOnOverflow = true);
+		static void destroyLayout(LayoutedText* layout);
 
-		/**
-		 *
-		 */
-		void destroyLayout(LayoutedText* layout);
+		static void paintChar(cairo_t* cr, const PositionedGlyph& value, Point offset = Point(0, 0));
 	};
 }
 

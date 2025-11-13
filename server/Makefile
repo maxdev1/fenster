@@ -1,46 +1,42 @@
 include ../platform.mk
 
 ifeq ($(target),ghost)
-	LDEPS := -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
-	EXTRA_CXXFLAGS :=
-	EXTRA_LDFLAGS :=
-	EXE := ../fenster.bin
+	LDFLAGS := -linput -lvideo -lps2driver -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
+	BIN := ../fenster.bin
 
 else ifeq ($(target),windows)
-	LDEPS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz
-	EXTRA_CXXFLAGS := -I$(SYSROOT)/system/include
-	EXTRA_LDFLAGS := -L$(SYSROOT)/system/lib -lgdi32
-	EXE := ../fenster.exe
+	LDFLAGS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz -L$(SYSROOT)/system/lib -lgdi32
+	CXXFLAGS := $(CXXFLAGS) -I$(SYSROOT)/system/include
+	BIN := ../fenster.exe
 
 else ifeq ($(target),macos)
-	LDEPS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz -lsdl2
-	EXTRA_CXXFLAGS := -I$(SYSROOT)/system/include -I$(CAIRO_INC)
-	EXTRA_LDFLAGS := -L$(SYSROOT)/system/lib -L/opt/homebrew/lib
-	EXE := ../fenster
+	LDFLAGS := -lproperties -lfenster -lcairo -lfreetype -lpixman-1 -lpng -lz -lsdl2 -L$(SYSROOT)/system/lib -L/opt/homebrew/lib
+	CXXFLAGS := $(CXXFLAGS) -I$(SYSROOT)/system/include
+	BIN := ../fenster
 
 endif
 
-CXXFLAGS := -Isrc -I$(FREETYPE_INC) -Wall -Wextra -std=c++17 $(EXTRA_CXXFLAGS) -Wno-unused-parameter
-LDFLAGS := $(LDEPS) $(EXTRA_LDFLAGS)
+CXXFLAGS := -Isrc -Wall -Wextra -std=c++17 $(CXXFLAGS) -Wno-unused-parameter
 
 SRC := $(shell find src -name '*.cpp')
-OBJTGT := obj/$(target)
-OBJ := $(patsubst src/%.cpp,$(OBJTGT)/%.o,$(SRC))
+OBJDIR := obj/$(target)
+OBJ := $(patsubst src/%.cpp,$(OBJDIR)/%.o,$(SRC))
+LIBFENSTER := $(SYSROOT)/system/lib/libfenster.a
 
-all: $(EXE)
+all: $(BIN)
 
-$(EXE): $(OBJ)
+$(BIN): $(OBJ) $(LIBFENSTER)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-$(OBJTGT)/%.o: src/%.cpp
+$(OBJDIR)/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-install: $(EXE)
+install: $(BIN)
 	mkdir -p $(SYSROOT)/applications
-	cp $(EXE) $(SYSROOT)/applications/
+	cp $(BIN) $(SYSROOT)/applications/
 
 clean:
-	rm -rf $(OBJTGT) $(EXE)
+	rm -rf $(OBJDIR) $(BIN)
 
 .PHONY: all install clean

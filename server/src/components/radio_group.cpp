@@ -24,7 +24,7 @@ namespace fensterserver
 		auto radioButton = dynamic_cast<RadioButton*>(comp);
 		if(radioButton)
 		{
-			radioButton->setInternalCheckedHandler([this, radioButton](bool checked, bool triggeredByGroup)
+			radioButton->addInternalCheckedHandler([this, radioButton](bool checked, bool triggeredByGroup)
 			{
 				if(!triggeredByGroup)
 				{

@@ -16,22 +16,20 @@ namespace fensterserver
      */
     class CheckableComponent : virtual public Component
     {
-        InternalCheckedHandlerFunc internalHandler;
+        std::vector<InternalCheckedHandlerFunc> internalHandlers;
 
     public:
-        explicit CheckableComponent() : internalHandler(nullptr)
-        {
-        }
+        explicit CheckableComponent() = default;
 
         ~CheckableComponent() override = default;
 
-        virtual void setChecked(bool value, bool triggeredByGroup);
+        virtual void setChecked(bool value, bool triggeredByGroup = false);
         virtual void setCheckedInternal(bool value) = 0;
         virtual bool isChecked() = 0;
 
-        void setInternalCheckedHandler(InternalCheckedHandlerFunc handler)
+        void addInternalCheckedHandler(InternalCheckedHandlerFunc handler)
         {
-            this->internalHandler = std::move(handler);
+            this->internalHandlers.push_back(std::move(handler));
         }
     };
 }

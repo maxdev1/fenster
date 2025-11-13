@@ -5,6 +5,8 @@
 #include "components/component.hpp"
 #include "layout/flex_layout.hpp"
 
+#include "components/scrollpane.hpp"
+
 namespace fensterserver
 {
 	void FlexLayout::setComponentInfo(Component* child, float grow, float shrink, int basis)
@@ -24,6 +26,10 @@ namespace fensterserver
 		bool horizontal = orientation == fenster::Orientation::Horizontal;
 
 		fenster::Rectangle bounds = component->getBounds();
+		if (dynamic_cast<ScrollPane*>(component->getParent())) {
+			bounds = component->getParent()->getBounds();
+		}
+
 		bounds.x = padding.left;
 		bounds.y = padding.top;
 		bounds.width -= padding.left + padding.right;
@@ -56,16 +62,19 @@ namespace fensterserver
 		int xOffset = bounds.x;
 		int yOffset = bounds.y;
 
+		int endX = 0;
+		int endY = 0;
+
 		for(auto& ref: children)
 		{
 			Component* child = ref.component;
 			FlexInfo flex = flexInfo[child];
 
-			int basis = (flex.basis >= 0)
+			int basis = (flex.basis > 0)
 				            ? flex.basis
 				            : (horizontal
-					               ? child->getPreferredSize().width
-					               : child->getPreferredSize().height);
+					               ? child->getEffectivePreferredSize().width
+					               : child->getEffectivePreferredSize().height);
 			int allocatedSize = basis;
 
 			if(remainingSize > 0 && flex.grow > 0)
@@ -76,16 +85,25 @@ namespace fensterserver
 
 			if(horizontal)
 			{
-				child->setBounds(fenster::Rectangle(xOffset, yOffset, allocatedSize, bounds.height));
-				xOffset += allocatedSize + space; // Add the gap after each component
+				fenster::Rectangle childBounds(xOffset, yOffset, allocatedSize, bounds.height);
+				child->setBounds(childBounds);
+				endX = std::max(childBounds.getEnd().x, endX);
+				endY = std::max(childBounds.getEnd().y, endY);
+
+				xOffset += allocatedSize + space;
 			}
 			else
 			{
-				child->setBounds(fenster::Rectangle(xOffset, yOffset, bounds.width, allocatedSize));
-				yOffset += allocatedSize + space; // Add the gap after each component
+				fenster::Rectangle childBounds(xOffset, yOffset, bounds.width, allocatedSize);
+				child->setBounds(childBounds);
+				endX = std::max(childBounds.getEnd().x, endX);
+				endY = std::max(childBounds.getEnd().y, endY);
+
+				yOffset += allocatedSize + space;
 			}
 		}
 
 		component->releaseChildren();
+		component->setPreferredSize(fenster::Dimension(endX, endY));
 	}
 }

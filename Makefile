@@ -1,6 +1,6 @@
 SUBPROJECTS := libproperties libfenster server
 
-.PHONY: all clean install-headers
+.PHONY: all clean install-headers test
 
 all: build install
 

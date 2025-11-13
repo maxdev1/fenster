@@ -85,7 +85,7 @@ namespace fenster
 		Window = 0,
 		Button = 1,
 		Label = 2,
-		TextField = 3,
+		TextBox = 3,
 		Canvas = 4,
 		Selection = 5,
 		Panel = 6,
@@ -94,7 +94,6 @@ namespace fenster
 		Checkbox = 9,
 		RadioButton = 10,
 		RadioGroup = 11,
-		TextArea = 12,
 	};
 
 	/**

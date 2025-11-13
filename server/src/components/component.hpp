@@ -65,6 +65,17 @@ namespace fensterserver
         EventListenerInfo info;
     };
 
+    enum class LayoutingPolicy {
+        /**
+         * Tells the layout that the bounds of the parent container should be used as the base for layouting.
+         */
+        Stretch,
+        /**
+         * Tells the layout that the preferred size of child components of the container should be respected.
+         */
+        Preferred,
+    };
+
     /**
      *
      */
@@ -101,11 +112,15 @@ namespace fensterserver
             return true;
         }
 
+
     public:
         fenster::ComponentId id;
 
         Component();
         ~Component() override;
+
+        LayoutingPolicy layoutPolicyHorizontal = LayoutingPolicy::Stretch;
+        LayoutingPolicy layoutPolicyVertical = LayoutingPolicy::Preferred;
 
         bool isVisible() const
         {

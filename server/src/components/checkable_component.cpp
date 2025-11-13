@@ -11,10 +11,8 @@ namespace fensterserver
 	{
 		setCheckedInternal(checked);
 
-		if(internalHandler)
-		{
+		for (const auto& internalHandler : internalHandlers) {
 			internalHandler(checked, triggeredByGroup);
-			return;
 		}
 
 		this->callForListeners(fenster::ComponentEventType::Checked, [checked](EventListenerInfo& info)
