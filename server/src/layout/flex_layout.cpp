@@ -26,9 +26,6 @@ namespace fensterserver
 		bool horizontal = orientation == fenster::Orientation::Horizontal;
 
 		fenster::Rectangle bounds = component->getBounds();
-		if (dynamic_cast<ScrollPane*>(component->getParent())) {
-			bounds = component->getParent()->getBounds();
-		}
 
 		bounds.x = padding.left;
 		bounds.y = padding.top;
@@ -36,74 +33,71 @@ namespace fensterserver
 		bounds.height -= padding.top + padding.bottom;
 
 		auto& children = component->acquireChildren();
-		int totalSpace = horizontal ? bounds.width : bounds.height;
-		int totalFlexGrow = 0;
-		int totalFixedSpace = 0;
 
-		// Calculate required space for fixed-size
+		float totalBasis = 0.f;
+		float totalGrow = 0.f;
+		float totalShrink = 0.f;
+
 		for(auto& ref: children)
 		{
 			Component* child = ref.component;
-			FlexInfo flex = flexInfo[child];
+			auto info = flexInfo[child];
 
-			int basis = (flex.basis >= 0)
-				            ? flex.basis
-				            : (horizontal
-					               ? child->getPreferredSize().width
-					               : child->getPreferredSize().height);
-			totalFixedSpace += basis;
-			totalFlexGrow += flex.grow;
+			fenster::Dimension pref = child->getPreferredSize();
+			int childPref = horizontal ? pref.width : pref.height;
+
+			int basis = (info.basis >= 0) ? info.basis : childPref;
+			totalBasis += basis;
+			totalGrow  += info.grow;
+			totalShrink += info.shrink;
+
+			info.basis = basis;
+			flexInfo[child] = info;
 		}
 
-		// Calculate remaining space, considering the gaps
-		int remainingSize = totalSpace - totalFixedSpace - (space * (children.size() - 1));
+		int mainSize = horizontal ? bounds.width : bounds.height;
+		int crossSize = horizontal ? bounds.height : bounds.width;
 
-		// Distribute space
-		int xOffset = bounds.x;
-		int yOffset = bounds.y;
+		float remaining = mainSize - totalBasis;
 
-		int endX = 0;
-		int endY = 0;
+		int pos = horizontal ? bounds.x : bounds.y;
+		int totalMainUsed = 0;
 
 		for(auto& ref: children)
 		{
 			Component* child = ref.component;
-			FlexInfo flex = flexInfo[child];
+			auto info = flexInfo[child];
 
-			int basis = (flex.basis >= 0)
-				            ? flex.basis
-				            : (horizontal
-					               ? child->getEffectivePreferredSize().width
-					               : child->getEffectivePreferredSize().height);
-			int allocatedSize = basis;
+			float size = info.basis;
 
-			if(remainingSize > 0 && flex.grow > 0)
+			if(remaining > 0 && totalGrow > 0)
 			{
-				float proportion = flex.grow / static_cast<float>(totalFlexGrow);
-				allocatedSize += static_cast<int>(proportion * remainingSize);
+				size += (info.grow / totalGrow) * remaining;
+			} else if(remaining < 0 && totalShrink > 0)
+			{
+				float overflow = -remaining;
+				size -= (info.shrink / totalShrink) * overflow;
 			}
+
+			int finalSize = std::max(0, (int) size);
 
 			if(horizontal)
 			{
-				fenster::Rectangle childBounds(xOffset, yOffset, allocatedSize, bounds.height);
-				child->setBounds(childBounds);
-				endX = std::max(childBounds.getEnd().x, endX);
-				endY = std::max(childBounds.getEnd().y, endY);
-
-				xOffset += allocatedSize + space;
-			}
-			else
+				child->setBounds(fenster::Rectangle(pos, bounds.y, finalSize, crossSize));
+				pos += finalSize;
+			} else
 			{
-				fenster::Rectangle childBounds(xOffset, yOffset, bounds.width, allocatedSize);
-				child->setBounds(childBounds);
-				endX = std::max(childBounds.getEnd().x, endX);
-				endY = std::max(childBounds.getEnd().y, endY);
-
-				yOffset += allocatedSize + space;
+				child->setBounds(fenster::Rectangle(bounds.x, pos, crossSize, finalSize));
+				pos += finalSize;
 			}
+
+			totalMainUsed += finalSize;
 		}
 
 		component->releaseChildren();
+
+		int endX = horizontal ? totalMainUsed : crossSize;
+		int endY = horizontal ? crossSize : totalMainUsed;
 		component->setPreferredSize(fenster::Dimension(endX, endY));
 	}
 }
