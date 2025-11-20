@@ -36,13 +36,13 @@ namespace fensterserver {
 		}
 
 		int cellWidth;
-		if (component->layoutPolicyHorizontal == LayoutingPolicy::Stretch) {
+		if (component->layoutPolicyHorizontal == LayoutingPolicy::Stretch || largestPrefWidth == 0) {
 			cellWidth = (availableWidth - (verticalSpace * (columns - 1))) / columns;
 		} else {
 			cellWidth = largestPrefWidth;
 		}
 		int cellHeight;
-		if (component->layoutPolicyVertical == LayoutingPolicy::Stretch) {
+		if (component->layoutPolicyVertical == LayoutingPolicy::Stretch || largestPrefHeight == 0) {
 			cellHeight = (availableHeight - (horizontalSpace * (actualRows - 1))) / actualRows;
 		} else {
 			cellHeight = largestPrefHeight;

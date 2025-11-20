@@ -497,7 +497,6 @@ namespace fensterserver
 			{
 				cursorX = insets.left + g.bounds.x + g.bounds.width;
 				cursorY = insets.top + g.bounds.y;
-				fenster::platformLog("last width %i", g.bounds.width);
 
 				if (g.controlChar == '\n')
 				{
