@@ -6,11 +6,38 @@
 #include "libfenster/properties.hpp"
 
 #include <utility>
+#include <algorithm>
 #include <cstring>
 #include <stdlib.h>
 
 namespace fenster
 {
+	std::vector<ComponentId> Component::createComponentIds(ComponentType type, size_t count)
+	{
+		std::vector<ComponentId> result;
+		if(!ApplicationInitialized)
+			return result;
+		while(result.size() < count)
+		{
+			const auto chunk = static_cast<uint16_t>(std::min(count - result.size(), G_UI_CREATE_COMPONENTS_MAXIMUM));
+			CommandCreateComponentsRequest request{{ProtocolCommandId::CreateComponents}, type, chunk};
+			const auto tx = platformCreateMessageTransaction();
+			if(!platformSendMessage(DelegateTaskId, &request, sizeof(request), tx))
+				break;
+			platformYieldTo(DelegateTaskId);
+			uint8_t buffer[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandCreateComponentsResponse) +
+			               G_UI_CREATE_COMPONENTS_MAXIMUM * sizeof(ComponentId)];
+			if(platformReceiveMessage(buffer, sizeof(buffer), tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
+				break;
+			auto response = reinterpret_cast<CommandCreateComponentsResponse*>(SYS_MESSAGE_CONTENT(buffer));
+			if(response->status != ProtocolStatus::Success || response->count != chunk)
+				break;
+			for(size_t i = 0; i < chunk; ++i)
+				result.push_back(response->ids[i]);
+		}
+		return result;
+	}
+
 	Component::~Component()
 	{
 		destroy();

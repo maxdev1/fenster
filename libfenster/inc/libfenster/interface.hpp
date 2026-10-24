@@ -66,6 +66,8 @@ namespace fenster
 		DestroyComponent = 21,
 		SetMinimumSize = 22,
 		SetMaximumSize = 23,
+		CreateComponents = 24,
+		UpdateComponents = 25,
 	};
 
 	/**
@@ -186,6 +188,41 @@ namespace fenster
 		ProtocolStatus status;
 		ComponentId id;
 	} __attribute__((packed)) CommandCreateComponentResponse;
+
+	// Bulk creation returns one ID per component, in request order.
+	constexpr size_t G_UI_CREATE_COMPONENTS_MAXIMUM = 64;
+	// Ghost's transport limit is smaller than the UI receive buffer.
+	constexpr size_t G_UI_MAXIMUM_UPDATE_SIZE = 2048;
+#ifdef _GHOST_
+	static_assert(G_UI_MAXIMUM_UPDATE_SIZE <= G_MESSAGE_MAXIMUM_MESSAGE_LENGTH, "UI batch exceeds IPC limit");
+#endif
+	struct CommandCreateComponentsRequest
+	{
+		MessageHeader header;
+		ComponentType type;
+		uint16_t count;
+	} __attribute__((packed));
+
+	struct CommandCreateComponentsResponse
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		uint16_t count;
+		ComponentId ids[];
+	} __attribute__((packed));
+
+	// Each update is an existing mutation request prefixed by its byte length.
+	// All records are validated before applying any; a batch has one response.
+	struct CommandUpdateComponentsRequest
+	{
+		MessageHeader header;
+		uint8_t updates[];
+	} __attribute__((packed));
+
+	struct ComponentUpdateHeader
+	{
+		uint16_t length;
+	} __attribute__((packed));
 
 	/**
 	 * Request sent to destroy a component
@@ -333,6 +370,7 @@ namespace fenster
 		MessageHeader header;
 		ComponentId id;
 		Rectangle area;
+		uintptr_t bufferAddress;
 	} __attribute__((packed)) CommandCanvasBlitRequest;
 
 	/**

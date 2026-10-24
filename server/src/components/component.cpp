@@ -167,6 +167,11 @@ namespace fensterserver
 		clip.x = screenPosition.x;
 		clip.y = screenPosition.y;
 		clip = clip.clip(parentClip);
+		if(clip.width <= 0 || clip.height <= 0)
+		{
+			fenster::platformReleaseMutex(lock);
+			return;
+		}
 
 		if(hasGraphics())
 		{

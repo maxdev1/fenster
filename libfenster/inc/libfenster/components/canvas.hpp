@@ -37,7 +37,7 @@ namespace fenster
 	{
 	protected:
 		CanvasBufferInfo currentBuffer{};
-		SYS_MUTEX_T currentBufferLock = platformInitializeMutex(false);
+		SYS_MUTEX_T currentBufferLock = platformInitializeMutex(true);
 
 		/**
 		 * Listener only for user purpose, so a client gets an event once the
@@ -69,6 +69,9 @@ namespace fenster
 
 		void acknowledgeNewBuffer(uintptr_t address, uint16_t width, uint16_t height);
 
+		/**
+		 * Publishes completed pixels and waits until the server has copied them.
+		 */
 		void blit(const Rectangle& rect);
 
 		/**

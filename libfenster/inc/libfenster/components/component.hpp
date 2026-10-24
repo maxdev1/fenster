@@ -30,12 +30,14 @@ namespace fenster
 	 */
 	class Component : public BoundingComponent
 	{
+		friend class ComponentUpdateBatch;
 		friend class FlexLayout;
 		friend class StackLayout;
 		friend class GridLayout;
 		friend class FlowLayout;
 
 		bool setLayout(Layout* layout);
+		static std::vector<ComponentId> createComponentIds(ComponentType type, size_t count);
 
 	protected:
 		ComponentId id;
@@ -91,6 +93,15 @@ namespace fenster
 	public:
 		explicit Component(ComponentId id) : id(id), BoundingComponent(this)
 		{
+		}
+
+		template <typename COMPONENT_TYPE, ComponentType COMPONENT_CONSTANT>
+		static std::vector<COMPONENT_TYPE*> createComponents(size_t count)
+		{
+			std::vector<COMPONENT_TYPE*> result;
+			for(auto componentId : createComponentIds(COMPONENT_CONSTANT, count))
+				result.push_back(attachComponent<COMPONENT_TYPE>(componentId));
+			return result;
 		}
 
 		ComponentId getId() const

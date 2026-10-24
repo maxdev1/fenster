@@ -8,7 +8,7 @@
 
 #include <cstring>
 
-#define ALIGN_UP(value) (value + value % 100)
+#define ALIGN_UP(value) (((value) + 99) / 100 * 100)
 
 namespace fensterserver
 {
@@ -86,13 +86,14 @@ namespace fensterserver
 		uint32_t bufferSize = pages * SYS_PAGE_SIZE;
 
 		fenster::platformAcquireMutex(bufferLock);
-		if(pages <= buffer.pages)
+		if(width <= buffer.paintableWidth && height <= buffer.paintableHeight && buffer.surface)
 		{
 			fenster::platformReleaseMutex(bufferLock);
 			return;
 		}
 
 		// Destroy old resources
+		bufferReady = false;
 		if(buffer.surface)
 		{
 			cairo_surface_destroy(buffer.surface);
@@ -165,17 +166,28 @@ namespace fensterserver
 		}
 	}
 
-	void Canvas::blit(Graphics* out, const fenster::Rectangle& clip, const fenster::Point& positionOnParent)
+	void Canvas::blit(Graphics* out, const fenster::Rectangle& parentClip, const fenster::Point& positionOnParent)
 	{
+		if(!visible)
+			return;
+
+		auto clip = getBounds();
+		clip.x = positionOnParent.x;
+		clip.y = positionOnParent.y;
+		clip = clip.clip(parentClip);
+		if(clip.width <= 0 || clip.height <= 0)
+			return;
+
 		auto cr = out->acquireContext();
 		if(cr)
 		{
 			fenster::platformAcquireMutex(bufferLock);
-			if(bufferReady && buffer.surface)
+			if(graphics.getSurface())
 			{
-				cairo_surface_mark_dirty(buffer.surface);
 				cairo_save(cr);
-				cairo_set_source_surface(cr, buffer.surface, positionOnParent.x, positionOnParent.y);
+				cairo_rectangle(cr, clip.x, clip.y, clip.width, clip.height);
+				cairo_clip(cr);
+				cairo_set_source_surface(cr, graphics.getSurface(), positionOnParent.x, positionOnParent.y);
 				cairo_paint(cr);
 				cairo_restore(cr);
 			}
@@ -198,13 +210,40 @@ namespace fensterserver
 	}
 
 
-	void Canvas::requestBlit(fenster::Rectangle& area)
+	bool Canvas::requestBlit(fenster::Rectangle area, uintptr_t bufferAddress)
 	{
 		fenster::platformAcquireMutex(bufferLock);
+		// A resize may have replaced the shared buffer while the client was painting.
+		if(!buffer.surface || bufferAddress != (uintptr_t) buffer.remoteMapping)
+		{
+			fenster::platformReleaseMutex(bufferLock);
+			return false;
+		}
+
+		// Keep the last committed image independent of ongoing client drawing.
+		graphics.resize(buffer.paintableWidth, buffer.paintableHeight, false);
+		auto cr = graphics.acquireContext();
+		if(!cr)
+		{
+			fenster::platformReleaseMutex(bufferLock);
+			return false;
+		}
+		if(!bufferReady)
+			area = fenster::Rectangle(0, 0, buffer.paintableWidth, buffer.paintableHeight);
+		cairo_surface_mark_dirty(buffer.surface);
+		cairo_save(cr);
+		cairo_rectangle(cr, area.x, area.y, area.width, area.height);
+		cairo_clip(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+		cairo_set_source_surface(cr, buffer.surface, 0, 0);
+		cairo_paint(cr);
+		cairo_restore(cr);
+		graphics.releaseContext();
 		bufferReady = true;
 		fenster::platformReleaseMutex(bufferLock);
 
 		markDirty(area);
 		Server::instance()->requestUpdateLater();
+		return true;
 	}
 }

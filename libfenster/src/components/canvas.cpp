@@ -105,12 +105,26 @@ namespace fenster
 
 	void Canvas::blit(const Rectangle& rect)
 	{
+		platformAcquireMutex(currentBufferLock);
+		if(!currentBuffer.surface)
+		{
+			platformReleaseMutex(currentBufferLock);
+			return;
+		}
+		cairo_surface_flush(currentBuffer.surface);
+
 		SYS_TX_T tx = platformCreateMessageTransaction();
 		CommandCanvasBlitRequest request;
 		request.header.id = fenster::ProtocolCommandId::CanvasBlit;
 		request.id = this->id;
 		request.area = rect;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandCanvasBlitRequest), tx);
-		platformYieldTo(DelegateTaskId);
+		request.bufferAddress = (uintptr_t) currentBuffer.buffer;
+		if(platformSendMessage(DelegateTaskId, &request, sizeof(CommandCanvasBlitRequest), tx))
+		{
+			// Keep the shared pixels stable until the server has saved its own image.
+			uint8_t response[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse)];
+			platformReceiveMessage(response, sizeof(response), tx);
+		}
+		platformReleaseMutex(currentBufferLock);
 	}
 }

@@ -25,6 +25,30 @@ namespace fensterserver
 		fenster::platformReleaseMutex(key_info_buffer_lock);
 	}
 
+	void EventProcessor::bufferMouseState(int scroll, uint64_t arrivalMillis)
+	{
+		MouseSample sample;
+		fenster::platformAcquireMutex(Cursor::inputLock);
+		sample.position = Cursor::nextPosition;
+		sample.buttons = Cursor::nextPressedButtons;
+		fenster::platformReleaseMutex(Cursor::inputLock);
+		sample.scroll = scroll;
+		sample.arrivalMillis = arrivalMillis;
+
+		fenster::platformAcquireMutex(mouseBufferLock);
+		sample.buttonChange = sample.buttons != lastBufferedButtons;
+		// Motion may replace motion, but never the position of a button edge or
+		// a scroll sample. Preserve those even while component painting is busy.
+		if(!sample.buttonChange && scroll == 0 && !mouseBuffer.empty() &&
+		   !mouseBuffer.back().buttonChange && mouseBuffer.back().scroll == 0 &&
+		   mouseBuffer.back().buttons == sample.buttons)
+			mouseBuffer.back() = sample;
+		else
+			mouseBuffer.push_back(sample);
+		lastBufferedButtons = sample.buttons;
+		fenster::platformReleaseMutex(mouseBufferLock);
+	}
+
 	void EventProcessor::process()
 	{
 		processMouseState();
@@ -33,13 +57,17 @@ namespace fensterserver
 
 	void EventProcessor::processKeyState()
 	{
+		std::deque<fenster::KeyInfo> pending;
 		fenster::platformAcquireMutex(key_info_buffer_lock);
-		while(key_info_buffer.size() > 0)
-		{
-			translateKeyEvent(key_info_buffer.back());
-			key_info_buffer.pop_back();
-		}
+		pending.swap(key_info_buffer);
 		fenster::platformReleaseMutex(key_info_buffer_lock);
+
+		// Preserve arrival order and let input continue while callbacks run.
+		while(!pending.empty())
+		{
+			translateKeyEvent(pending.front());
+			pending.pop_front();
+		}
 	}
 
 	void EventProcessor::translateKeyEvent(fenster::KeyInfo& info)
@@ -57,16 +85,14 @@ namespace fensterserver
 		}
 	}
 
-	void EventProcessor::handlePress(Server* instance, Screen* screen, MouseEvent& event)
+	void EventProcessor::handlePress(Server* instance, Screen* screen, MouseEvent& event, uint64_t arrivalMillis)
 	{
 		event.type = fenster::MouseEventType::Press;
 
-		// Multiclicks
-		static uint64_t lastClick = 0;
-		static int clickCount = 0;
-		uint64_t currentClick = fenster::platformMillis();
-		uint64_t diff = currentClick - lastClick;
-		if(diff < multiclickTimespan)
+		// Use input time: delayed UI dispatch must not turn a double click into
+		// two single clicks or unrelated presses into a double click.
+		uint64_t diff = arrivalMillis - lastClick;
+		if(clickCount > 0 && diff < multiclickTimespan)
 		{
 			++clickCount;
 		}
@@ -74,7 +100,7 @@ namespace fensterserver
 		{
 			clickCount = 1;
 		}
-		lastClick = currentClick;
+		lastClick = arrivalMillis;
 		event.clickCount = clickCount;
 
 		// Send event
@@ -188,47 +214,41 @@ namespace fensterserver
 
 	void EventProcessor::processMouseState()
 	{
-		fenster::Point previousPosition = Cursor::position;
-
-		fenster::MouseButton previousPressedButtons = Cursor::pressedButtons;
+		std::deque<MouseSample> pending;
+		fenster::platformAcquireMutex(mouseBufferLock);
+		pending.swap(mouseBuffer);
+		fenster::platformReleaseMutex(mouseBufferLock);
 
 		Server* instance = Server::instance();
 		Screen* screen = instance->screen;
-
-		if(Cursor::position != Cursor::nextPosition)
+		for(const auto& sample : pending)
 		{
-			screen->markDirty(Cursor::getArea());
-			Cursor::position = Cursor::nextPosition;
-			screen->markDirty(Cursor::getArea());
-		}
+			const auto previousPosition = Cursor::position;
+			auto previousPressedButtons = Cursor::pressedButtons;
+			Cursor::position = sample.position;
+			Cursor::pressedButtons = sample.buttons;
 
-		// set pressed buttons
-		Cursor::pressedButtons = Cursor::nextPressedButtons;
+			MouseEvent baseEvent;
+			baseEvent.screenPosition = sample.position;
+			baseEvent.position = sample.position;
+			baseEvent.buttons = sample.buttons;
+			baseEvent.scroll = sample.scroll;
 
-		MouseEvent baseEvent;
-		baseEvent.screenPosition = Cursor::position;
-		baseEvent.position = baseEvent.screenPosition;
-		baseEvent.buttons = Cursor::pressedButtons;
-		baseEvent.scroll = Cursor::nextScroll;
-		Cursor::nextScroll = 0;
+			const bool pressed =
+				(!(previousPressedButtons & fenster::MouseButton::Button1) && (Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
+				(!(previousPressedButtons & fenster::MouseButton::Button2) && (Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
+				(!(previousPressedButtons & fenster::MouseButton::Button3) && (Cursor::pressedButtons & fenster::MouseButton::Button3));
+			const bool released =
+				((previousPressedButtons & fenster::MouseButton::Button1) && !(Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
+				((previousPressedButtons & fenster::MouseButton::Button2) && !(Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
+				((previousPressedButtons & fenster::MouseButton::Button3) && !(Cursor::pressedButtons & fenster::MouseButton::Button3));
 
-		if((!(previousPressedButtons & fenster::MouseButton::Button1) && (Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
-		   (!(previousPressedButtons & fenster::MouseButton::Button2) && (Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
-		   (!(previousPressedButtons & fenster::MouseButton::Button3) && (Cursor::pressedButtons & fenster::MouseButton::Button3)))
-		{
-			handlePress(instance, screen, baseEvent);
+			if(released)
+				handleRelease(instance, baseEvent);
+			if(pressed)
+				handlePress(instance, screen, baseEvent, sample.arrivalMillis);
+			if((!pressed && !released && sample.position != previousPosition) || sample.scroll != 0)
+				handleMoveOrDrag(instance, screen, baseEvent);
 		}
-		else if(
-			((previousPressedButtons & fenster::MouseButton::Button1) && !(Cursor::pressedButtons & fenster::MouseButton::Button1)) ||
-			((previousPressedButtons & fenster::MouseButton::Button2) && !(Cursor::pressedButtons & fenster::MouseButton::Button2)) ||
-			((previousPressedButtons & fenster::MouseButton::Button3) && !(Cursor::pressedButtons & fenster::MouseButton::Button3)))
-		{
-			handleRelease(instance, baseEvent);
-		}
-		else if(Cursor::position != previousPosition || baseEvent.scroll != 0)
-		{
-			handleMoveOrDrag(instance, screen, baseEvent);
-		}
-
 	}
 }

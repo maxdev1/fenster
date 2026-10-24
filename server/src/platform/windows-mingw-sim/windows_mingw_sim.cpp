@@ -50,6 +50,7 @@ bool alt = false;
 
 LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 {
+	const auto arrivalMillis = fenster::platformMillis();
 	switch(m)
 	{
 		case WM_CREATE:
@@ -146,6 +147,7 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 				{
 				}
 
+			fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 			fensterserver::Cursor::nextPosition.x = mouseX;
 			fensterserver::Cursor::nextPosition.y = mouseY;
 
@@ -165,33 +167,47 @@ LRESULT CALLBACK WndProc(HWND h, UINT m, WPARAM w, LPARAM l)
 			{
 				fensterserver::Cursor::nextPosition.y = HEIGHT - 2;
 			}
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 
 			return 0;
 		}
 		case WM_LBUTTONDOWN:
+			fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button1;
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 			return 0;
 		case WM_LBUTTONUP:
+			fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 			fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button1;
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 			return 0;
 		case WM_RBUTTONDOWN:
+			fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button2;
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 			return 0;
 		case WM_RBUTTONUP:
+			fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 			fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button2;
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 			return 0;
 		case WM_MOUSEWHEEL:
 		{
 			int delta = GET_WHEEL_DELTA_WPARAM(w);
 			int steps = delta / WHEEL_DELTA;
 
-			fensterserver::Cursor::nextScroll += -steps;
-			fensterserver::Server::instance()->requestUpdateImmediately();
+			fensterserver::Server::instance()->eventProcessor->bufferMouseState(-steps, arrivalMillis);
+			fensterserver::Server::instance()->requestPointerUpdate();
 			return 0;
 		}
 	}

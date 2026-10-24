@@ -15,10 +15,11 @@ namespace fensterserver
     class Image : virtual public Component
     {
         cairo_surface_t* image = nullptr;
+		std::string imagePath;
 
     public:
         Image();
-        ~Image() override = default;
+        ~Image() override;
 
         void paint() override;
 

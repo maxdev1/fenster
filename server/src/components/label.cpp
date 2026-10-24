@@ -40,6 +40,7 @@ namespace fensterserver
 		}
 
 		graphics.releaseContext();
+		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}
 
 	void Label::paint()

@@ -8,6 +8,7 @@
 #include <deque>
 #include "platform/platform.hpp"
 #include "libfenster/input/key_info.hpp"
+#include <libfenster/interface.hpp>
 
 #define DEFAULT_MULTICLICK_TIMESPAN 250
 
@@ -22,7 +23,22 @@ namespace fensterserver
      */
     class EventProcessor
     {
-        void handlePress(Server* instance, Screen* screen, MouseEvent& event);
+        struct MouseSample
+        {
+            fenster::Point position;
+            fenster::MouseButton buttons;
+            int scroll;
+            uint64_t arrivalMillis;
+            bool buttonChange;
+        };
+
+        std::deque<MouseSample> mouseBuffer;
+        SYS_MUTEX_T mouseBufferLock = fenster::platformInitializeMutex(false);
+        fenster::MouseButton lastBufferedButtons = fenster::MouseButton::None;
+        uint64_t lastClick = 0;
+        int clickCount = 0;
+
+        void handlePress(Server* instance, Screen* screen, MouseEvent& event, uint64_t arrivalMillis);
         void handleRelease(Server* instance, MouseEvent& event);
         void handleMoveOrDrag(Server* instance, Screen* screen, MouseEvent& event);
 
@@ -34,6 +50,7 @@ namespace fensterserver
         std::deque<fenster::KeyInfo> key_info_buffer;
         SYS_MUTEX_T key_info_buffer_lock = fenster::platformInitializeMutex(false);
         void bufferKeyEvent(fenster::KeyInfo keyInfo);
+        void bufferMouseState(int scroll, uint64_t arrivalMillis);
 
         void process();
 

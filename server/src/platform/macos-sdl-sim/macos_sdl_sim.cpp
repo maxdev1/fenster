@@ -113,6 +113,7 @@ int main(int argc, char** argv)
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
+            const auto arrivalMillis = fenster::platformMillis();
             switch (e.type)
             {
                 case SDL_QUIT:
@@ -196,6 +197,7 @@ int main(int argc, char** argv)
                         SDL_ShowCursor(SDL_DISABLE);
                     }
 
+                    fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
                     fensterserver::Cursor::nextPosition.x = mouseX;
                     fensterserver::Cursor::nextPosition.y = mouseY;
 
@@ -204,27 +206,35 @@ int main(int argc, char** argv)
                     if (fensterserver::Cursor::nextPosition.y < 0) fensterserver::Cursor::nextPosition.y = 0;
                     if (fensterserver::Cursor::nextPosition.y > HEIGHT - 2) fensterserver::Cursor::nextPosition.y = HEIGHT - 2;
 
-                    fensterserver::Server::instance()->requestUpdateImmediately();
+                    fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+                    fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+                    fensterserver::Server::instance()->requestPointerUpdate();
                     break;
                 }
 
                 case SDL_MOUSEBUTTONDOWN:
                 {
+                    fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
                     if (e.button.button == SDL_BUTTON_LEFT)
                         fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button1;
                     if (e.button.button == SDL_BUTTON_RIGHT)
                         fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button2;
-                    fensterserver::Server::instance()->requestUpdateImmediately();
+                    fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+                    fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+                    fensterserver::Server::instance()->requestPointerUpdate();
                     break;
                 }
 
                 case SDL_MOUSEBUTTONUP:
                 {
+                    fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
                     if (e.button.button == SDL_BUTTON_LEFT)
                         fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button1;
                     if (e.button.button == SDL_BUTTON_RIGHT)
                         fensterserver::Cursor::nextPressedButtons &= ~fenster::MouseButton::Button2;
-                    fensterserver::Server::instance()->requestUpdateImmediately();
+                    fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
+                    fensterserver::Server::instance()->eventProcessor->bufferMouseState(0, arrivalMillis);
+                    fensterserver::Server::instance()->requestPointerUpdate();
                     break;
                 }
 
@@ -234,8 +244,8 @@ int main(int argc, char** argv)
                     // original code did: steps = delta / WHEEL_DELTA; nextScroll += -steps;
                     // We'll do similar: mouse wheel y = steps
                     int steps = e.wheel.y;
-                    fensterserver::Cursor::nextScroll += -steps;
-                    fensterserver::Server::instance()->requestUpdateImmediately();
+                    fensterserver::Server::instance()->eventProcessor->bufferMouseState(-steps, arrivalMillis);
+                    fensterserver::Server::instance()->requestPointerUpdate();
                     break;
                 }
             } // switch event.type

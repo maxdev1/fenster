@@ -69,11 +69,17 @@ namespace fensterserver
 
 		initializeVideo();
 
-		fenster::platformCreateThread((void*) &startInputHandlers);
-
 		fenster::Dimension resolution = videoOutput->getResolution();
 		fenster::Rectangle screenBounds(0, 0, resolution.width, resolution.height);
 		createVitalComponents(screenBounds);
+		fenster::platformAcquireMutex(Cursor::inputLock);
+		Cursor::nextPosition = fenster::Point(screenBounds.width / 2, screenBounds.height / 2);
+		fenster::platformReleaseMutex(Cursor::inputLock);
+		cursorOverlay = new CursorOverlay(videoOutput, screenBounds);
+#ifdef _GHOST_
+		pointerTask = fenster::platformCreateThread((void*) &startPointerUpdateLoop);
+#endif
+		fenster::platformCreateThread((void*) &startInputHandlers);
 
 		Test::createTestComponents();
 
@@ -126,9 +132,6 @@ namespace fensterserver
 		Graphics global;
 		global.resize(screenBounds.width, screenBounds.height, false);
 
-		Cursor::nextPosition = fenster::Point(screenBounds.width / 2, screenBounds.height / 2);
-
-		uint64_t lastUpdate = 0;
 		fenster::platformAcquireMutex(updateLock);
 		while(true)
 		{
@@ -138,24 +141,79 @@ namespace fensterserver
 			screen->resolveRequirement(COMPONENT_REQUIREMENT_LAYOUT, 0);
 			screen->resolveRequirement(COMPONENT_REQUIREMENT_PAINT, 0);
 
-			screen->blit(&global, screenBounds, fenster::Point(0, 0));
-			Cursor::paint(&global);
+			// Invalidations arriving during composition belong to the next frame.
+			const auto invalid = screen->grabInvalid().clip(screenBounds);
+			auto damage = invalid;
+			if(invalid.width > 0 && invalid.height > 0 && lastInvalid.width > 0 && lastInvalid.height > 0)
+			{
+				// Restore the previous debug border along with the changed content.
+				damage.extend(lastInvalid.getStart());
+				damage.extend(fenster::Point(lastInvalid.getRight() - 1, lastInvalid.getBottom() - 1));
+			}
+			compose(&global, damage);
 
-			output(&global);
+			output(&global, invalid, damage);
 
 			framesTotal++;
 			fenster::platformAcquireMutexTimeout(updateLock, 1000);
-
-			auto now = fenster::platformMillis();
-			if(now - lastUpdate < 10)
-				fenster::platformSleep(5);
-			lastUpdate = now;
 		}
+	}
+
+	void Server::compose(Graphics* graphics, const fenster::Rectangle& damage)
+	{
+		if(damage.width <= 0 || damage.height <= 0)
+			return;
+
+		auto cr = graphics->acquireContext();
+		if(!cr)
+			return;
+
+		// Rebuild damaged pixels from a clean background, including alpha surfaces.
+		cairo_save(cr);
+		cairo_rectangle(cr, damage.x, damage.y, damage.width, damage.height);
+		cairo_clip(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+		cairo_set_source_rgb(cr, 0, 0, 0);
+		cairo_paint(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+
+		screen->blit(graphics, damage, fenster::Point(0, 0));
+		cairo_restore(cr);
+		graphics->releaseContext();
 	}
 
 	void Server::requestUpdateImmediately() const
 	{
 		fenster::platformReleaseMutex(updateLock);
+	}
+
+	void Server::requestPointerUpdate() const
+	{
+		fenster::platformReleaseMutex(updateLock);
+#ifdef _GHOST_
+		fenster::platformReleaseMutex(pointerUpdateLock);
+		if(pointerTask != SYS_TID_NONE)
+			fenster::platformYieldTo(pointerTask);
+#else
+		if(cursorOverlay)
+			cursorOverlay->present();
+#endif
+	}
+
+	void Server::startPointerUpdateLoop()
+	{
+		Server::instance()->pointerUpdateLoop();
+	}
+
+	void Server::pointerUpdateLoop()
+	{
+		fenster::platformRegisterTaskIdentifier("windowserver/pointer");
+		fenster::platformAcquireMutex(pointerUpdateLock);
+		while(true)
+		{
+			cursorOverlay->present();
+			fenster::platformAcquireMutex(pointerUpdateLock);
+		}
 	}
 
 	void Server::requestUpdateLater() const
@@ -174,10 +232,9 @@ namespace fensterserver
 		}
 	}
 
-	void Server::output(Graphics* graphics)
+	void Server::output(Graphics* graphics, const fenster::Rectangle& invalid, const fenster::Rectangle& damage)
 	{
-		fenster::Rectangle invalid = screen->grabInvalid();
-		if(invalid.width == 0 && invalid.height == 0)
+		if(damage.width <= 0 || damage.height <= 0)
 			return;
 
 		// Draw the green debug border around invalid area
@@ -191,6 +248,8 @@ namespace fensterserver
 					debugBorderCycle = 0;
 
 				cairo_save(cr);
+				cairo_rectangle(cr, invalid.x, invalid.y, invalid.width, invalid.height);
+				cairo_clip(cr);
 				cairo_set_line_width(cr, 2);
 				cairo_rectangle(cr, invalid.x, invalid.y, invalid.width, invalid.height);
 				cairo_set_source_rgba(cr,
@@ -204,19 +263,9 @@ namespace fensterserver
 			}
 		}
 
-		fenster::Dimension resolution = videoOutput->getResolution();
-		fenster::Rectangle screenBounds(0, 0, resolution.width, resolution.height);
+		cursorOverlay->commit(graphics, damage);
 
-		auto screenSurface = graphics->getSurface();
-		cairo_surface_flush(screenSurface);
-		auto buffer = (fenster::ColorArgb*) cairo_image_surface_get_data(screenSurface);
-
-		fenster::Rectangle totalInvalid = invalid;
-		totalInvalid.extend(lastInvalid.getStart());
-		totalInvalid.extend(lastInvalid.getEnd());
-		videoOutput->blit(totalInvalid.clip(screenBounds), screenBounds, buffer);
-
-		lastInvalid = invalid;
+		lastInvalid = debugOn ? invalid : fenster::Rectangle();
 	}
 
 	Component* Server::dispatchUpwards(Component* component, Event& event)

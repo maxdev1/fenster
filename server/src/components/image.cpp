@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/image.hpp"
+#include "video/image_cache.hpp"
 #include <libfenster/font/font_loader.hpp>
 #include <libfenster/properties.hpp>
 
@@ -11,21 +12,35 @@
 
 namespace fensterserver
 {
+	static ImageCache imageCache;
+
 	Image::Image()
 	{
+	}
+
+	Image::~Image()
+	{
+		if(image)
+			cairo_surface_destroy(image);
 	}
 
 	void Image::loadImage(std::string path)
 	{
 		fenster::platformAcquireMutex(this->lock);
+		if(image && path == imagePath)
+		{
+			fenster::platformReleaseMutex(this->lock);
+			return;
+		}
 		if(image)
 		{
 			cairo_surface_destroy(image);
 			image = nullptr;
 		}
 
-		image = cairo_image_surface_create_from_png(path.c_str());
-		if(cairo_surface_status(image) != CAIRO_STATUS_SUCCESS)
+		image = imageCache.acquire(path);
+		imagePath = path;
+		if(!image)
 		{
 			fenster::platformLog("failed to load image: %s", path.c_str());
 			image = nullptr;
@@ -54,12 +69,18 @@ namespace fensterserver
 		fenster::platformAcquireMutex(this->lock);
 
 		cairo_save(cr);
-		int imageWidth = cairo_image_surface_get_width(image);
-		int imageX = bounds.width / 2 - imageWidth / 2;
-		int imageY = 10;
-		cairo_set_source_surface(cr, image, imageX, imageY);
-		cairo_rectangle(cr, imageX, imageY, bounds.width, bounds.height);
-		cairo_fill(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+		cairo_paint(cr);
+		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+		if(image)
+		{
+			int imageWidth = cairo_image_surface_get_width(image);
+			int imageX = bounds.width / 2 - imageWidth / 2;
+			int imageY = 10;
+			cairo_set_source_surface(cr, image, imageX, imageY);
+			cairo_rectangle(cr, imageX, imageY, bounds.width, bounds.height);
+			cairo_fill(cr);
+		}
 		cairo_restore(cr);
 
 		fenster::platformReleaseMutex(this->lock);

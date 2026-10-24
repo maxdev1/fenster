@@ -15,18 +15,42 @@
 #include <libinput/mouse/mouse.hpp>
 #include <libps2driver/ps2driver.hpp>
 
-static g_fd keyboardIn;
-static g_fd mouseIn;
+static g_fd keyboardIn = G_FD_NONE;
+static g_fd mouseIn = G_FD_NONE;
+static SYS_MUTEX_T inputInitializationLock = fenster::platformInitializeMutex(false);
+static bool inputInitialized = false;
+
+static bool inputReceiverAwaitInitialization()
+{
+	fenster::platformAcquireMutex(inputInitializationLock);
+	const bool initialized = inputInitialized;
+	fenster::platformReleaseMutex(inputInitializationLock);
+	return initialized;
+}
 
 void inputReceiverInitialize()
 {
-	g_tid keyEventThread = g_create_task((void*) inputReceiverStartReceiveKeyEvents);
-	g_tid mouseEventThread = g_create_task((void*) inputReceiverStartReceiveMouseEvents);
-	ps2DriverInitialize(&keyboardIn, &mouseIn, keyEventThread, mouseEventThread);
+	// Receivers may run immediately on another processor. Publish their file
+	// descriptors before either enters a blocking read.
+	fenster::platformAcquireMutex(inputInitializationLock);
+	g_create_task_status keyStatus;
+	g_create_task_status mouseStatus;
+	g_tid keyEventThread = g_create_task_ds((void*) inputReceiverStartReceiveKeyEvents, nullptr, &keyStatus);
+	g_tid mouseEventThread = g_create_task_ds((void*) inputReceiverStartReceiveMouseEvents, nullptr, &mouseStatus);
+	inputInitialized = keyStatus == G_CREATE_TASK_STATUS_SUCCESSFUL &&
+	                   mouseStatus == G_CREATE_TASK_STATUS_SUCCESSFUL &&
+	                   ps2DriverInitialize(&keyboardIn, &mouseIn, keyEventThread, mouseEventThread);
+	fenster::platformReleaseMutex(inputInitializationLock);
+
+	if(!inputInitialized)
+		fenster::platformLog("failed to initialize PS/2 input; input receiver tasks stopped");
 }
 
 void inputReceiverStartReceiveKeyEvents()
 {
+	if(!inputReceiverAwaitInitialization())
+		return;
+
 	fenster::platformRegisterTaskIdentifier("windowserver/key-receiver");
 
 	fensterserver::EventProcessor* event_queue = fensterserver::Server::instance()->eventProcessor;
@@ -57,6 +81,9 @@ void inputReceiverStartReceiveKeyEvents()
 
 void inputReceiverStartReceiveMouseEvents()
 {
+	if(!inputReceiverAwaitInitialization())
+		return;
+
 	fenster::platformRegisterTaskIdentifier("windowserver/mouse-receiver");
 
 	fensterserver::Server* instance = fensterserver::Server::instance();
@@ -65,7 +92,9 @@ void inputReceiverStartReceiveMouseEvents()
 	while(true)
 	{
 		g_mouse_info info = g_mouse::readMouse(mouseIn);
+		const auto arrivalMillis = fenster::platformMillis();
 
+		fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 		fensterserver::Cursor::nextPosition.x += info.x;
 		fensterserver::Cursor::nextPosition.y += info.y;
 
@@ -100,9 +129,10 @@ void inputReceiverStartReceiveMouseEvents()
 			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button3;
 		}
 
-		fensterserver::Cursor::nextScroll += info.scroll;
+		fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
 
-		fensterserver::Server::instance()->requestUpdateImmediately();
+		instance->eventProcessor->bufferMouseState(info.scroll, arrivalMillis);
+		instance->requestPointerUpdate();
 	}
 }
 

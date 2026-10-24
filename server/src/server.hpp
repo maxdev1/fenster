@@ -10,6 +10,7 @@
 #include "components/label.hpp"
 #include "events/event_processor.hpp"
 #include "video/video_output.hpp"
+#include "video/cursor_overlay.hpp"
 
 namespace fensterserver
 {
@@ -22,25 +23,31 @@ namespace fensterserver
     {
         SYS_TID_T updateTask = SYS_TID_NONE;
         SYS_TID_T renderTask = SYS_TID_NONE;
+        SYS_TID_T pointerTask = SYS_TID_NONE;
 
         SYS_MUTEX_T updateLock = fenster::platformInitializeMutex(false);
         SYS_MUTEX_T lazyUpdateLock = fenster::platformInitializeMutex(false);
+        SYS_MUTEX_T pointerUpdateLock = fenster::platformInitializeMutex(false);
         fenster::Rectangle lastInvalid;
+        CursorOverlay* cursorOverlay = nullptr;
 
         void initializeVideo();
         void createVitalComponents(fenster::Rectangle screenBounds);
         VideoOutput* findVideoOutput();
         static void startInputHandlers();
+        static void startPointerUpdateLoop();
+        void pointerUpdateLoop();
 
         void updateLoop(const fenster::Rectangle& screenBounds);
         void updateDebounceLoop() const;
+        void compose(Graphics* graphics, const fenster::Rectangle& damage);
 
         static void fpsCounter();
 
     public:
         VideoOutput* videoOutput;
         EventProcessor* eventProcessor;
-        Screen* screen;
+        Screen* screen = nullptr;
         Label* stateLabel;
 
         Server();
@@ -57,6 +64,7 @@ namespace fensterserver
          * all components. This triggers the update to run immediately.
          */
         void requestUpdateImmediately() const;
+        void requestPointerUpdate() const;
 
         /**
          * Also requests an update, but debounces requests that come in very quickly.
@@ -71,7 +79,7 @@ namespace fensterserver
         /**
          * Blits the component state.
          */
-        void output(Graphics* graphics);
+        void output(Graphics* graphics, const fenster::Rectangle& invalid, const fenster::Rectangle& damage);
 
         /**
          * Dispatches the given event to the component.

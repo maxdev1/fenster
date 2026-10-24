@@ -17,11 +17,69 @@
 #include "components/checkbox.hpp"
 #include "components/text/text_box.hpp"
 #include "interface/interface_receiver.hpp"
+#include "interface/component_updates.hpp"
+#include <vector>
 
 using namespace fenster;
 
 namespace fensterserver
 {
+	static Component* createComponent(ComponentType type, SYS_TID_T sender)
+	{
+		Component* component = nullptr;
+		switch(type)
+		{
+			case ComponentType::Window:
+				component = new Window();
+				Server::instance()->screen->addChild(component);
+				break;
+
+			case ComponentType::Label:
+				component = new Label();
+				break;
+
+			case ComponentType::Button:
+				component = new Button();
+				break;
+
+			case ComponentType::TextBox:
+				component = new TextBox();
+				break;
+
+			case ComponentType::Canvas:
+				component = new Canvas(sender);
+				break;
+
+			case ComponentType::Selection:
+				component = new Selection();
+				break;
+
+			case ComponentType::Panel:
+				component = new Panel();
+				break;
+
+			case ComponentType::ScrollPane:
+				component = new ScrollPane();
+				break;
+
+			case ComponentType::Image:
+				component = new Image();
+				break;
+
+			case ComponentType::Checkbox:
+				component = new Checkbox();
+				break;
+
+			default:
+				platformLog("don't know how to create a component of type %i", type);
+				break;
+		}
+
+		if(component)
+			ComponentRegistry::bind(platformGetPidForTid(sender), component);
+		return component;
+	}
+
 	void interfaceReceiverThread()
 	{
 		while(true)
@@ -45,74 +103,64 @@ namespace fensterserver
 			}
 
 			if(!deferred)
-				delete buf;
+				delete[] buf;
 		}
 	}
 
-	void interfaceReceiverProcessCommand(void* requestMessage)
+	bool interfaceReceiverProcessCommand(void* requestMessage, bool batched)
 	{
 		auto requestUiMessage = (MessageHeader*) SYS_MESSAGE_CONTENT(requestMessage);
 		void* responseMessage = nullptr;
 		int responseLength = 0;
+		CommandSimpleResponse canvasBlitResponse{};
 
-		if(requestUiMessage->id == ProtocolCommandId::CreateComponent)
+		if(requestUiMessage->id == ProtocolCommandId::UpdateComponents)
+		{
+			auto response = new CommandSimpleResponse{{ProtocolCommandId::UpdateComponents}, ProtocolStatus::Error};
+			const auto length = SYS_MESSAGE_LENGTH(requestMessage);
+			if(length >= sizeof(CommandUpdateComponentsRequest))
+			{
+				auto request = reinterpret_cast<CommandUpdateComponentsRequest*>(requestUiMessage);
+				const bool success = applyComponentUpdates(request->updates, length - sizeof(*request),
+					[&](const uint8_t* bytes, size_t size) {
+						std::vector<uint8_t> nested(SYS_MESSAGE_HEADER_SIZE + size);
+						memcpy(nested.data(), requestMessage, SYS_MESSAGE_HEADER_SIZE);
+						memcpy(SYS_MESSAGE_CONTENT(nested.data()), bytes, size);
+						return interfaceReceiverProcessCommand(nested.data(), true);
+					});
+				if(success)
+					response->status = ProtocolStatus::Success;
+			}
+			responseMessage = response;
+			responseLength = sizeof(*response);
+		}
+		else if(requestUiMessage->id == ProtocolCommandId::CreateComponents)
+		{
+			auto request = reinterpret_cast<CommandCreateComponentsRequest*>(requestUiMessage);
+			uint16_t count = 0;
+			if(SYS_MESSAGE_LENGTH(requestMessage) == sizeof(*request) &&
+			   request->count > 0 && request->count <= G_UI_CREATE_COMPONENTS_MAXIMUM &&
+			   (request->type == ComponentType::Panel || request->type == ComponentType::Image ||
+				request->type == ComponentType::Label))
+				count = request->count;
+			responseLength = sizeof(CommandCreateComponentsResponse) + count * sizeof(ComponentId);
+			auto response = static_cast<CommandCreateComponentsResponse*>(operator new(responseLength));
+			response->header.id = ProtocolCommandId::CreateComponents;
+			response->status = count ? ProtocolStatus::Success : ProtocolStatus::Error;
+			response->count = count;
+			for(size_t i = 0; i < count; ++i)
+				response->ids[i] = createComponent(request->type, SYS_MESSAGE_SENDER(requestMessage))->id;
+			responseMessage = response;
+		}
+		else if(requestUiMessage->id == ProtocolCommandId::CreateComponent)
 		{
 			auto createRequest = (CommandCreateComponentRequest*) requestUiMessage;
 
-			Component* component = nullptr;
-			switch(createRequest->type)
-			{
-				case ComponentType::Window:
-					component = new Window();
-					Server::instance()->screen->addChild(component);
-					break;
-
-				case ComponentType::Label:
-					component = new Label();
-					break;
-
-				case ComponentType::Button:
-					component = new Button();
-					break;
-
-				case ComponentType::TextBox:
-					component = new TextBox();
-					break;
-
-				case ComponentType::Canvas:
-					component = new Canvas(SYS_MESSAGE_SENDER(requestMessage));
-					break;
-
-				case ComponentType::Selection:
-					component = new Selection();
-					break;
-
-				case ComponentType::Panel:
-					component = new Panel();
-					break;
-
-				case ComponentType::ScrollPane:
-					component = new ScrollPane();
-					break;
-
-				case ComponentType::Image:
-					component = new Image();
-					break;
-
-				case ComponentType::Checkbox:
-					component = new Checkbox();
-					break;
-
-				default:
-					platformLog("don't know how to create a component of type %i", createRequest->type);
-					break;
-			}
-
+			Component* component = createComponent(createRequest->type, SYS_MESSAGE_SENDER(requestMessage));
 			ComponentId component_id = -1;
 			if(component)
 			{
 				component_id = component->id;
-				ComponentRegistry::bind(platformGetPidForTid(SYS_MESSAGE_SENDER(requestMessage)), component);
 			}
 
 			// create response message
@@ -301,8 +349,8 @@ namespace fensterserver
 			}
 			else
 			{
-				component->setStringProperty(request->property, std::string(request->value));
-				response->status = ProtocolStatus::Success;
+				response->status = component->setStringProperty(request->property, std::string(request->value))
+					? ProtocolStatus::Success : ProtocolStatus::Error;
 			}
 
 			responseMessage = response;
@@ -346,15 +394,21 @@ namespace fensterserver
 		{
 			auto request = (CommandCanvasBlitRequest*) requestUiMessage;
 			Component* component = ComponentRegistry::get(request->id);
+			auto response = &canvasBlitResponse;
+			response->header.id = ProtocolCommandId::CanvasBlit;
+			response->status = ProtocolStatus::Error;
 
 			if(component)
 			{
 				auto canvas = dynamic_cast<Canvas*>(component);
 				if(canvas)
 				{
-					canvas->requestBlit(request->area);
+					if(canvas->requestBlit(request->area, request->bufferAddress))
+						response->status = ProtocolStatus::Success;
 				}
 			}
+			responseMessage = response;
+			responseLength = sizeof(CommandSimpleResponse);
 		}
 		else if(requestUiMessage->id == ProtocolCommandId::RegisterDesktopCanvas)
 		{
@@ -476,14 +530,23 @@ namespace fensterserver
 			responseLength = sizeof(CommandSimpleResponse);
 		}
 
-		Server::instance()->requestUpdateLater();
-
-		if(responseMessage)
+		bool successful = true;
+		if(batched)
 		{
-			platformSendMessage(
-					SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength,
-					SYS_MESSAGE_TRANSACTION(requestMessage));
-			platformYieldTo(SYS_MESSAGE_SENDER(requestMessage));
+			successful = responseMessage && static_cast<CommandSimpleResponse*>(responseMessage)->status == ProtocolStatus::Success;
 		}
+		else
+		{
+			Server::instance()->requestUpdateLater();
+			if(responseMessage)
+			{
+				platformSendMessage(SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength,
+									SYS_MESSAGE_TRANSACTION(requestMessage));
+				platformYieldTo(SYS_MESSAGE_SENDER(requestMessage));
+			}
+		}
+		if(responseMessage && responseMessage != &canvasBlitResponse)
+			operator delete(responseMessage);
+		return successful;
 	}
 }

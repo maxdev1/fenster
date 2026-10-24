@@ -64,7 +64,7 @@ namespace fensterserver
         void blit(Graphics* out, const fenster::Rectangle& absClip, const fenster::Point& positionOnParent) override;
 
         static void asyncBufferResizer(async_resizer_info_t* info);
-        void requestBlit(fenster::Rectangle& area);
+        bool requestBlit(fenster::Rectangle area, uintptr_t bufferAddress);
     };
 }
 

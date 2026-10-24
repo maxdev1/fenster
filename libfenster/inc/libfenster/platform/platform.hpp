@@ -27,6 +27,7 @@
 #define SYS_TX_T g_message_transaction
 #define SYS_TX_NONE G_MESSAGE_TRANSACTION_NONE
 
+#define SYS_MESSAGE_LENGTH(message) ((g_message_header*) message)->length
 #define SYS_MESSAGE_HEADER_SIZE sizeof(g_message_header)
 #define SYS_MESSAGE_RECEIVE_SUCCESS G_MESSAGE_RECEIVE_STATUS_SUCCESSFUL
 #define SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER G_MESSAGE_RECEIVE_STATUS_EXCEEDS_BUFFER_SIZE
@@ -63,6 +64,7 @@ typedef struct
 #define SYS_TX_T int // TODO
 #define SYS_TX_NONE -1 // TODO
 
+#define SYS_MESSAGE_LENGTH(message) 0 // TODO
 #define SYS_MESSAGE_HEADER_SIZE 0 // TODO
 #define SYS_MESSAGE_RECEIVE_SUCCESS 1 // TODO
 #define SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER 2 // TODO
@@ -98,6 +100,7 @@ typedef struct mac_mutex_s {
 #define SYS_TX_T int // TODO
 #define SYS_TX_NONE -1 // TODO
 
+#define SYS_MESSAGE_LENGTH(message) 0 // TODO
 #define SYS_MESSAGE_HEADER_SIZE 0 // TODO
 #define SYS_MESSAGE_RECEIVE_SUCCESS 1 // TODO
 #define SYS_MESSAGE_RECEIVE_ERROR_EXCEEDS_BUFFER 2 // TODO
