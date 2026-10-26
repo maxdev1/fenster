@@ -37,6 +37,7 @@ namespace fensterserver
         ButtonState incButtonState;
 
         bool knobDrag;
+        bool hovered = false;
         int dragPressPosition;
         int dragViewPosition;
 

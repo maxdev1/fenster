@@ -13,6 +13,7 @@ namespace fensterserver
 	{
 		for(auto& entry : entries)
 			cairo_surface_destroy(entry.surface);
+		fenster::platformDestroyMutex(lock);
 	}
 
 	cairo_surface_t* ImageCache::acquire(const std::string& path)

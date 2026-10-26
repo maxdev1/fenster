@@ -33,35 +33,77 @@ namespace fenster
 
 	SYS_MUTEX_T platformInitializeMutex(bool reentrant)
     {
-        mac_mutex_t* mutex = (mac_mutex_t*)malloc(sizeof(mac_mutex_t));
-
+        auto mutex = new mac_mutex_t;
+        mutex->reentrant = reentrant;
+        mutex->available = true;
         pthread_mutexattr_t attr;
         pthread_mutexattr_init(&attr);
-
-        if (reentrant)
+        if(reentrant)
             pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-        else
-            pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
-
         pthread_mutex_init(&mutex->m, &attr);
-
         pthread_mutexattr_destroy(&attr);
+        pthread_cond_init(&mutex->ready, nullptr);
         return mutex;
     }
 
-    void platformAcquireMutex(SYS_MUTEX_T m)
+    void platformAcquireMutex(SYS_MUTEX_T mutex)
     {
-        pthread_mutex_lock(&m->m);
+        pthread_mutex_lock(&mutex->m);
+        if(!mutex->reentrant)
+        {
+            while(!mutex->available)
+                pthread_cond_wait(&mutex->ready, &mutex->m);
+            mutex->available = false;
+            pthread_mutex_unlock(&mutex->m);
+        }
     }
 
-    void platformAcquireMutexTimeout(SYS_MUTEX_T m, uint32_t timeoutMs)
+    void platformAcquireMutexTimeout(SYS_MUTEX_T mutex, uint32_t timeoutMs)
     {
-		// TODO
+        if(!timeoutMs)
+            return platformAcquireMutex(mutex);
+        if(mutex->reentrant)
+        {
+            const auto deadline = platformMillis() + timeoutMs;
+            while(pthread_mutex_trylock(&mutex->m) != 0)
+            {
+                if(platformMillis() >= deadline)
+                    return;
+                platformSleep(1);
+            }
+            return;
+        }
+        timespec deadline;
+        clock_gettime(CLOCK_REALTIME, &deadline);
+        deadline.tv_sec += timeoutMs / 1000;
+        deadline.tv_nsec += (timeoutMs % 1000) * 1000000L;
+        deadline.tv_sec += deadline.tv_nsec / 1000000000L;
+        deadline.tv_nsec %= 1000000000L;
+        pthread_mutex_lock(&mutex->m);
+        while(!mutex->available)
+            if(pthread_cond_timedwait(&mutex->ready, &mutex->m, &deadline) != 0)
+                break;
+        if(mutex->available)
+            mutex->available = false;
+        pthread_mutex_unlock(&mutex->m);
     }
 
-    void platformReleaseMutex(SYS_MUTEX_T m)
+    void platformReleaseMutex(SYS_MUTEX_T mutex)
     {
-        pthread_mutex_unlock(&m->m);
+        if(!mutex->reentrant)
+        {
+            pthread_mutex_lock(&mutex->m);
+            mutex->available = true;
+            pthread_cond_signal(&mutex->ready);
+        }
+        pthread_mutex_unlock(&mutex->m);
+    }
+
+    void platformDestroyMutex(SYS_MUTEX_T mutex)
+    {
+        pthread_cond_destroy(&mutex->ready);
+        pthread_mutex_destroy(&mutex->m);
+        delete mutex;
     }
 
     static void* _platformThreadEntry(void* arg)
@@ -78,9 +120,25 @@ namespace fenster
         return tid;
     }
 
+	struct DataThreadEntry { void (*entry)(void*); void* data; };
+	static void* dataThreadEntry(void* raw)
+	{
+		auto argument = static_cast<DataThreadEntry*>(raw);
+		auto entry = *argument;
+		delete argument;
+		entry.entry(entry.data);
+		return nullptr;
+	}
 	SYS_TID_T platformCreateThreadWithData(void* entry, void* data)
 	{
-		printf("NOT IMPLEMENTED: platformCreateThreadWithData\n");
+		auto argument = new DataThreadEntry{reinterpret_cast<void(*)(void*)>(entry), data};
+		pthread_t tid;
+		if(pthread_create(&tid, nullptr, dataThreadEntry, argument) != 0)
+		{
+			delete argument;
+			return SYS_TID_NONE;
+		}
+		return tid;
 	}
 
     uint64_t platformMillis()
@@ -152,7 +210,7 @@ namespace fenster
 
 	void platformJoin(SYS_TID_T tid)
 	{
-		printf("NOT IMPLEMENTED: platformJoin\n");
+		pthread_join(tid, nullptr);
 	}
 
 	bool platformRegisterTaskIdentifier(const char* task)

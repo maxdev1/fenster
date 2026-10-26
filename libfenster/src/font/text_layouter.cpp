@@ -72,6 +72,7 @@ namespace fenster
 
 		// Clear layout positions
 		layout->positions.clear();
+		layout->textBounds = {};
 		if (stat != CAIRO_STATUS_SUCCESS)
 			return;
 
@@ -109,6 +110,7 @@ namespace fenster
 			}
 
 			// Wouldn't match in line or is break character? Start next line
+			if(newline) { extents.width = 0; extents.x_advance = 0; }
 			if (lastNewLine || (breakOnOverflow && (x + extents.width > bounds.width)))
 			{
 				if (alignment == TextAlignment::RIGHT)

@@ -16,6 +16,7 @@
 #include "libfenster/listener/mouse_listener.hpp"
 #include "libfenster/listener/visible_listener.hpp"
 #include "libfenster/listener/key_listener.hpp"
+#include "libfenster/listener/relative_mouse_listener.hpp"
 #include "libfenster/metrics/rectangle.hpp"
 #include "libfenster/application.hpp"
 #include "libfenster/color_argb.hpp"
@@ -35,8 +36,10 @@ namespace fenster
 		friend class StackLayout;
 		friend class GridLayout;
 		friend class FlowLayout;
+		friend class FillLayout;
 
 		bool setLayout(Layout* layout);
+		static ComponentId createComponentId(ComponentType type);
 		static std::vector<ComponentId> createComponentIds(ComponentType type, size_t count);
 
 	protected:
@@ -54,27 +57,8 @@ namespace fenster
 			if (!ApplicationInitialized)
 				return nullptr;
 
-			SYS_TX_T tx = platformCreateMessageTransaction();
-			CommandCreateComponentRequest request;
-			request.header.id = fenster::ProtocolCommandId::CreateComponent;
-			request.type = COMPONENT_CONSTANT;
-			platformSendMessage(DelegateTaskId, &request, sizeof(CommandCreateComponentRequest), tx);
-			// g_yield_t(DelegateTaskId);
-
-			size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandCreateComponentResponse);
-			uint8_t buffer[bufferSize];
-
-			COMPONENT_TYPE* component = nullptr;
-			if (platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
-			{
-				auto response = (CommandCreateComponentResponse*) SYS_MESSAGE_CONTENT(buffer);
-
-				if (response->status == ProtocolStatus::Success)
-				{
-					component = attachComponent<COMPONENT_TYPE>(response->id);
-				}
-			}
-			return component;
+			auto id = createComponentId(COMPONENT_CONSTANT);
+			return id ? attachComponent<COMPONENT_TYPE>(id) : nullptr;
 		}
 
 		template <typename COMPONENT_TYPE>
@@ -110,6 +94,11 @@ namespace fenster
 		}
 
 		void destroy();
+		/**
+		 * Deletes an attached local proxy without destroying its remote object.
+		 * The caller must stop local readers/callbacks first.
+		 */
+		void disposeLocal();
 		bool addChild(Component* c);
 
 		bool setBounds(const Rectangle& rect);
@@ -118,6 +107,11 @@ namespace fenster
 
 		bool isVisible();
 		bool setVisible(bool visible);
+
+		/**
+		 * Synchronously lay out and paint this hidden component's visible descendants.
+		 */
+		bool prepareForDisplay();
 		bool setBackground(ColorArgb argb);
 
 		bool setFocusable(bool focusable);
@@ -142,6 +136,10 @@ namespace fenster
 		bool addVisibleListener(VisibleListenerFunc listener);
 		bool addKeyListener(KeyListener* listener);
 		bool addKeyListener(KeyListenerFunc listener);
+
+		bool setMouseGrabbed(bool grabbed);
+		bool addRelativeMouseListener(RelativeMouseListenerFunc listener);
+		bool addMouseGrabListener(MouseGrabListenerFunc listener);
 
 		void handle(ComponentEventHeader* header);
 	};

@@ -30,6 +30,9 @@ namespace fensterserver
         int height;
 
         explicit Graphics(uint16_t width = 0, uint16_t height = 0);
+        ~Graphics();
+        Graphics(const Graphics&) = delete;
+        Graphics& operator=(const Graphics&) = delete;
 
         void resize(int width, int height, bool averaged = true);
 

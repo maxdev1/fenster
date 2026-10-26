@@ -15,6 +15,7 @@
 namespace fensterserver
 {
     class item_container_t;
+    class Panel;
 
     /**
      *
@@ -30,6 +31,13 @@ namespace fensterserver
         SYS_MUTEX_T pointerUpdateLock = fenster::platformInitializeMutex(false);
         fenster::Rectangle lastInvalid;
         CursorOverlay* cursorOverlay = nullptr;
+        Panel* tooltipPanel = nullptr;
+        Label* tooltipLabel = nullptr;
+        fenster::ComponentId tooltipSource = -1;
+        fenster::Point tooltipPosition;
+        uint64_t tooltipSince = 0;
+        bool tooltipPending = false;
+        void updateTooltip();
 
         void initializeVideo();
         void createVitalComponents(fenster::Rectangle screenBounds);

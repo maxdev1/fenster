@@ -89,6 +89,9 @@ typedef struct
 
 typedef struct mac_mutex_s {
     pthread_mutex_t m;
+    pthread_cond_t ready;
+    bool reentrant;
+    bool available;
 } mac_mutex_t;
 #define SYS_MUTEX_T mac_mutex_s*
 
@@ -166,6 +169,11 @@ namespace fenster
 	 * @param mutex The mutex handle
 	 */
 	void platformReleaseMutex(SYS_MUTEX_T mutex);
+
+	/**
+	 * Destroys an unused mutex after all its borrowers have stopped.
+	 */
+	void platformDestroyMutex(SYS_MUTEX_T mutex);
 
 	/**
 	 * Generates a unique transaction ID for message exchange.

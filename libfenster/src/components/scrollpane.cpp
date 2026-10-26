@@ -22,7 +22,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::ScrollPaneSetContent;
 		request.scrollpane = this->id;
 		request.content = content->getId();
-		platformSendMessage(DelegateTaskId, &request, sizeof(request), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
@@ -47,7 +48,8 @@ namespace fenster
 		request.scrollpane = this->id;
 		request.width = width;
 		request.height = height;
-		platformSendMessage(DelegateTaskId, &request, sizeof(request), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);

@@ -8,7 +8,7 @@
 namespace fensterserver
 {
     void interfaceReceiverThread();
-    bool interfaceReceiverProcessCommand(void* requestMessage, bool batched = false);
+    bool interfaceReceiverProcessCommand(void* requestMessage);
 }
 
 #endif

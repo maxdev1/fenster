@@ -18,14 +18,12 @@
 namespace fensterserver
 {
 	Window::Window() :
-		backgroundColor(_RGB(244, 244, 248)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE),
+		backgroundColor(_RGB(250, 251, 253)), borderWidth(DEFAULT_BORDER_WIDTH), cornerSize(DEFAULT_CORNER_SIZE),
 		resizeMode(RESIZE_MODE_NONE)
 	{
 		focused = false;
 		visible = false;
 		resizable = true;
-		crossHovered = false;
-		crossPressed = false;
 
 		shadowSize = 10;
 		titleHeight = 40;
@@ -43,8 +41,18 @@ namespace fensterserver
 
 	void Window::layout()
 	{
+		if(fullscreen) setBounds(getFullscreenBounds());
 		fenster::Rectangle bounds = getBounds();
-		label.setBounds(fenster::Rectangle(shadowSize + 12, shadowSize, bounds.width - shadowSize - 20, titleHeight));
+		crossBounds = fenster::Rectangle(bounds.width - 47, 15, 30, 30);
+		int controlsLeft = crossBounds.x;
+		fullscreenBounds = {};
+		minimizeBounds = {};
+		if(maximizeButtonVisible)
+			fullscreenBounds = fenster::Rectangle(controlsLeft -= 34, 15, 30, 30);
+		if(minimizeButtonVisible)
+			minimizeBounds = fenster::Rectangle(controlsLeft -= 34, 15, 30, 30);
+		label.setBounds(fenster::Rectangle(shadowSize + 12, shadowSize,
+		                                 std::max(0, controlsLeft - shadowSize - 20), titleHeight));
 
 		int menuBarHeight = 30;
 		if(menuBar)
@@ -56,7 +64,6 @@ namespace fensterserver
 		panel.setBounds(fenster::Rectangle(shadowSize, shadowSize + titleHeight + (menuBar ? menuBarHeight : 0),
 		                                   bounds.width - shadowSize * 2,
 		                                   bounds.height - titleHeight - shadowSize * 2 - (menuBar ? menuBarHeight : 0)));
-		crossBounds = fenster::Rectangle(bounds.width - 47, 15, 30, 30);
 	}
 
 	void Window::setMenuBar(MenuBar* menuBar)
@@ -115,38 +122,109 @@ namespace fensterserver
 			shadowAlphaAdd += addIncr;
 		}
 
-		int borderRadius = 5;
+		int borderRadius = 9;
 		roundedRectangle(cr, shadowSize, shadowSize, bounds.width - 2 * shadowSize, bounds.height - 2 * shadowSize,
 		                 borderRadius);
 		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(backgroundColor));
-		cairo_fill(cr);
+		cairo_fill_preserve(cr);
+		cairo_set_source_rgba(cr, .56, .61, .70, isFocused() ? .28 : .16); cairo_set_line_width(cr, 1); cairo_stroke(cr);
+		cairo_set_source_rgba(cr, .85, .88, .93, .65);
+		cairo_move_to(cr, shadowSize, shadowSize + titleHeight - .5);
+		cairo_line_to(cr, bounds.width - shadowSize, shadowSize + titleHeight - .5); cairo_stroke(cr);
 	}
 
 	void Window::paintControls(cairo_t* cr) const
 	{
-		if(crossHovered)
+		for(auto control : {Control::Minimize, Control::Fullscreen, Control::Close})
 		{
-			cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(ARGB(20, 50, 50, 50)));
-			cairo_rectangle(cr, crossBounds.x, crossBounds.y, crossBounds.width, crossBounds.height);
-			cairo_fill(cr);
+			if((control == Control::Minimize && !minimizeButtonVisible) ||
+			   (control == Control::Fullscreen && !maximizeButtonVisible)) continue;
+			const auto& box = control == Control::Close ? crossBounds :
+			                  control == Control::Fullscreen ? fullscreenBounds : minimizeBounds;
+			const bool enabled = control == Control::Close ||
+			                     (control == Control::Fullscreen ? resizable : showInTaskbar);
+			const bool hovered = enabled && hoveredControl == control;
+			const bool pressed = hovered && pressedControl == control;
+			if(hovered)
+			{
+				if(control == Control::Close) cairo_set_source_rgba(cr, .96, .88, .89, 1);
+				else cairo_set_source_rgba(cr, .88, .91, .96, 1);
+				roundedRectangle(cr, box.x, box.y, box.width, box.height, 7);
+				cairo_fill(cr);
+			}
+			if(control == Control::Close && hovered)
+				cairo_set_source_rgba(cr, pressed ? .65 : .78, .20, .24, 1);
+			else
+				cairo_set_source_rgba(cr, pressed ? .20 : .40, pressed ? .25 : .40, pressed ? .35 : .40,
+				                      enabled ? 1 : .3);
+			cairo_set_line_width(cr, 1.5);
+			if(control == Control::Close)
+			{
+				cairo_move_to(cr, box.x + 11, box.y + 11);
+				cairo_line_to(cr, box.x + 19, box.y + 19);
+				cairo_move_to(cr, box.x + 19, box.y + 11);
+				cairo_line_to(cr, box.x + 11, box.y + 19);
+			}
+			else if(control == Control::Minimize)
+			{
+				cairo_move_to(cr, box.x + 10, box.y + 19);
+				cairo_line_to(cr, box.x + 20, box.y + 19);
+			}
+			else if(fullscreen)
+			{
+				cairo_move_to(cr, box.x + 13, box.y + 11);
+				cairo_line_to(cr, box.x + 13, box.y + 9);
+				cairo_line_to(cr, box.x + 21, box.y + 9);
+				cairo_line_to(cr, box.x + 21, box.y + 17);
+				cairo_line_to(cr, box.x + 19, box.y + 17);
+				cairo_rectangle(cr, box.x + 10, box.y + 12, 8, 8);
+			}
+			else cairo_rectangle(cr, box.x + 10, box.y + 10, 10, 10);
+			cairo_stroke(cr);
 		}
+	}
 
-		if(crossPressed && crossHovered)
-			cairo_set_source_rgba(cr, 0.0, 0.4, 0.8, 1);
-		else if(crossHovered)
-			cairo_set_source_rgba(cr, 0.1, 0.5, 0.9, 1);
-		else
-			cairo_set_source_rgba(cr, 0.4, 0.4, 0.4, 1);
+	Window::Control Window::getControlAt(const fenster::Point& position) const
+	{
+		if(crossBounds.contains(position)) return Control::Close;
+		if(maximizeButtonVisible && resizable && fullscreenBounds.contains(position)) return Control::Fullscreen;
+		if(minimizeButtonVisible && showInTaskbar && minimizeBounds.contains(position)) return Control::Minimize;
+		return Control::None;
+	}
 
-		int crossPadding = 11;
-		cairo_set_line_width(cr, 1.5);
-		cairo_move_to(cr, crossBounds.x + crossPadding, crossBounds.y + crossPadding);
-		cairo_line_to(cr, crossBounds.x + crossBounds.width - crossPadding,
-		              crossBounds.y + crossBounds.height - crossPadding);
-		cairo_stroke(cr);
-		cairo_move_to(cr, crossBounds.x + crossBounds.width - crossPadding, crossBounds.y + crossPadding);
-		cairo_line_to(cr, crossBounds.x + crossPadding, crossBounds.y + crossBounds.height - crossPadding);
-		cairo_stroke(cr);
+	fenster::Rectangle Window::getFullscreenBounds()
+	{
+		auto parent = getParent();
+		if(!parent) return getBounds();
+		auto size = parent->getBounds();
+		fenster::Rectangle area{0, 0, size.width, size.height};
+		if(auto screen = dynamic_cast<Screen*>(parent)) area = screen->getWindowArea();
+		// Keep shadows outside the usable area; the dock paints above the bottom shadow.
+		return {area.x - shadowSize, area.y - shadowSize, area.width + 2 * shadowSize,
+		        area.height + 2 * shadowSize};
+	}
+
+	void Window::toggleFullscreen()
+	{
+		if(fullscreen)
+		{
+			fullscreen = false;
+			setBounds(restoreBounds);
+		}
+		else if(resizable && getParent())
+		{
+			auto area = getFullscreenBounds();
+			if(area.width <= 2 * shadowSize || area.height <= 2 * shadowSize) return;
+			restoreBounds = getBounds();
+			fullscreen = true;
+			setBounds(area);
+		}
+		markFor(COMPONENT_REQUIREMENT_PAINT);
+	}
+
+	void Window::minimize()
+	{
+		setVisible(false);
 	}
 
 	void Window::paint()
@@ -171,13 +249,25 @@ namespace fensterserver
 	{
 		if(resizeMode == RESIZE_MODE_MOVE)
 		{
+			if(fullscreen)
+			{
+				auto delta = me.screenPosition - pressScreenPoint;
+				if(std::abs(delta.x) < 4 && std::abs(delta.y) < 4) return;
+				// Keep the same horizontal title-bar anchor under the pointer.
+				pressPoint.x = std::clamp(int(int64_t(pressPoint.x) * restoreBounds.width / pressBounds.width),
+				                          shadowSize, restoreBounds.width - shadowSize);
+				pressBounds = restoreBounds;
+				fullscreen = false;
+			}
 			fenster::Point newLocation = me.screenPosition - pressPoint;
+			if(getParent()) newLocation = newLocation - getParent()->getLocationOnScreen();
 			setBounds({newLocation.x, newLocation.y, pressBounds.width, pressBounds.height});
 			Cursor::set("drag");
 			return;
 		}
 
 		fenster::Point newLocation = me.screenPosition - pressPoint;
+		if(getParent()) newLocation = newLocation - getParent()->getLocationOnScreen();
 
 		int left = pressBounds.x;
 		int top = pressBounds.y;
@@ -218,64 +308,90 @@ namespace fensterserver
 		setBounds(r);
 	}
 
-	void Window::startDragOrResize(MouseEvent& me)
+	WindowResizeMode Window::getResizeModeAt(const fenster::Point& pos) const
 	{
 		auto currentBounds = getBounds();
-		pressPoint = me.position;
-		pressBounds = currentBounds;
+		WindowResizeMode resizeMode = RESIZE_MODE_NONE;
 
-		resizeMode = RESIZE_MODE_NONE;
-
-		if(resizable)
+		if(resizable && !fullscreen)
 		{
-			if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2) && (
-				   pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
+			if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (
+				   pos.y < cornerSize) && (pos.y > shadowSize - cornerSize / 2))
 			{
 				resizeMode |= RESIZE_MODE_TOP | RESIZE_MODE_LEFT;
 			}
-			else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-				        pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-				        pressPoint.y < cornerSize) && (pressPoint.y > shadowSize - cornerSize / 2))
+			else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
+				        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (
+				        pos.y < cornerSize) && (pos.y > shadowSize - cornerSize / 2))
 			{
 				resizeMode |= RESIZE_MODE_TOP | RESIZE_MODE_RIGHT;
 			}
-			else if((pressPoint.x < shadowSize + cornerSize / 2) && (pressPoint.x > shadowSize - cornerSize / 2)
+			else if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2)
 			        &&
-			        (pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-				        pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
+			        (pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+				        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
 			{
 				resizeMode |= RESIZE_MODE_BOTTOM | RESIZE_MODE_LEFT;
 			}
-			else if((pressPoint.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-				        pressPoint.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-				        pressPoint.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-				        pressPoint.y < currentBounds.height - shadowSize + cornerSize / 2))
+			else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
+				        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (
+				        pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
+				        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
 			{
 				resizeMode |= RESIZE_MODE_BOTTOM | RESIZE_MODE_RIGHT;
 			}
-			else if(pressPoint.y < shadowSize + borderWidth / 2 && pressPoint.y > shadowSize - borderWidth / 2)
+			else if(pos.y < shadowSize + borderWidth / 2 && pos.y > shadowSize - borderWidth / 2)
 			{
 				resizeMode = RESIZE_MODE_TOP;
 			}
-			else if(pressPoint.x < shadowSize + borderWidth / 2 && pressPoint.x > shadowSize - borderWidth / 2)
+			else if(pos.x < shadowSize + borderWidth / 2 && pos.x > shadowSize - borderWidth / 2)
 			{
 				resizeMode = RESIZE_MODE_LEFT;
 			}
-			else if((pressPoint.y > currentBounds.height - shadowSize - borderWidth / 2) && (
-				        pressPoint.y < currentBounds.height - shadowSize + borderWidth / 2))
+			else if((pos.y > currentBounds.height - shadowSize - borderWidth / 2) && (
+				        pos.y < currentBounds.height - shadowSize + borderWidth / 2))
 			{
 				resizeMode = RESIZE_MODE_BOTTOM;
 			}
-			else if((pressPoint.x > currentBounds.width - shadowSize - borderWidth / 2) && (
-				        pressPoint.x < currentBounds.width - shadowSize + borderWidth / 2))
+			else if((pos.x > currentBounds.width - shadowSize - borderWidth / 2) && (
+				        pos.x < currentBounds.width - shadowSize + borderWidth / 2))
 			{
 				resizeMode = RESIZE_MODE_RIGHT;
 			}
 		}
 
+		return resizeMode;
+	}
+
+	std::string Window::getCursorAt(const fenster::Point& position) const
+	{
+		switch(getResizeModeAt(position))
+		{
+			case RESIZE_MODE_TOP | RESIZE_MODE_LEFT:
+			case RESIZE_MODE_BOTTOM | RESIZE_MODE_RIGHT: return "resize-nwes";
+			case RESIZE_MODE_TOP | RESIZE_MODE_RIGHT:
+			case RESIZE_MODE_BOTTOM | RESIZE_MODE_LEFT: return "resize-nesw";
+			case RESIZE_MODE_TOP:
+			case RESIZE_MODE_BOTTOM: return "resize-ns";
+			case RESIZE_MODE_LEFT:
+			case RESIZE_MODE_RIGHT: return "resize-ew";
+			default: return "default";
+		}
+	}
+
+	void Window::startDragOrResize(MouseEvent& me)
+	{
+		pressPoint = me.position;
+		pressScreenPoint = me.screenPosition;
+		pressBounds = getBounds();
+		resizeMode = getResizeModeAt(pressPoint);
+
 		if(resizeMode == RESIZE_MODE_NONE)
 		{
-			if(pressPoint.y < titleHeight)
+			if(pressPoint.y >= shadowSize && pressPoint.y < shadowSize + titleHeight &&
+			   !(minimizeButtonVisible && minimizeBounds.contains(pressPoint)) &&
+			   !(maximizeButtonVisible && fullscreenBounds.contains(pressPoint)) &&
+			   !crossBounds.contains(pressPoint))
 			{
 				resizeMode = RESIZE_MODE_MOVE;
 				Cursor::set("drag");
@@ -285,141 +401,55 @@ namespace fensterserver
 
 	Component* Window::handleMouseEvent(MouseEvent& me)
 	{
-		if(me.type == fenster::MouseEventType::Drag)
+		auto updateHover = [&](Control control)
 		{
-			if(crossPressed)
+			if(hoveredControl != control)
 			{
-				crossHovered = crossBounds.contains(me.position);
+				hoveredControl = control;
 				markFor(COMPONENT_REQUIREMENT_PAINT);
 			}
-			else if(resizeMode != RESIZE_MODE_NONE)
+		};
+
+		if(me.type == fenster::MouseEventType::Drag)
+		{
+			if(pressedControl != Control::None) updateHover(getControlAt(me.position));
+			else if(resizeMode != RESIZE_MODE_NONE) dragOrResize(me);
+			return this;
+		}
+		if(me.type == fenster::MouseEventType::Release || me.type == fenster::MouseEventType::DragRelease)
+		{
+			const auto released = pressedControl;
+			pressedControl = Control::None;
+			resizeMode = RESIZE_MODE_NONE;
+			markFor(COMPONENT_REQUIREMENT_PAINT);
+			if(me.type == fenster::MouseEventType::Release && !(me.buttons & fenster::MouseButton::Button1) &&
+			   released != Control::None && released == getControlAt(me.position))
 			{
-				dragOrResize(me);
+				updateHover(Control::None);
+				if(released == Control::Close) close();
+				else if(released == Control::Minimize) minimize();
+				else toggleFullscreen();
 			}
 			return this;
 		}
 
-		// Let child components handle other input first
 		Component* handledByChild = Component::handleMouseEvent(me);
 		if(handledByChild)
+		{
+			updateHover(Control::None);
 			return handledByChild;
-
-		// Handle mouse events
-		if(me.type == fenster::MouseEventType::Move)
-		{
-			if(resizable)
-			{
-				fenster::Rectangle currentBounds = getBounds();
-
-				fenster::Point pos = me.position;
-				if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (
-					   pos.y < cornerSize) &&
-				   (pos.y > shadowSize - cornerSize / 2))
-				{
-					// Top left corner
-					Cursor::set("resize-nwes");
-				}
-				else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-					        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (pos.y < cornerSize) && (
-					        pos.y > shadowSize - cornerSize / 2))
-				{
-					// Top right corner
-					Cursor::set("resize-nesw");
-				}
-				else if((pos.x < shadowSize + cornerSize / 2) && (pos.x > shadowSize - cornerSize / 2) && (
-					        pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-					        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
-				{
-					// Bottom left corner
-					Cursor::set("resize-nesw");
-				}
-				else if((pos.x > currentBounds.width - shadowSize - cornerSize / 2) && (
-					        pos.x < currentBounds.width - shadowSize + cornerSize / 2) && (
-					        pos.y > currentBounds.height - shadowSize - cornerSize / 2) && (
-					        pos.y < currentBounds.height - shadowSize + cornerSize / 2))
-				{
-					// Bottom right corner
-					Cursor::set("resize-nwes");
-				}
-				else if(pos.y < shadowSize + borderWidth / 2 && pos.y > shadowSize - borderWidth / 2)
-				{
-					// Top edge
-					Cursor::set("resize-ns");
-				}
-				else if(pos.x < shadowSize + borderWidth / 2 && pos.x > shadowSize - borderWidth / 2)
-				{
-					// Left edge
-					Cursor::set("resize-ew");
-				}
-				else if((pos.y > currentBounds.height - shadowSize - borderWidth / 2) && (
-					        pos.y < currentBounds.height - shadowSize + borderWidth / 2))
-				{
-					// Bottom edge
-					Cursor::set("resize-ns");
-				}
-				else if((pos.x > currentBounds.width - shadowSize - borderWidth / 2) && (
-					        pos.x < currentBounds.width - shadowSize + borderWidth / 2))
-				{
-					// Right edge
-					Cursor::set("resize-ew");
-				}
-				else
-				{
-					Cursor::set("default");
-				}
-			}
-
-			if(crossBounds.contains(me.position))
-			{
-				crossHovered = true;
-				markFor(COMPONENT_REQUIREMENT_PAINT);
-			}
-			else
-			{
-				if(crossHovered)
-				{
-					markFor(COMPONENT_REQUIREMENT_PAINT);
-				}
-				crossHovered = false;
-			}
 		}
-		else if(me.type == fenster::MouseEventType::Press)
+		if(me.type == fenster::MouseEventType::Move || me.type == fenster::MouseEventType::Enter)
+			updateHover(getControlAt(me.position));
+		else if(me.type == fenster::MouseEventType::Press && (me.buttons & fenster::MouseButton::Button1))
 		{
-			// Press on the cross
-			if(crossBounds.contains(me.position))
-			{
-				crossPressed = true;
-				markFor(COMPONENT_REQUIREMENT_PAINT);
-				return this;
-			}
-			else
-			{
-				startDragOrResize(me);
-			}
-		}
-		else if(me.type == fenster::MouseEventType::DragRelease)
-		{
-			crossPressed = false;
+			pressedControl = getControlAt(me.position);
+			updateHover(pressedControl);
 			markFor(COMPONENT_REQUIREMENT_PAINT);
-			Cursor::set("default");
-
-			resizeMode = RESIZE_MODE_NONE;
-		}
-		else if(me.type == fenster::MouseEventType::Release)
-		{
-			if(crossBounds.contains(me.position))
-			{
-				this->close();
-				return this;
-			}
-
-			resizeMode = RESIZE_MODE_NONE;
+			if(pressedControl == Control::None) startDragOrResize(me);
 		}
 		else if(me.type == fenster::MouseEventType::Leave)
-		{
-			Cursor::set("default");
-		}
-
+			updateHover(Control::None);
 		return this;
 	}
 
@@ -438,6 +468,9 @@ namespace fensterserver
 
 	bool Window::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
+		if(property == fenster::ComponentProperty::MinimizeButtonVisible) { *out = minimizeButtonVisible; return true; }
+		if(property == fenster::ComponentProperty::MaximizeButtonVisible) { *out = maximizeButtonVisible; return true; }
+		if(property == fenster::ComponentProperty::ShowInTaskbar) { *out = showInTaskbar; return true; }
 		if(property == fenster::ComponentProperty::Resizable)
 		{
 			*out = resizable;
@@ -455,9 +488,36 @@ namespace fensterserver
 
 	bool Window::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
+		if(property == fenster::ComponentProperty::MinimizeButtonVisible ||
+		   property == fenster::ComponentProperty::MaximizeButtonVisible)
+		{
+			auto& visible = property == fenster::ComponentProperty::MinimizeButtonVisible ?
+			                minimizeButtonVisible : maximizeButtonVisible;
+			if(visible != bool(value))
+			{
+				visible = value;
+				pressedControl = hoveredControl = Control::None;
+				markFor(COMPONENT_REQUIREMENT_LAYOUT | COMPONENT_REQUIREMENT_PAINT);
+			}
+			return true;
+		}
+		if(property == fenster::ComponentProperty::ShowInTaskbar)
+		{
+			if(showInTaskbar != bool(value)) {
+				showInTaskbar = value;
+				markFor(COMPONENT_REQUIREMENT_PAINT);
+				if(auto screen = dynamic_cast<Screen*>(getParent()))
+					screen->callForListeners(fenster::ComponentEventType::Window, [this, screen](EventListenerInfo& info) {
+						screen->sendWindowEvent(info.component_id, this, info.target_thread, true);
+					});
+			}
+			return true;
+		}
 		if(property == fenster::ComponentProperty::Resizable)
 		{
+			if(!value && fullscreen) toggleFullscreen();
 			resizable = value;
+			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return true;
 		}
 

@@ -18,6 +18,7 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+#include <cstdlib>
 
 // keep previous constants
 static const int WIDTH = 1600;
@@ -62,6 +63,7 @@ int main(int argc, char** argv)
 
     // renderer + streaming texture
     SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if(!ren) ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_SOFTWARE);
     if (!ren)
     {
         SDL_Log("SDL_CreateRenderer failed: %s", SDL_GetError());
@@ -100,6 +102,8 @@ int main(int argc, char** argv)
 
     // state like original
     bool running = true;
+    unsigned previewFrames = 0;
+    const char* capture = std::getenv("FENSTER_CAPTURE");
     bool ctrl = false;
     bool shift = false;
     bool alt = false;
@@ -262,6 +266,11 @@ int main(int argc, char** argv)
 
         // throttle roughly to ~60fps like original Sleep(16)
         SDL_Delay(16);
+        if(capture && ++previewFrames == 90) {
+            cairo_surface_flush(surface);
+            cairo_surface_write_to_png(surface, capture);
+            running = false;
+        }
     } // main loop
 
     // cleanup

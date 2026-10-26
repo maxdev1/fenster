@@ -87,6 +87,11 @@ namespace fenster
 		g_mutex_release(mutex);
 	}
 
+	void platformDestroyMutex(SYS_MUTEX_T mutex)
+	{
+		g_mutex_destroy(mutex);
+	}
+
 	uint64_t platformMillis()
 	{
 		return g_millis();

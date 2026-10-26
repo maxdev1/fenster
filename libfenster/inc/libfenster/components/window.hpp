@@ -27,6 +27,9 @@ namespace fenster
 
 		bool isResizable();
 		void setResizable(bool resizable);
+		void setShowInTaskbar(bool show) { setNumericProperty(ComponentProperty::ShowInTaskbar, show); }
+		void setMinimizeButtonVisible(bool visible) { setNumericProperty(ComponentProperty::MinimizeButtonVisible, visible); }
+		void setMaximizeButtonVisible(bool visible) { setNumericProperty(ComponentProperty::MaximizeButtonVisible, visible); }
 
 		bool onClose(std::function<void()> func);
 	};

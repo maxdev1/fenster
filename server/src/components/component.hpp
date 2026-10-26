@@ -16,6 +16,7 @@
 #include <libfenster/interface.hpp>
 #include <libfenster/metrics/rectangle.hpp>
 #include <vector>
+#include <atomic>
 #include <bits/std_function.h>
 
 
@@ -63,6 +64,7 @@ namespace fensterserver
     {
         fenster::ComponentEventType type;
         EventListenerInfo info;
+        SYS_TID_T owner;
     };
 
     enum class LayoutingPolicy {
@@ -92,8 +94,8 @@ namespace fensterserver
         fenster::Dimension preferredSize;
         fenster::Dimension maximumSize;
 
-        ComponentRequirement requirements;
-        ComponentRequirement childRequirements;
+        std::atomic<ComponentRequirement> requirements;
+        std::atomic<ComponentRequirement> childRequirements;
 
         std::vector<ComponentListenerEntry*> listeners;
 
@@ -103,6 +105,8 @@ namespace fensterserver
         Graphics graphics;
 
         bool visible;
+        std::string tooltip;
+        std::string mouseCursor = "default";
 
         /**
          * If a component that extends this class does not need to paint anything, it should return false here.
@@ -114,6 +118,16 @@ namespace fensterserver
 
 
     public:
+        // Cairo's cached fonts are shared by hidden preparation and frame painting.
+        class RenderAccess
+        {
+        public:
+            RenderAccess();
+            ~RenderAccess();
+            RenderAccess(const RenderAccess&) = delete;
+            RenderAccess& operator=(const RenderAccess&) = delete;
+        };
+
         fenster::ComponentId id;
 
         Component();
@@ -126,6 +140,9 @@ namespace fensterserver
         {
             return this->visible;
         }
+
+        // Prepare cached surfaces while the subtree is excluded from normal frames.
+        bool prepareForDisplay();
 
         /**
          * Sets the z-index of this component on its parent. When new children are added,
@@ -151,6 +168,9 @@ namespace fensterserver
         void releaseChildren() const;
 
         bool canHandleEvents() const;
+        /** Cursor for a pointer position in this component's local coordinates. */
+        virtual std::string getCursorAt(const fenster::Point& position) const { return mouseCursor; }
+        const std::string& getTooltip() const { return tooltip; }
 
         void setVisible(bool visible);
 
@@ -280,6 +300,8 @@ namespace fensterserver
         }
 
         virtual void setLayout(Layout* layout);
+        bool setLayoutPadding(fenster::Insets padding);
+        bool setFlexComponentInfo(fenster::ComponentId child, float grow, float shrink, int basis);
 
         virtual Layout* getLayout() const
         {
@@ -319,7 +341,12 @@ namespace fensterserver
         /**
          * Resolves the given requirement
          */
-        void resolveRequirement(ComponentRequirement req, int lvl);
+        void resolveRequirement(ComponentRequirement req, int lvl, fenster::Rectangle clip = {});
+
+        ComponentRequirement pendingRequirements() const
+        {
+            return requirements.load() | childRequirements.load();
+        }
 
         bool hasChildRequirements() const
         {
@@ -361,7 +388,10 @@ namespace fensterserver
         virtual bool getStringProperty(fenster::ComponentProperty property, std::string& out);
         virtual bool setStringProperty(fenster::ComponentProperty property, std::string value);
 
-        void addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id);
+        void addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id,
+                         SYS_TID_T owner = SYS_TID_NONE);
+        // Requires exclusive registry cleanup; background canvas workers do not use listeners.
+        void removeListenersForProcess(SYS_TID_T owner);
         bool callForListeners(fenster::ComponentEventType eventType,
                               const std::function<void(EventListenerInfo&)>& func);
 

@@ -20,8 +20,12 @@ namespace fensterserver
     {
         fenster::Font* font = nullptr;
         int fontSize = 14;
-        cairo_text_extents_t textExtents;
-        cairo_font_extents_t fontExtents;
+        bool textDirty = true;
+        int glyphWidth = -1;
+        std::vector<int> lineWidths;
+        std::vector<cairo_glyph_t> glyphs;
+        void layoutText(cairo_t* cr);
+        void positionGlyphs(int width);
 
         std::string text;
         fenster::TextAlignment alignment = fenster::TextAlignment::LEFT;
@@ -31,7 +35,7 @@ namespace fensterserver
 
     public:
         Label();
-        ~Label() override = default;
+        ~Label() override;
 
         void paint() override;
         void update() override;

@@ -24,6 +24,10 @@ namespace fensterserver
         Label label;
         fenster::Insets insets;
         bool enabled;
+        bool selected = false;
+        bool armed = false;
+        fenster::Icon icon = fenster::Icon::None;
+        fenster::TextAlignment alignment = fenster::TextAlignment::CENTER;
         fenster::ButtonVariant variant = fenster::ButtonVariant::Default;
 
     public:
@@ -35,6 +39,7 @@ namespace fensterserver
         void paint() override;
 
         Component* handleMouseEvent(MouseEvent& e) override;
+        Component* handleKeyEvent(KeyEvent& event) override;
 
         void setTitleInternal(std::string title) override;
         std::string getTitle() override;

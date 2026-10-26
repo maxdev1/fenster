@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "server.hpp"
+#include "input/mouse_grab.hpp"
 #include "component_registry.hpp"
 #include "components/button.hpp"
 #include "components/cursor.hpp"
@@ -103,11 +104,19 @@ namespace fensterserver
 		stateLabel->setBounds(fenster::Rectangle(10, screenBounds.height - 100, screenBounds.width - 20, 30));
 		instance()->stateLabel->setColor(_RGB(255, 255, 255));
 		screen->addChild(stateLabel);
+		tooltipPanel = new Panel();
+		tooltipPanel->setBackground(_RGB(43, 51, 69));
+		tooltipPanel->setNumericProperty(fenster::ComponentProperty::CornerRadius, 6);
+		tooltipPanel->setVisible(false);
+		tooltipPanel->setZIndex(1000000);
+		tooltipLabel = new Label(); tooltipLabel->setColor(_RGB(255, 255, 255));
+		tooltipLabel->setNumericProperty(fenster::ComponentProperty::FontSize, 12);
+		tooltipPanel->addChild(tooltipLabel); screen->addChild(tooltipPanel);
 
 #if defined(_WIN32) || defined(__APPLE__)
 		Panel* backgroundPanel = new Panel();
 		backgroundPanel->setBounds(screenBounds);
-		backgroundPanel->setBackground(_RGB(0, 0, 0));
+		backgroundPanel->setBackground(_RGB(234, 239, 247));
 		screen->addChild(backgroundPanel);
 #endif
 
@@ -135,28 +144,67 @@ namespace fensterserver
 		fenster::platformAcquireMutex(updateLock);
 		while(true)
 		{
-			eventProcessor->process();
-
-			screen->resolveRequirement(COMPONENT_REQUIREMENT_UPDATE, 0);
-			screen->resolveRequirement(COMPONENT_REQUIREMENT_LAYOUT, 0);
-			screen->resolveRequirement(COMPONENT_REQUIREMENT_PAINT, 0);
-
-			// Invalidations arriving during composition belong to the next frame.
-			const auto invalid = screen->grabInvalid().clip(screenBounds);
-			auto damage = invalid;
-			if(invalid.width > 0 && invalid.height > 0 && lastInvalid.width > 0 && lastInvalid.height > 0)
 			{
-				// Restore the previous debug border along with the changed content.
-				damage.extend(lastInvalid.getStart());
-				damage.extend(fenster::Point(lastInvalid.getRight() - 1, lastInvalid.getBottom() - 1));
+				ComponentRegistry::Access components;
+				Component::RenderAccess rendering;
+				MouseGrab::retryNotifications();
+				eventProcessor->process();
+
+				// Size changes can invalidate measurements made earlier in the
+				// pass. Settle those dependencies before painting a frame.
+				for(int pass = 0; pass < 8; ++pass)
+				{
+					screen->resolveRequirement(COMPONENT_REQUIREMENT_UPDATE, 0);
+					screen->resolveRequirement(COMPONENT_REQUIREMENT_LAYOUT, 0);
+					if(!(screen->pendingRequirements() & (COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT))) break;
+				}
+				eventProcessor->refreshHover();
+				updateTooltip();
+				screen->resolveRequirement(COMPONENT_REQUIREMENT_PAINT, 0);
+
+				// Invalidations arriving during composition belong to the next frame.
+				const auto invalid = screen->grabInvalid().clip(screenBounds);
+				auto damage = invalid;
+				if(invalid.width > 0 && invalid.height > 0 && lastInvalid.width > 0 && lastInvalid.height > 0)
+				{
+					// Restore the previous debug border along with the changed content.
+					damage.extend(lastInvalid.getStart());
+					damage.extend(fenster::Point(lastInvalid.getRight() - 1, lastInvalid.getBottom() - 1));
+				}
+				compose(&global, damage);
+
+				output(&global, invalid, damage);
+
+				framesTotal++;
 			}
-			compose(&global, damage);
-
-			output(&global, invalid, damage);
-
-			framesTotal++;
-			fenster::platformAcquireMutexTimeout(updateLock, 1000);
+			fenster::platformAcquireMutexTimeout(updateLock, tooltipPending ? 100 : 1000);
 		}
+	}
+
+	void Server::updateTooltip()
+	{
+		auto target = ComponentRegistry::get(Cursor::hoveredComponent);
+		std::string text;
+		for(auto at = target; at; at = at->getParent())
+			if(!at->getTooltip().empty()) { text = at->getTooltip(); break; }
+		const auto id = target ? target->id : -1;
+		const auto now = fenster::platformMillis();
+		if(id != tooltipSource || Cursor::position != tooltipPosition || Cursor::pressedButtons != fenster::MouseButton::None) {
+			tooltipPanel->setVisible(false); tooltipSince = now;
+			tooltipSource = id; tooltipPosition = Cursor::position;
+		}
+		tooltipPending = !text.empty() && Cursor::pressedButtons == fenster::MouseButton::None && now - tooltipSince < 600;
+		if(text.empty() || Cursor::pressedButtons != fenster::MouseButton::None) { tooltipPanel->setVisible(false); return; }
+		if(tooltipPending || tooltipPanel->isVisible()) return;
+		tooltipLabel->setTitle(text);
+		tooltipLabel->resolveRequirement(COMPONENT_REQUIREMENT_UPDATE, 0);
+		int width = std::min(360, tooltipLabel->getPreferredSize().width + 20), height = 30;
+		auto screenBox = screen->getBounds();
+		int x = std::max(8, std::min(Cursor::position.x + 12, screenBox.width - width - 8));
+		int y = Cursor::position.y + 24;
+		if(y + height > screenBox.height - 8) y = Cursor::position.y - height - 12;
+		tooltipPanel->setBounds({x, y, width, height}); tooltipLabel->setBounds({10, 0, width - 20, height});
+		tooltipPanel->setVisible(true);
 	}
 
 	void Server::compose(Graphics* graphics, const fenster::Rectangle& damage)
@@ -295,7 +343,10 @@ namespace fensterserver
 	{
 		Component* handledBy = nullptr;
 
-		if(component->canHandleEvents())
+		auto mouse = dynamic_cast<MouseEvent*>(&event);
+		// Hidden controls must still clear their old hover/press state.
+		const bool cleanup = mouse && (mouse->type == fenster::MouseEventType::Leave || mouse->type == fenster::MouseEventType::DragRelease);
+		if(component->canHandleEvents() || cleanup)
 		{
 			Locatable* locatable = dynamic_cast<Locatable*>(&event);
 			if(locatable != 0)
@@ -315,12 +366,24 @@ namespace fensterserver
 
 	Component* Server::switchFocus(Component* pressed)
 	{
+		if(!pressed || !pressed->canHandleEvents()) return nullptr;
 		auto source = ComponentRegistry::get(Cursor::focusedComponent);
+		// Moving/resizing the current window keeps its focused field or canvas.
+		// Capture still belongs to the window, independently of keyboard focus.
+		if(source && source != pressed && pressed->isWindow() && source->getWindow() == pressed &&
+		   source->canHandleEvents() && source->isFocusable())
+		{
+			pressed->bringToFront();
+			return source;
+		}
 
 		auto target = pressed->setFocused(true);
 		if(!target)
 			return nullptr;
+		if(auto popup = screen ? screen->getDesktopPopup() : nullptr)
+			if(target != popup && !target->isChildOf(popup)) screen->dismissDesktopPopup(false);
 		Cursor::focusedComponent = target->id;
+		MouseGrab::focusChanged(target->id);
 		Window* targetWindow = target->getWindow();
 
 		Window* sourceWindow = nullptr;
@@ -372,6 +435,7 @@ namespace fensterserver
 			seconds++;
 			std::stringstream s;
 			s << "FPS: " << framesTotal << ", Time: " << seconds;
+			ComponentRegistry::Access components;
 			instance()->stateLabel->setTitle(s.str());
 			instance()->requestUpdateLater();
 			framesTotal = 0;
@@ -380,6 +444,7 @@ namespace fensterserver
 
 	void Server::setDebug(bool cond)
 	{
+		ComponentRegistry::Access components;
 		debugOn = cond;
 		server->stateLabel->setVisible(cond);
 	}

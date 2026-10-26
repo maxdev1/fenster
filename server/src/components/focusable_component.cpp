@@ -13,6 +13,7 @@ namespace fensterserver
 	{
 		if(isFocusable())
 		{
+			if(this->focused == focused) return self;
 			setFocusedInternal(focused);
 
 			self->callForListeners(fenster::ComponentEventType::Focus, [focused](EventListenerInfo& info)
@@ -57,7 +58,7 @@ namespace fensterserver
 	{
 		if(property == fenster::ComponentProperty::Focusable)
 		{
-			*out = this->focusable ? 1 : 0;
+			*out = this->isFocusable() ? 1 : 0;
 			return true;
 		}
 		if(property == fenster::ComponentProperty::DispatchesFocus)

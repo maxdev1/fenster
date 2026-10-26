@@ -14,7 +14,7 @@ namespace fenster
 		/**
 		 * Properties may have a different meaning for each component. They are
 		 * used to simplify configuring components from a client application.
-		*/
+		 */
 		Resizable,
 		Secure,
 		Enabled,
@@ -35,13 +35,37 @@ namespace fenster
 		/**
 		 * Properties for layout managers that also might have a different meaning
 		 * per layout manager.
-		*/
+		 */
 		LayoutOrientation,
 		LayoutSpace,
 		LayoutSpaceHorizontal,
 		LayoutSpaceVertical,
 		LayoutPadding,
-		LayoutFlexComponentInfo
+		LayoutFlexComponentInfo,
+
+		Icon,
+		Selected,
+		CornerRadius,
+		BorderColor,
+		HoverBackground,
+		SelectedBackground,
+		FontSize,
+		Placeholder,
+		Tooltip,
+		SelectAll,
+		ScrollOffsetY,
+		MouseCursor,
+		ShowInTaskbar,
+		/**
+		 * Promotes a child of the registered desktop to a dock above ordinary windows.
+		 */
+		DesktopTaskbar,
+		/**
+		 * Shows a child of the desktop dock as a focusable popup, or dismiss it.
+		 */
+		DesktopPopup,
+		MinimizeButtonVisible,
+		MaximizeButtonVisible
 	};
 
 }

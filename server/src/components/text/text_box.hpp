@@ -6,6 +6,7 @@
 #define FENSTER_SERVER_COMPONENTS_TEXTBOX
 
 #include "components/text/text_component.hpp"
+#include <libfenster/icons.hpp>
 #include "components/titled_component.hpp"
 
 #include <libfenster/font/font.hpp>
@@ -25,6 +26,8 @@ namespace fensterserver
 	class TextBox : virtual public TextComponent, virtual public TitledComponent
 	{
 		std::string text;
+		std::string placeholder;
+		fenster::Icon icon = fenster::Icon::None;
 		TextBoxVisualStatus visualStatus = TextBoxVisualStatus::NORMAL;
 		bool secure = false;
 		bool multiline = false;
@@ -34,7 +37,7 @@ namespace fensterserver
 		int fontSize = 14;
 
 		fenster::ColorArgb textColor = _RGB(0, 0, 0);
-		fenster::Insets insets = fenster::Insets(5, 5, 5, 5);
+		fenster::Insets insets = fenster::Insets(8, 10, 8, 10);
 
 		int scrollX = 0;
 		int scrollY = 0;
@@ -49,11 +52,12 @@ namespace fensterserver
 	public:
 		TextBox();
 
-		~TextBox() override = default;
+		~TextBox() override;
 
 		void update() override;
 
 		void paint() override;
+		bool setStringProperty(fenster::ComponentProperty property, std::string value) override;
 
 		void paintBackground(cairo_t* cr);
 
@@ -70,6 +74,7 @@ namespace fensterserver
 		Component* handleKeyEvent(KeyEvent& e) override;
 
 		Component* handleMouseEvent(MouseEvent& e) override;
+		std::string getCursorAt(const fenster::Point& position) const override { return "text"; }
 
 		bool getNumericProperty(fenster::ComponentProperty property, uint32_t* out) override;
 

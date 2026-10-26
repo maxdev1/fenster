@@ -9,6 +9,7 @@
 #include "server.hpp"
 #include "components/cursor.hpp"
 #include "events/event_processor.hpp"
+#include "input/mouse_grab.hpp"
 
 #include <libfenster/input/key_info.hpp>
 #include <libinput/keyboard/keyboard.hpp>
@@ -67,7 +68,7 @@ void inputReceiverStartReceiveKeyEvents()
 		key.scancode = ghostKey.scancode;
 		key.key = ghostKey.key;
 
-		if(key.ctrl && key.key == "KEY_Q" && key.pressed)
+		if(key.ctrl && !key.alt && key.key == "KEY_Q" && key.pressed)
 		{
 			fensterserver::Server::setDebug(!fensterserver::Server::isDebug());
 			continue;
@@ -93,6 +94,13 @@ void inputReceiverStartReceiveMouseEvents()
 	{
 		g_mouse_info info = g_mouse::readMouse(mouseIn);
 		const auto arrivalMillis = fenster::platformMillis();
+		auto buttons = fenster::MouseButton::None;
+		if(info.button1) buttons |= fenster::MouseButton::Button1;
+		if(info.button2) buttons |= fenster::MouseButton::Button2;
+		if(info.button3) buttons |= fenster::MouseButton::Button3;
+		uint64_t generation;
+		if(fensterserver::MouseGrab::routeMouse(info.x, info.y, buttons, info.scroll, generation))
+			continue;
 
 		fenster::platformAcquireMutex(fensterserver::Cursor::inputLock);
 		fensterserver::Cursor::nextPosition.x += info.x;
@@ -115,23 +123,11 @@ void inputReceiverStartReceiveMouseEvents()
 			fensterserver::Cursor::nextPosition.y = resolution.height - 2;
 		}
 
-		fensterserver::Cursor::nextPressedButtons = fenster::MouseButton::None;
-		if(info.button1)
-		{
-			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button1;
-		}
-		if(info.button2)
-		{
-			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button2;
-		}
-		if(info.button3)
-		{
-			fensterserver::Cursor::nextPressedButtons |= fenster::MouseButton::Button3;
-		}
+		fensterserver::Cursor::nextPressedButtons = buttons;
 
 		fenster::platformReleaseMutex(fensterserver::Cursor::inputLock);
 
-		instance->eventProcessor->bufferMouseState(info.scroll, arrivalMillis);
+		instance->eventProcessor->bufferMouseState(info.scroll, arrivalMillis, generation);
 		instance->requestPointerUpdate();
 	}
 }

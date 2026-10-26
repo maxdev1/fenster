@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/scrollbar.hpp"
-#include "components/cursor.hpp"
 #include "events/mouse_event.hpp"
+#include "util/cairo.hpp"
 
 #include <stdio.h>
 
@@ -21,9 +21,9 @@ namespace fensterserver
 		fenster::Rectangle knob = calculateKnob();
 
 		int knobPadding = 3;
-		cairo_rectangle(cr, knob.x + knobPadding, knob.y + knobPadding, knob.width - 2 * knobPadding,
-		                knob.height - 2 * knobPadding);
-		cairo_set_source_rgba(cr, 0, 0, 0, 0.5);
+		cairo_rounded_rectangle(cr, knob.x + knobPadding, knob.y + knobPadding, std::max(1, knob.width - 2 * knobPadding),
+		                std::max(1, knob.height - 2 * knobPadding), 4);
+		cairo_set_source_rgba(cr, .43, .49, .59, knobDrag ? .85 : hovered ? .62 : .35);
 		cairo_fill(cr);
 
 		graphics.releaseContext();
@@ -31,9 +31,12 @@ namespace fensterserver
 
 	Component* Scrollbar::handleMouseEvent(MouseEvent& me)
 	{
+		if(me.type == fenster::MouseEventType::Move) return this;
+		if(me.type == fenster::MouseEventType::Leave) { hovered = false; markFor(COMPONENT_REQUIREMENT_PAINT); return this; }
+		if(me.type == fenster::MouseEventType::Release || me.type == fenster::MouseEventType::DragRelease) { knobDrag = false; markFor(COMPONENT_REQUIREMENT_PAINT); return this; }
 		if(me.type == fenster::MouseEventType::Enter)
 		{
-			Cursor::set("default");
+			hovered = true;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
 			return this;
 		}
@@ -42,6 +45,7 @@ namespace fensterserver
 			fenster::Rectangle knob = calculateKnob();
 			if(knob.contains(me.position))
 			{
+				knobDrag = true;
 				if(orientation == ScrollbarOrientation::VERTICAL)
 				{
 					dragPressPosition = me.position.y;
@@ -58,6 +62,7 @@ namespace fensterserver
 		}
 		else if(me.type == fenster::MouseEventType::Drag)
 		{
+			if(!knobDrag) return this;
 
 			int mousePosition;
 			if(orientation == ScrollbarOrientation::VERTICAL)
@@ -108,7 +113,7 @@ namespace fensterserver
 		if(modelPosition < 0)
 			modelPosition = 0;
 		else if(modelPosition > contentLength - viewportLength)
-			modelPosition = contentLength - viewportLength;
+			modelPosition = std::max(0, contentLength - viewportLength);
 
 		markFor(COMPONENT_REQUIREMENT_PAINT);
 	}

@@ -28,18 +28,22 @@ namespace fensterserver
             fenster::Point position;
             fenster::MouseButton buttons;
             int scroll;
+            bool ctrl;
             uint64_t arrivalMillis;
             bool buttonChange;
+			uint64_t generation;
         };
 
         std::deque<MouseSample> mouseBuffer;
         SYS_MUTEX_T mouseBufferLock = fenster::platformInitializeMutex(false);
         fenster::MouseButton lastBufferedButtons = fenster::MouseButton::None;
+        bool ctrlDown = false; // Protected by key_info_buffer_lock; sampled on input arrival.
         uint64_t lastClick = 0;
         int clickCount = 0;
+		uint64_t mouseGeneration = 0;
 
         void handlePress(Server* instance, Screen* screen, MouseEvent& event, uint64_t arrivalMillis);
-        void handleRelease(Server* instance, MouseEvent& event);
+        void handleRelease(Server* instance, MouseEvent& event, bool cancelled = false);
         void handleMoveOrDrag(Server* instance, Screen* screen, MouseEvent& event);
 
     public:
@@ -50,13 +54,14 @@ namespace fensterserver
         std::deque<fenster::KeyInfo> key_info_buffer;
         SYS_MUTEX_T key_info_buffer_lock = fenster::platformInitializeMutex(false);
         void bufferKeyEvent(fenster::KeyInfo keyInfo);
-        void bufferMouseState(int scroll, uint64_t arrivalMillis);
+        void bufferMouseState(int scroll, uint64_t arrivalMillis, uint64_t generation = 0);
 
         void process();
 
         void translateKeyEvent(fenster::KeyInfo& info);
         void processKeyState();
         void processMouseState();
+        void refreshHover();
     };
 }
 

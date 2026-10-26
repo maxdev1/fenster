@@ -14,7 +14,7 @@ else ifeq ($(target),macos)
     SYSROOT := ../platform/macos-sdl-sim/sysroot
     CXX := g++-15
 	CXXFLAGS := -I/opt/homebrew/include/freetype2 -I/opt/homebrew/include
-    AR := gcc-ar-15
+    AR := /usr/bin/ar
 
 else ifeq ($(target),)
 $(error Target must be specified (e.g. "make target=ghost"))

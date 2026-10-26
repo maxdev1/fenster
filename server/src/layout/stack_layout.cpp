@@ -33,21 +33,26 @@ namespace fensterserver {
 			first = false;
 
 			auto size = child->getEffectivePreferredSize();
+			auto minimum = child->getMinimumSize(), maximum = child->getMaximumSize();
 
 			if (horizontal) {
 				int usedHeight = component->layoutPolicyVertical == LayoutingPolicy::Stretch && bounds.height > 0
-					                 ? bounds.height - padding.top - padding.bottom
+					                 ? std::max(0, bounds.height - padding.top - padding.bottom)
 					                 : size.height;
+				if(maximum.height >= 0) usedHeight = std::min(usedHeight, maximum.height);
+				usedHeight = std::max(usedHeight, minimum.height);
 				child->setBounds({pos, padding.top, size.width, usedHeight});
 				pos += size.width;
-				max = std::max(max, usedHeight);
+				max = std::max(max, size.height);
 			} else {
 				int usedWidth = component->layoutPolicyHorizontal == LayoutingPolicy::Stretch && bounds.width > 0
-					                ? bounds.width - padding.left - padding.right
+					                ? std::max(0, bounds.width - padding.left - padding.right)
 					                : size.width;
+				if(maximum.width >= 0) usedWidth = std::min(usedWidth, maximum.width);
+				usedWidth = std::max(usedWidth, minimum.width);
 				child->setBounds({padding.left, pos, usedWidth, size.height});
 				pos += size.height;
-				max = std::max(max, usedWidth);
+				max = std::max(max, size.width);
 			}
 		}
 		component->releaseChildren();

@@ -13,6 +13,14 @@ namespace fensterserver
 			return false;
 		switch(reinterpret_cast<const MessageHeader*>(bytes)->id)
 		{
+			case ProtocolCommandId::CreateReservedComponent:
+				return length == sizeof(CommandCreateReservedComponentRequest) &&
+				       reinterpret_cast<const CommandCreateReservedComponentRequest*>(bytes)->id > 0 &&
+				       isCreatableComponentType(reinterpret_cast<const CommandCreateReservedComponentRequest*>(bytes)->type);
+			case ProtocolCommandId::SetLayoutPadding:
+				return length == sizeof(CommandSetLayoutPaddingRequest);
+			case ProtocolCommandId::SetFlexComponentInfo:
+				return length == sizeof(CommandSetFlexComponentInfoRequest);
 			case ProtocolCommandId::SetBounds:
 				return length == sizeof(CommandSetBoundsRequest);
 			case ProtocolCommandId::SetNumericProperty:
@@ -51,16 +59,15 @@ namespace fensterserver
 				return false;
 			position += header.length;
 		}
-		bool successful = true;
 		for(size_t position = 0; position < length;)
 		{
 			fenster::ComponentUpdateHeader header;
 			memcpy(&header, bytes + position, sizeof(header));
 			position += sizeof(header);
 			if(!apply(bytes + position, header.length))
-				successful = false;
+				return false;
 			position += header.length;
 		}
-		return successful;
+		return true;
 	}
 }

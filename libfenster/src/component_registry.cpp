@@ -36,4 +36,14 @@ namespace fenster
 
 		return component;
 	}
+
+	void ComponentRegistry::remove(Component* component)
+	{
+		platformAcquireMutex(componentsLock);
+		auto entry = components.find(component->getId());
+		if(entry != components.end() && entry->second == component)
+			components.erase(entry);
+		platformReleaseMutex(componentsLock);
+	}
+
 }

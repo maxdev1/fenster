@@ -34,6 +34,7 @@ namespace fensterserver
     {
         SYS_TID_T partnerProcess;
         async_resizer_info_t* asyncInfo;
+        SYS_TID_T resizeTask = SYS_TID_NONE;
 
         SYS_MUTEX_T bufferLock = fenster::platformInitializeMutex(true);
         CanvasBufferInfo buffer{};

@@ -13,12 +13,12 @@ namespace fensterserver
 	void interfaceApplicationExitCleanupThread(ApplicationExitCleanupHandler* handler)
 	{
 		handler->run();
+		delete handler;
 	}
 
 	void ApplicationExitCleanupHandler::run()
 	{
 		fenster::platformJoin(pid);
 		ComponentRegistry::cleanupProcess(pid);
-		ProcessRegistry::cleanup_process(pid);
 	}
 }

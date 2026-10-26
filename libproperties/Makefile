@@ -1,6 +1,6 @@
 include ../platform.mk
 
-LIB := libproperties.a
+LIB := obj/$(target)/libproperties.a
 CXXFLAGS := -Iinc -std=c++17
 
 SRC := $(shell find src -name '*.cpp')

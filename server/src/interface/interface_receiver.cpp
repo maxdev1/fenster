@@ -18,20 +18,90 @@
 #include "components/text/text_box.hpp"
 #include "interface/interface_receiver.hpp"
 #include "interface/component_updates.hpp"
+#include "process_registry.hpp"
+#include "input/mouse_grab.hpp"
 #include <vector>
 
 using namespace fenster;
 
 namespace fensterserver
 {
-	static Component* createComponent(ComponentType type, SYS_TID_T sender)
+	static Component* createComponent(ComponentType type, SYS_TID_T sender, SYS_TID_T pid, ComponentId id = 0);
+	// The packet validator checks record sizes and string termination before any
+	// mutation runs. The outer receiver holds the registry access guard and has
+	// already resolved/validated the sender process for the complete packet.
+	static bool applyComponentMutation(const uint8_t* bytes, SYS_TID_T pid, SYS_TID_T sender)
+	{
+		auto command = reinterpret_cast<const MessageHeader*>(bytes)->id;
+		if(command == ProtocolCommandId::CreateReservedComponent)
+		{
+			auto request = reinterpret_cast<const CommandCreateReservedComponentRequest*>(bytes);
+			return request->id > 0 && createComponent(request->type, sender, pid, request->id) != nullptr;
+		}
+		if(command == ProtocolCommandId::AddComponent)
+		{
+			auto request = reinterpret_cast<const CommandAddChildRequest*>(bytes);
+			auto parent = ComponentRegistry::get(request->parent);
+			auto child = ComponentRegistry::get(request->child);
+			if(!parent || !child || !ComponentRegistry::owns(pid, parent->id) ||
+			   !ComponentRegistry::owns(pid, child->id) || parent == child || parent->isChildOf(child))
+				return false;
+			parent->addChild(child);
+			return true;
+		}
+		// The remaining mutation records all begin with a component ID.
+		ComponentId id;
+		memcpy(&id, bytes + sizeof(MessageHeader), sizeof(id));
+		auto component = ComponentRegistry::get(id);
+		if(!component) return false;
+		switch(command)
+		{
+			case ProtocolCommandId::SetLayoutPadding:
+				return component->setLayoutPadding(reinterpret_cast<const CommandSetLayoutPaddingRequest*>(bytes)->padding);
+			case ProtocolCommandId::SetFlexComponentInfo:
+			{
+				auto request = reinterpret_cast<const CommandSetFlexComponentInfoRequest*>(bytes);
+				return component->setFlexComponentInfo(request->child, request->grow, request->shrink, request->basis);
+			}
+			case ProtocolCommandId::SetBounds:
+				component->setBounds(reinterpret_cast<const CommandSetBoundsRequest*>(bytes)->bounds);
+				return true;
+			case ProtocolCommandId::SetNumericProperty:
+			{
+				auto request = reinterpret_cast<const CommandSetNumericPropertyRequest*>(bytes);
+				return component->setNumericProperty(request->property, request->value);
+			}
+			case ProtocolCommandId::SetStringProperty:
+			{
+				auto request = reinterpret_cast<const CommandSetStringPropertyRequest*>(bytes);
+				return component->setStringProperty(request->property, request->value);
+			}
+			case ProtocolCommandId::AddListener:
+			{
+				auto request = reinterpret_cast<const CommandAddListenerRequest*>(bytes);
+				component->addListener(request->event_type, request->target_thread, request->id, pid);
+				return true;
+			}
+			case ProtocolCommandId::SetMinimumSize:
+				component->setMinimumSize(reinterpret_cast<const CommandSetSizeRequest*>(bytes)->size);
+				return true;
+			case ProtocolCommandId::SetMaximumSize:
+				component->setMaximumSize(reinterpret_cast<const CommandSetSizeRequest*>(bytes)->size);
+				return true;
+			case ProtocolCommandId::SetPreferredSize:
+				component->setPreferredSize(reinterpret_cast<const CommandSetSizeRequest*>(bytes)->size);
+				return true;
+			default: return false;
+		}
+	}
+
+	static Component* makeComponent(ComponentType type, SYS_TID_T sender)
 	{
 		Component* component = nullptr;
 		switch(type)
 		{
 			case ComponentType::Window:
 				component = new Window();
-				Server::instance()->screen->addChild(component);
 				break;
 
 			case ComponentType::Label:
@@ -75,8 +145,18 @@ namespace fensterserver
 				break;
 		}
 
+		return component;
+	}
+
+	static Component* createComponent(ComponentType type, SYS_TID_T sender, SYS_TID_T pid, ComponentId id)
+	{
+		auto create = [=] { return makeComponent(type, sender); };
+		auto component = id ? ComponentRegistry::createReserved(pid, id, create) : create();
 		if(component)
-			ComponentRegistry::bind(platformGetPidForTid(sender), component);
+		{
+			if(!id) ComponentRegistry::bind(pid, component);
+			if(type == ComponentType::Window) Server::instance()->screen->addChild(component);
+		}
 		return component;
 	}
 
@@ -107,12 +187,16 @@ namespace fensterserver
 		}
 	}
 
-	bool interfaceReceiverProcessCommand(void* requestMessage, bool batched)
+	bool interfaceReceiverProcessCommand(void* requestMessage)
 	{
 		auto requestUiMessage = (MessageHeader*) SYS_MESSAGE_CONTENT(requestMessage);
 		void* responseMessage = nullptr;
 		int responseLength = 0;
 		CommandSimpleResponse canvasBlitResponse{};
+		ComponentRegistry::Access components;
+		auto pid = platformGetPidForTid(SYS_MESSAGE_SENDER(requestMessage));
+		if(pid == SYS_TID_NONE || ProcessRegistry::get(pid) == SYS_TID_NONE)
+			return false; // Discard queued requests after the client's exit cleanup.
 
 		if(requestUiMessage->id == ProtocolCommandId::UpdateComponents)
 		{
@@ -123,14 +207,44 @@ namespace fensterserver
 				auto request = reinterpret_cast<CommandUpdateComponentsRequest*>(requestUiMessage);
 				const bool success = applyComponentUpdates(request->updates, length - sizeof(*request),
 					[&](const uint8_t* bytes, size_t size) {
-						std::vector<uint8_t> nested(SYS_MESSAGE_HEADER_SIZE + size);
-						memcpy(nested.data(), requestMessage, SYS_MESSAGE_HEADER_SIZE);
-						memcpy(SYS_MESSAGE_CONTENT(nested.data()), bytes, size);
-						return interfaceReceiverProcessCommand(nested.data(), true);
+						return applyComponentMutation(bytes, pid, SYS_MESSAGE_SENDER(requestMessage));
 					});
 				if(success)
 					response->status = ProtocolStatus::Success;
 			}
+			responseMessage = response;
+			responseLength = sizeof(*response);
+		}
+		else if(requestUiMessage->id == ProtocolCommandId::PrepareComponent)
+		{
+			bool ready = false;
+			if(SYS_MESSAGE_LENGTH(requestMessage) == sizeof(CommandPrepareComponentRequest))
+			{
+				auto request = reinterpret_cast<CommandPrepareComponentRequest*>(requestUiMessage);
+				if(ComponentRegistry::owns(pid, request->id))
+					if(auto component = ComponentRegistry::get(request->id)) ready = component->prepareForDisplay();
+			}
+			responseMessage = new CommandSimpleResponse{{requestUiMessage->id}, ready ? ProtocolStatus::Success : ProtocolStatus::Error};
+			responseLength = sizeof(CommandSimpleResponse);
+		}
+		else if(requestUiMessage->id == ProtocolCommandId::SetLayoutPadding ||
+				requestUiMessage->id == ProtocolCommandId::SetFlexComponentInfo)
+		{
+			auto expected = requestUiMessage->id == ProtocolCommandId::SetLayoutPadding ?
+				sizeof(CommandSetLayoutPaddingRequest) : sizeof(CommandSetFlexComponentInfoRequest);
+			auto success = SYS_MESSAGE_LENGTH(requestMessage) == expected &&
+				applyComponentMutation(reinterpret_cast<const uint8_t*>(requestUiMessage), pid, SYS_MESSAGE_SENDER(requestMessage));
+			responseMessage = new CommandSimpleResponse{{requestUiMessage->id}, success ? ProtocolStatus::Success : ProtocolStatus::Error};
+			responseLength = sizeof(CommandSimpleResponse);
+		}
+
+		else if(requestUiMessage->id == ProtocolCommandId::ReserveComponentIds)
+		{
+			auto response = new CommandReserveComponentIdsResponse{};
+			response->header.id = ProtocolCommandId::ReserveComponentIds;
+			if(SYS_MESSAGE_LENGTH(requestMessage) == sizeof(MessageHeader))
+				response->component_ids = ComponentRegistry::reserveIds(pid);
+			response->status = response->component_ids.count ? ProtocolStatus::Success : ProtocolStatus::Error;
 			responseMessage = response;
 			responseLength = sizeof(*response);
 		}
@@ -149,14 +263,14 @@ namespace fensterserver
 			response->status = count ? ProtocolStatus::Success : ProtocolStatus::Error;
 			response->count = count;
 			for(size_t i = 0; i < count; ++i)
-				response->ids[i] = createComponent(request->type, SYS_MESSAGE_SENDER(requestMessage))->id;
+				response->ids[i] = createComponent(request->type, SYS_MESSAGE_SENDER(requestMessage), pid)->id;
 			responseMessage = response;
 		}
 		else if(requestUiMessage->id == ProtocolCommandId::CreateComponent)
 		{
 			auto createRequest = (CommandCreateComponentRequest*) requestUiMessage;
 
-			Component* component = createComponent(createRequest->type, SYS_MESSAGE_SENDER(requestMessage));
+			Component* component = createComponent(createRequest->type, SYS_MESSAGE_SENDER(requestMessage), pid);
 			ComponentId component_id = -1;
 			if(component)
 			{
@@ -182,7 +296,8 @@ namespace fensterserver
 
 			// create response message
 			auto response = new CommandAddChildResponse;
-			if(parent == nullptr || child == nullptr)
+			if(parent == nullptr || child == nullptr || !ComponentRegistry::owns(pid, parent->id) ||
+			   !ComponentRegistry::owns(pid, child->id) || parent == child || parent->isChildOf(child))
 			{
 				response->status = ProtocolStatus::Error;
 			}
@@ -195,6 +310,18 @@ namespace fensterserver
 			responseMessage = response;
 			responseLength = sizeof(CommandAddChildResponse);
 		}
+		else if(requestUiMessage->id == ProtocolCommandId::SetMouseGrab)
+		{
+			auto response = new CommandSimpleResponse{{ProtocolCommandId::SetMouseGrab}, ProtocolStatus::Error};
+			if(SYS_MESSAGE_LENGTH(requestMessage) == sizeof(CommandSetMouseGrabRequest))
+			{
+				auto request = reinterpret_cast<CommandSetMouseGrabRequest*>(requestUiMessage);
+				if(MouseGrab::set(request->id, pid, request->grabbed))
+					response->status = ProtocolStatus::Success;
+			}
+			responseMessage = response;
+			responseLength = sizeof(*response);
+		}
 		else if(requestUiMessage->id == ProtocolCommandId::DestroyComponent)
 		{
 			auto request = (CommandDestroyComponentRequest*) requestUiMessage;
@@ -202,6 +329,7 @@ namespace fensterserver
 
 			if(component)
 			{
+				MouseGrab::releaseFor(component);
 				auto parent = component->getParent();
 				if(parent)
 					parent->removeChild(component);
@@ -259,7 +387,7 @@ namespace fensterserver
 			}
 			else
 			{
-				component->addListener(request->event_type, request->target_thread, request->id);
+				component->addListener(request->event_type, request->target_thread, request->id, pid);
 				response->status = ProtocolStatus::Success;
 			}
 
@@ -330,8 +458,7 @@ namespace fensterserver
 			}
 			else
 			{
-				Server::instance()->switchFocus(component);
-				response->status = ProtocolStatus::Success;
+				response->status = Server::instance()->switchFocus(component) ? ProtocolStatus::Success : ProtocolStatus::Error;
 			}
 
 			responseMessage = response;
@@ -416,7 +543,7 @@ namespace fensterserver
 			Component* component = ComponentRegistry::get(request->canvas_id);
 
 			auto response = new CommandRegisterDesktopCanvasResponse;
-			if(component == nullptr)
+			if(component == nullptr || !ComponentRegistry::owns(pid, component->id))
 			{
 				response->status = ProtocolStatus::Error;
 			}
@@ -431,8 +558,13 @@ namespace fensterserver
 
 					Screen* screen = Server::instance()->screen;
 					screen->addChild(canvas);
-					screen->addListener(ComponentEventType::Window, request->target_thread, canvas->id);
+					screen->setDesktopCanvas(canvas);
+					screen->addListener(ComponentEventType::Window, request->target_thread, canvas->id, pid);
 					canvas->setBounds(screen->getBounds());
+					for(auto child : screen->acquireChildren())
+						if(auto window = dynamic_cast<Window*>(child.component))
+							screen->sendWindowEvent(canvas->id, window, request->target_thread, true);
+					screen->releaseChildren();
 				}
 			}
 
@@ -455,7 +587,8 @@ namespace fensterserver
 			auto request = (CommandScrollPaneSetContent*) requestUiMessage;
 			ScrollPane* scrollpane = dynamic_cast<ScrollPane*>(ComponentRegistry::get(request->scrollpane));
 			Component* content = ComponentRegistry::get(request->content);
-			if(scrollpane && content)
+			if(scrollpane && content && ComponentRegistry::owns(pid, scrollpane->id) &&
+			   ComponentRegistry::owns(pid, content->id) && scrollpane != content && !scrollpane->isChildOf(content))
 			{
 				scrollpane->setContent(content);
 				response->status = ProtocolStatus::Success;
@@ -530,23 +663,16 @@ namespace fensterserver
 			responseLength = sizeof(CommandSimpleResponse);
 		}
 
-		bool successful = true;
-		if(batched)
+		components.release(); // Transport can block; no component pointer escapes this operation.
+		Server::instance()->requestUpdateLater();
+		if(responseMessage)
 		{
-			successful = responseMessage && static_cast<CommandSimpleResponse*>(responseMessage)->status == ProtocolStatus::Success;
-		}
-		else
-		{
-			Server::instance()->requestUpdateLater();
-			if(responseMessage)
-			{
-				platformSendMessage(SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength,
-									SYS_MESSAGE_TRANSACTION(requestMessage));
-				platformYieldTo(SYS_MESSAGE_SENDER(requestMessage));
-			}
+			platformSendMessage(SYS_MESSAGE_SENDER(requestMessage), responseMessage, responseLength,
+							 SYS_MESSAGE_TRANSACTION(requestMessage));
+			platformYieldTo(SYS_MESSAGE_SENDER(requestMessage));
 		}
 		if(responseMessage && responseMessage != &canvasBlitResponse)
 			operator delete(responseMessage);
-		return successful;
+		return true;
 	}
 }

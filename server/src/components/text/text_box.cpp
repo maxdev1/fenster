@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/text/text_box.hpp"
-#include "components/cursor.hpp"
+#include "util/cairo.hpp"
 #include "components/text/move/default_caret_move_strategy.hpp"
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
@@ -22,9 +22,17 @@ namespace fensterserver
 		font = fenster::FontLoader::getDefault();
 	}
 
+	TextBox::~TextBox()
+	{
+		fenster::TextLayouter::destroyLayout(viewModel);
+	}
+
 	void TextBox::setText(std::string newText)
 	{
-		text = newText;
+		text = std::move(newText);
+		cursor = std::max(0, std::min(cursor, static_cast<int>(text.size())));
+		marker = std::max(0, std::min(marker, static_cast<int>(text.size())));
+		scrollToCursorBeforePaint = true;
 		markFor(COMPONENT_REQUIREMENT_UPDATE);
 	}
 
@@ -64,23 +72,17 @@ namespace fensterserver
 
 	void TextBox::paintBackground(cairo_t* cr)
 	{
-		auto bounds = getBounds();
-
-		cairo_set_source_rgb(cr, 1, 1, 1);
-		cairo_rectangle(cr, 0, 0, bounds.width, bounds.height);
-		cairo_fill(cr);
-
-		fenster::ColorArgb borderColor;
-		if (focused)
-			borderColor = _RGB(55, 155, 255);
-		else if (visualStatus == TextBoxVisualStatus::HOVERED)
-			borderColor = _RGB(150, 150, 150);
-		else
-			borderColor = _RGB(180, 180, 180);
-		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(borderColor));
-		cairo_rectangle(cr, 0.5, 0.5, bounds.width - 1, bounds.height - 1);
-		cairo_set_line_width(cr, 1.0);
-		cairo_stroke(cr);
+		clearSurface();
+		auto box = getBounds();
+		if(focused) {
+			cairo_rounded_rectangle(cr, .5, .5, box.width - 1, box.height - 1, 8);
+			cairo_set_source_rgba(cr, .37, .43, .88, .12); cairo_set_line_width(cr, 3); cairo_stroke(cr);
+		}
+		cairo_rounded_rectangle(cr, 1.5, 1.5, box.width - 3, box.height - 3, 7);
+		cairo_set_source_rgb(cr, 1, 1, 1); cairo_fill_preserve(cr);
+		auto border = focused ? _RGB(116, 128, 227) : visualStatus == TextBoxVisualStatus::HOVERED ? _RGB(188, 198, 215) : _RGB(222, 228, 237);
+		cairo_set_source_rgba(cr, ARGB_TO_FPARAMS(border)); cairo_set_line_width(cr, 1); cairo_stroke(cr);
+		fenster::paintIcon(cr, icon, 12, (box.height - 17) / 2., 17, _RGB(143, 155, 174));
 	}
 
 	void TextBox::layoutText(cairo_t* cr)
@@ -180,6 +182,17 @@ namespace fensterserver
 		if (focused)
 			paintMarking(cr);
 		paintText(cr);
+		if(text.empty() && !placeholder.empty()) {
+			auto hint = fenster::TextLayouter::initializeLayout();
+			fenster::TextLayouter::layout(cr, placeholder.c_str(), font, fontSize, fenster::Rectangle(0, 0, std::max(0, bounds.width - insets.left - insets.right), bounds.height), fenster::TextAlignment::LEFT, hint, false);
+			cairo_set_source_rgb(cr, .57, .62, .70);
+			for(const auto& glyph : hint->positions) {
+				cairo_save(cr);
+				fenster::TextLayouter::paintChar(cr, glyph, fenster::Point(insets.left, insets.top));
+				cairo_restore(cr);
+			}
+			fenster::TextLayouter::destroyLayout(hint);
+		}
 		if (focused)
 			paintCursor(cr);
 
@@ -364,9 +377,9 @@ namespace fensterserver
 			{
 				char c = platformCharForKey(ke.info);
 
-				if (!multiline && c == '\n')
+				if (!multiline && (c == '\n' || c == '\t'))
 				{
-					//
+					// Single-line fields leave Enter/Tab to the containing dialog.
 				} else if (c != -1)
 				{
 					std::stringstream s;
@@ -393,7 +406,6 @@ namespace fensterserver
 		{
 			visualStatus = TextBoxVisualStatus::HOVERED;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
-			Cursor::set("text");
 			return this;
 		}
 
@@ -401,7 +413,6 @@ namespace fensterserver
 		{
 			visualStatus = TextBoxVisualStatus::NORMAL;
 			markFor(COMPONENT_REQUIREMENT_PAINT);
-			Cursor::set("default");
 			return this;
 		}
 
@@ -542,6 +553,8 @@ namespace fensterserver
 
 	bool TextBox::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
+		if(property == fenster::ComponentProperty::Icon) { *out = static_cast<uint32_t>(icon); return true; }
+		if(property == fenster::ComponentProperty::SelectAll) { *out = getSelectedRange().getLength() == text.size(); return true; }
 		if (property == fenster::ComponentProperty::Secure)
 		{
 			*out = secure;
@@ -557,8 +570,16 @@ namespace fensterserver
 		return false;
 	}
 
+	bool TextBox::setStringProperty(fenster::ComponentProperty property, std::string value)
+	{
+		if(property == fenster::ComponentProperty::Placeholder) { placeholder = std::move(value); markFor(COMPONENT_REQUIREMENT_PAINT); return true; }
+		return Component::setStringProperty(property, std::move(value));
+	}
+
 	bool TextBox::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
+		if(property == fenster::ComponentProperty::Icon) { icon = static_cast<fenster::Icon>(value); insets.left = icon == fenster::Icon::None ? 10 : 36; markFor(COMPONENT_REQUIREMENT_ALL); return true; }
+		if(property == fenster::ComponentProperty::SelectAll) { marker = 0; cursor = text.size(); scrollToCursorBeforePaint = true; markFor(COMPONENT_REQUIREMENT_PAINT); return true; }
 		if (property == fenster::ComponentProperty::Secure)
 		{
 			setSecure(value == 1);

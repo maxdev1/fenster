@@ -27,7 +27,8 @@ namespace fenster
 		CommandFocusRequest request;
 		request.header.id = fenster::ProtocolCommandId::Focus;
 		request.id = this->id;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandFocusRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandFocusRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandFocusResponse);

@@ -42,6 +42,8 @@ namespace fensterserver
         }
 
         void layout() override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
+        bool getNumericProperty(fenster::ComponentProperty property, uint32_t* value) override;
 
         Component *handleKeyEvent(KeyEvent &event) override;
         Component* handleMouseEvent(MouseEvent& event) override;

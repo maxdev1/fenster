@@ -84,6 +84,15 @@ namespace fenster
 	}
 
 
+	void platformDestroyMutex(SYS_MUTEX_T mutex)
+	{
+		if(mutex->reentrant)
+			DeleteCriticalSection(&mutex->cs);
+		else
+			CloseHandle(mutex->handle);
+		free(mutex);
+	}
+
 	DWORD WINAPI _platformThreadEntry(LPVOID arg)
 	{
 		void (*entry)() = (void (*)()) arg;
@@ -96,9 +105,22 @@ namespace fenster
 		return CreateThread(NULL, 0, _platformThreadEntry, entry, 0, NULL);
 	}
 
+	struct DataThreadEntry { void (*entry)(void*); void* data; };
+	static DWORD WINAPI dataThreadEntry(LPVOID raw)
+	{
+		auto argument = static_cast<DataThreadEntry*>(raw);
+		auto entry = *argument;
+		delete argument;
+		entry.entry(entry.data);
+		return 0;
+	}
 	SYS_TID_T platformCreateThreadWithData(void* entry, void* data)
 	{
-		printf("NOT IMPLEMENTED: platformCreateThreadWithData\n");
+		auto argument = new DataThreadEntry{reinterpret_cast<void(*)(void*)>(entry), data};
+		auto thread = CreateThread(nullptr, 0, dataThreadEntry, argument, 0, nullptr);
+		if(!thread)
+			delete argument;
+		return thread;
 	}
 
 	uint64_t platformMillis()
@@ -160,7 +182,8 @@ namespace fenster
 
 	void platformJoin(SYS_TID_T tid)
 	{
-		printf("NOT IMPLEMENTED: platformJoin\n");
+		WaitForSingleObject(tid, INFINITE);
+		CloseHandle(tid);
 	}
 
 	bool platformRegisterTaskIdentifier(const char* task)

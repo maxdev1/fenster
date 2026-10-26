@@ -9,12 +9,14 @@
 #include "components/titled_component.hpp"
 
 #include <libfenster/font/font.hpp>
+#include <libfenster/icons.hpp>
 
 namespace fensterserver
 {
     class Image : virtual public Component
     {
         cairo_surface_t* image = nullptr;
+        fenster::Icon icon = fenster::Icon::None;
 		std::string imagePath;
 
     public:
@@ -22,6 +24,7 @@ namespace fensterserver
         ~Image() override;
 
         void paint() override;
+        bool setNumericProperty(fenster::ComponentProperty property, uint32_t value) override;
 
         void loadImage(std::string path);
 

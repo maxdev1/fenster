@@ -5,14 +5,24 @@
 #include "video/graphics.hpp"
 
 #include <stdio.h>
+#include <algorithm>
 #include <server.hpp>
 
 namespace fensterserver
 {
 	Graphics::Graphics(uint16_t width, uint16_t height) :
-		width(width), height(height)
+		width(0), height(0)
 	{
 		resize(width, height);
+	}
+
+	Graphics::~Graphics()
+	{
+		if(context)
+			cairo_destroy(context);
+		if(surface)
+			cairo_surface_destroy(surface);
+		fenster::platformDestroyMutex(lock);
 	}
 
 
@@ -65,19 +75,21 @@ namespace fensterserver
 		if(newWidth <= 0 || newHeight <= 0)
 			return;
 
+		fenster::platformAcquireMutex(lock);
+		// Capacity grows independently on each axis; list/grid changes must not
+		// discard the retained height when growing width (or vice versa).
 		if(averaged)
 		{
-			newWidth = newWidth + (averageFactor - newWidth % averageFactor);
-			newHeight = newHeight + (averageFactor - newHeight % averageFactor);
+			newWidth = (newWidth + averageFactor - 1) / averageFactor * averageFactor;
+			newHeight = (newHeight + averageFactor - 1) / averageFactor * averageFactor;
 		}
-
-		// TODO: Like this, buffers never downscale. Check if we want this:
-		if(newWidth <= width && newHeight <= height)
+		newWidth = std::max(newWidth, int(width));
+		newHeight = std::max(newHeight, int(height));
+		if(surface && newWidth == width && newHeight == height)
 		{
+			fenster::platformReleaseMutex(lock);
 			return;
 		}
-
-		fenster::platformAcquireMutex(lock);
 		if(surface)
 		{
 			cairo_surface_destroy(surface);

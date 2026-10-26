@@ -3,14 +3,17 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/component.hpp"
+#include "input/mouse_grab.hpp"
 #include "component_registry.hpp"
 #include "components/window.hpp"
+#include "components/cursor.hpp"
 #include "events/key_event.hpp"
 #include "events/locatable.hpp"
 #include "events/mouse_event.hpp"
 #include "layout/flex_layout.hpp"
 #include "layout/flow_layout.hpp"
 #include "layout/grid_layout.hpp"
+#include "layout/fill_layout.hpp"
 #include "layout/stack_layout.hpp"
 #include "libfenster/json/json.hpp"
 #include "server.hpp"
@@ -20,11 +23,16 @@
 #include <libfenster/interface.hpp>
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 
 #include "checkable_component.hpp"
 
 namespace fensterserver
 {
+	static SYS_MUTEX_T renderLock = fenster::platformInitializeMutex(true);
+	Component::RenderAccess::RenderAccess() { fenster::platformAcquireMutex(renderLock); }
+	Component::RenderAccess::~RenderAccess() { fenster::platformReleaseMutex(renderLock); }
+
 	Component::Component() :
 		BoundingComponent(this),
 		FocusableComponent(this),
@@ -40,32 +48,47 @@ namespace fensterserver
 
 	Component::~Component()
 	{
+		ComponentRegistry::forget(id);
+		if(parent)
+			parent->removeChild(this);
+		// Embedded internal children have already run their own destructors.
+		while(!children.empty())
+		{
+			auto child = children.back();
+			children.pop_back();
+			if(child.type == COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT)
+			{
+				child.component->parent = nullptr;
+				ComponentRegistry::destroy(child.component);
+			}
+		}
+		for(auto listener : listeners)
+			delete listener;
 		delete _layout;
+		fenster::platformDestroyMutex(childrenLock);
+		fenster::platformDestroyMutex(lock);
 	}
 
 	void Component::setBoundsInternal(const fenster::Rectangle& newBounds)
 	{
 		fenster::platformAcquireMutex(lock);
 
-		fenster::Rectangle oldBounds = bounds;
+		auto adjusted = newBounds;
+		adjusted.width = std::max(adjusted.width, minimumSize.width);
+		adjusted.height = std::max(adjusted.height, minimumSize.height);
+		if(adjusted == bounds) { fenster::platformReleaseMutex(lock); return; }
+		const auto oldBounds = bounds;
 		markDirty();
-
-		bounds = newBounds;
-		if(bounds.width < minimumSize.width)
-			bounds.width = minimumSize.width;
-		if(bounds.height < minimumSize.height)
-			bounds.height = minimumSize.height;
+		bounds = adjusted;
 		markDirty();
 
 		if(oldBounds.width != bounds.width || oldBounds.height != bounds.height)
 		{
-			if(hasGraphics())
-			{
-				graphics.resize(bounds.width, bounds.height);
-			}
 			markFor(COMPONENT_REQUIREMENT_ALL);
 			handleBoundChanged(oldBounds);
 		}
+		if(auto screen = dynamic_cast<Screen*>(parent))
+			if(screen->isTaskbar(this)) screen->markFor(COMPONENT_REQUIREMENT_LAYOUT);
 
 		fenster::platformReleaseMutex(lock);
 	}
@@ -123,12 +146,43 @@ namespace fensterserver
 		return true;
 	}
 
+	bool Component::prepareForDisplay()
+	{
+		RenderAccess rendering;
+		fenster::platformAcquireMutex(lock);
+		if(visible) { fenster::platformReleaseMutex(lock); return false; }
+		for(int pass = 0; pass < 8; ++pass)
+		{
+			resolveRequirement(COMPONENT_REQUIREMENT_UPDATE, 0);
+			resolveRequirement(COMPONENT_REQUIREMENT_LAYOUT, 0);
+			if(!(pendingRequirements() & (COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT))) break;
+		}
+		const bool ready = !(pendingRequirements() & (COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT));
+		if(ready) resolveRequirement(COMPONENT_REQUIREMENT_PAINT, 0);
+		fenster::platformReleaseMutex(lock);
+		return ready;
+	}
+
 	void Component::setVisible(bool visible)
 	{
 		fenster::platformAcquireMutex(lock);
+		if(this->visible == visible) { fenster::platformReleaseMutex(lock); return; }
 		this->visible = visible;
 		markDirty();
 		fenster::platformReleaseMutex(lock);
+		if(!visible)
+		{
+			MouseGrab::releaseFor(this);
+			if(auto source = ComponentRegistry::get(Cursor::focusedComponent))
+			{
+				if(source == this || source->isChildOf(this))
+				{
+					source->setFocused(false);
+					if(auto window = source->getWindow()) window->setFocused(false);
+					Cursor::focusedComponent = -1;
+				}
+			}
+		}
 
 		if(visible)
 		{
@@ -142,7 +196,7 @@ namespace fensterserver
 			e.header.type = fenster::ComponentEventType::Visible;
 			e.header.component_id = info.component_id;
 			e.visible = visible;
-			fenster::platformSendMessage(info.target_thread, &e, sizeof(fenster::ComponentVisibleEvent),SYS_TX_NONE);
+			ComponentRegistry::sendEvent(info.target_thread, &e, sizeof(fenster::ComponentVisibleEvent), SYS_TX_NONE);
 		});
 	}
 
@@ -198,6 +252,8 @@ namespace fensterserver
 
 	void Component::addChild(Component* comp, ComponentChildReferenceType type)
 	{
+		if(!comp || comp == this || isChildOf(comp))
+			return;
 		if(comp->parent)
 			comp->parent->removeChild(comp);
 
@@ -281,7 +337,11 @@ namespace fensterserver
 			{
 				auto ref = children[index];
 				children.erase(children.begin() + index);
-				children.push_back(ref);
+				auto position = std::find_if(children.begin(), children.end(), [comp](const auto& child)
+				{
+					return child.component->zIndex > comp->zIndex;
+				});
+				children.insert(position, ref);
 
 				markDirty(comp->bounds);
 				break;
@@ -340,6 +400,7 @@ namespace fensterserver
 		auto handledByListener = this->callForListeners(fenster::ComponentEventType::Mouse,
 		                                                [event](EventListenerInfo& info)
 		                                                {
+			                                                if(event.synthetic && event.type == fenster::MouseEventType::Move) return;
 			                                                fenster::ComponentMouseEvent postedEvent;
 			                                                postedEvent.header.type =
 					                                                fenster::ComponentEventType::Mouse;
@@ -349,6 +410,7 @@ namespace fensterserver
 			                                                postedEvent.buttons = event.buttons;
 			                                                postedEvent.clickCount = event.clickCount;
 			                                                postedEvent.scroll = event.scroll;
+			                                                postedEvent.ctrl = event.ctrl;
 			                                                fenster::platformSendMessage(
 					                                                info.target_thread, &postedEvent,
 					                                                sizeof(fenster::ComponentMouseEvent),SYS_TX_NONE);
@@ -426,30 +488,61 @@ namespace fensterserver
 		preferred.height = std::max(preferred.height, min.height);
 
 		auto max = getMaximumSize();
-		if(max.width != -1 && max.height != -1) {
-            preferred.width = std::min(preferred.width, max.width);
-            preferred.height = std::min(preferred.height, max.height);
-		}
+		if(max.width >= 0) preferred.width = std::max(min.width, std::min(preferred.width, max.width));
+		if(max.height >= 0) preferred.height = std::max(min.height, std::min(preferred.height, max.height));
 		return preferred;
 	}
 
 	void Component::setMinimumSize(const fenster::Dimension& size)
 	{
+		if(minimumSize == size) return;
 		minimumSize = size;
 		markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
 	void Component::setMaximumSize(const fenster::Dimension& size)
 	{
+		if(maximumSize == size) return;
 		maximumSize = size;
 		markParentFor(COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_LAYOUT);
 	}
 
 	void Component::setLayout(Layout* newMgr)
 	{
+		fenster::platformAcquireMutex(lock);
+		if(newMgr == _layout) { fenster::platformReleaseMutex(lock); return; }
+		delete _layout;
 		newMgr->setComponent(this);
 		this->_layout = newMgr;
 		markFor(COMPONENT_REQUIREMENT_LAYOUT);
+		fenster::platformReleaseMutex(lock);
+	}
+
+	bool Component::setLayoutPadding(fenster::Insets padding)
+	{
+		fenster::platformAcquireMutex(lock);
+		auto layout = dynamic_cast<PaddingSupport*>(getLayout());
+		if(!layout) { fenster::platformReleaseMutex(lock); return false; }
+		if(layout->getPadding() != padding)
+		{
+			layout->setPadding(padding);
+			markFor(COMPONENT_REQUIREMENT_LAYOUT);
+		}
+		fenster::platformReleaseMutex(lock);
+		return true;
+	}
+
+	bool Component::setFlexComponentInfo(fenster::ComponentId childId, float grow, float shrink, int basis)
+	{
+		auto child = ComponentRegistry::get(childId);
+		fenster::platformAcquireMutex(lock);
+		auto layout = dynamic_cast<FlexLayout*>(getLayout());
+		if(!layout || !child || !child->isChildOf(this) || !std::isfinite(grow) || !std::isfinite(shrink))
+		{ fenster::platformReleaseMutex(lock); return false; }
+		layout->setComponentInfo(child, grow, shrink, basis);
+		markFor(COMPONENT_REQUIREMENT_LAYOUT);
+		fenster::platformReleaseMutex(lock);
+		return true;
 	}
 
 	void Component::markParentFor(ComponentRequirement req)
@@ -480,63 +573,53 @@ namespace fensterserver
 	 * Resolves a single requirement in the component tree. Layouting is done top-down,
 	 * while updating and painting is done bottom-up.
 	 */
-	void Component::resolveRequirement(ComponentRequirement req, int lvl)
+	void Component::resolveRequirement(ComponentRequirement req, int lvl, fenster::Rectangle clip)
 	{
-		if((childRequirements & req) && (req & COMPONENT_REQUIREMENT_UPDATE || req & COMPONENT_REQUIREMENT_PAINT))
+		if(req == COMPONENT_REQUIREMENT_PAINT)
 		{
-			fenster::platformAcquireMutex(childrenLock);
-			for(auto& child: children)
-			{
-				if(child.component->visible)
-				{
-					fenster::platformAcquireMutex(child.component->lock);
-					child.component->resolveRequirement(req, lvl + 1);
-					fenster::platformReleaseMutex(child.component->lock);
-				}
-			}
-			childRequirements &= ~req;
-			fenster::platformReleaseMutex(childrenLock);
+			if(lvl == 0) clip = bounds;
+			clip = bounds.clip(clip);
+			if(clip.width <= 0 || clip.height <= 0) return;
+			clip.x -= bounds.x;
+			clip.y -= bounds.y;
 		}
-
+		auto childrenFor = [&] {
+			// Clear before visiting: a child can invalidate an earlier sibling
+			// or ancestor while resolving its own requirements.
+			childRequirements &= ~req;
+			fenster::platformAcquireMutex(childrenLock);
+			for(auto& child : children)
+			{
+				auto component = child.component;
+				if(!component->visible) continue;
+				fenster::platformAcquireMutex(component->lock);
+				component->resolveRequirement(req, lvl + 1, clip);
+				if(component->pendingRequirements() & req) childRequirements |= req;
+				fenster::platformReleaseMutex(component->lock);
+			}
+			fenster::platformReleaseMutex(childrenLock);
+		};
+		if((childRequirements & req) && (req & (COMPONENT_REQUIREMENT_UPDATE | COMPONENT_REQUIREMENT_PAINT)))
+			childrenFor();
 		fenster::platformAcquireMutex(lock);
 		if(requirements & req)
 		{
+			requirements &= ~req;
 			if(req & COMPONENT_REQUIREMENT_UPDATE)
 			{
+				// Text measurement needs a context, not a full offscreen buffer.
+				if(hasGraphics() && !graphics.getSurface()) graphics.resize(1, 1);
 				update();
 			}
-			if(req & COMPONENT_REQUIREMENT_LAYOUT)
-			{
-				layout();
-			}
-			if(req & COMPONENT_REQUIREMENT_PAINT)
-			{
-				paint();
-				markDirty();
-			}
-
-			requirements &= ~req;
+			if(req & COMPONENT_REQUIREMENT_LAYOUT) layout();
+			if(req & COMPONENT_REQUIREMENT_PAINT) { recheckGraphics(); paint(); markDirty(); }
 		}
 		fenster::platformReleaseMutex(lock);
-
-		if((childRequirements & req) && (req & COMPONENT_REQUIREMENT_LAYOUT))
-		{
-			fenster::platformAcquireMutex(childrenLock);
-			for(auto& child: children)
-			{
-				if(child.component->visible)
-				{
-					fenster::platformAcquireMutex(child.component->lock);
-					child.component->resolveRequirement(req, lvl + 1);
-					fenster::platformReleaseMutex(child.component->lock);
-				}
-			}
-			childRequirements &= ~req;
-			fenster::platformReleaseMutex(childrenLock);
-		}
+		if((childRequirements & req) && (req & COMPONENT_REQUIREMENT_LAYOUT)) childrenFor();
 	}
 
-	void Component::addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id)
+	void Component::addListener(fenster::ComponentEventType eventType, SYS_TID_T target_thread, fenster::ComponentId id,
+	                            SYS_TID_T owner)
 	{
 		fenster::platformAcquireMutex(lock);
 
@@ -544,9 +627,26 @@ namespace fensterserver
 		entry->info.target_thread = target_thread;
 		entry->info.component_id = id;
 		entry->type = eventType;
+		entry->owner = owner == SYS_TID_NONE ? fenster::platformGetPidForTid(target_thread) : owner;
 		listeners.push_back(entry);
 
 		fenster::platformReleaseMutex(lock);
+	}
+
+	void Component::removeListenersForProcess(SYS_TID_T owner)
+	{
+		// Called only while registry cleanup excludes all listener readers. Canvas
+		// workers never touch listeners; do not wait on their transport-held locks.
+		for(auto entry = listeners.begin(); entry != listeners.end();)
+		{
+			if((*entry)->owner == owner)
+			{
+				delete *entry;
+				entry = listeners.erase(entry);
+			}
+			else
+				++entry;
+		}
 	}
 
 	bool Component::callForListeners(fenster::ComponentEventType eventType,
@@ -575,6 +675,8 @@ namespace fensterserver
 			return;
 
 		cairo_save(cr);
+		cairo_rectangle(cr, 0, 0, bounds.width, bounds.height);
+		cairo_clip(cr);
 		cairo_set_source_rgba(cr, 0, 0, 0, 0);
 		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 		cairo_paint(cr);
@@ -600,6 +702,18 @@ namespace fensterserver
 
 	bool Component::getNumericProperty(fenster::ComponentProperty property, uint32_t* out)
 	{
+		if(property == fenster::ComponentProperty::DesktopPopup)
+		{
+			auto screen = Server::instance()->screen;
+			*out = screen && screen->getDesktopPopup() == this;
+			return true;
+		}
+		if(property == fenster::ComponentProperty::DesktopTaskbar)
+		{
+			auto screen = Server::instance()->screen;
+			*out = screen && screen->isTaskbar(this);
+			return true;
+		}
 		if(property == fenster::ComponentProperty::Visible)
 		{
 			*out = this->isVisible() ? 1 : 0;
@@ -624,8 +738,23 @@ namespace fensterserver
 
 	bool Component::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
 	{
+		if(property == fenster::ComponentProperty::DesktopPopup)
+		{
+			auto screen = Server::instance()->screen;
+			return screen && screen->setDesktopPopup(this, value != 0);
+		}
+		if(property == fenster::ComponentProperty::DesktopTaskbar)
+		{
+			auto screen = Server::instance()->screen;
+			return screen && screen->setTaskbar(this, value != 0);
+		}
 		if(property == fenster::ComponentProperty::Layout)
 		{
+			if((fenster::LayoutType) value == fenster::LayoutType::Fill)
+			{
+				setLayout(new FillLayout());
+				return true;
+			}
 			if((fenster::LayoutType) value == fenster::LayoutType::Flow)
 			{
 				setLayout(new FlowLayout());
@@ -667,6 +796,8 @@ namespace fensterserver
 			if(layoutWithOrientation)
 			{
 				layoutWithOrientation->setOrientation((fenster::Orientation) value);
+				markFor(COMPONENT_REQUIREMENT_LAYOUT);
+				return true;
 			}
 		}
 		else if(property == fenster::ComponentProperty::LayoutSpace)
@@ -675,6 +806,14 @@ namespace fensterserver
 			if(layoutWithSingleSpacing)
 			{
 				layoutWithSingleSpacing->setSpace(value);
+				markFor(COMPONENT_REQUIREMENT_LAYOUT);
+				return true;
+			}
+			// Flow's existing client setSpace() applies the gap on both axes.
+			if(auto spacing = dynamic_cast<SpacingSupport*>(getLayout()))
+			{
+				spacing->setHorizontalSpace(value); spacing->setVerticalSpace(value);
+				markFor(COMPONENT_REQUIREMENT_LAYOUT);
 				return true;
 			}
 		}
@@ -684,6 +823,7 @@ namespace fensterserver
 			if(layoutWithSpacing)
 			{
 				layoutWithSpacing->setHorizontalSpace(value);
+				markFor(COMPONENT_REQUIREMENT_LAYOUT);
 				return true;
 			}
 		}
@@ -693,6 +833,7 @@ namespace fensterserver
 			if(layoutWithSpacing)
 			{
 				layoutWithSpacing->setVerticalSpace(value);
+				markFor(COMPONENT_REQUIREMENT_LAYOUT);
 				return true;
 			}
 		}
@@ -706,6 +847,13 @@ namespace fensterserver
 
 	bool Component::setStringProperty(fenster::ComponentProperty property, std::string text)
 	{
+		if(property == fenster::ComponentProperty::MouseCursor)
+		{
+			mouseCursor = text.empty() ? "default" : std::move(text);
+			Server::instance()->requestUpdateImmediately();
+			return true;
+		}
+		if(property == fenster::ComponentProperty::Tooltip) { tooltip = std::move(text); return true; }
 		if(property == fenster::ComponentProperty::Title)
 		{
 			if(auto titled = dynamic_cast<TitledComponent*>(this))
@@ -728,12 +876,7 @@ namespace fensterserver
 						(int) obj["right"].asNumber()
 						);
 
-				auto layoutWithPaddingSupport = dynamic_cast<PaddingSupport*>(getLayout());
-				if(layoutWithPaddingSupport)
-				{
-					layoutWithPaddingSupport->setPadding(insets);
-					return true;
-				}
+				return setLayoutPadding(insets);
 			}
 		}
 		else if(property == fenster::ComponentProperty::LayoutFlexComponentInfo)
@@ -745,23 +888,8 @@ namespace fensterserver
 				auto obj = result.asObject();
 
 				auto childId = (fenster::ComponentId) obj["component"].asNumber();
-				auto child = ComponentRegistry::get(childId);
-				if(!child)
-				{
-					fenster::platformLog("Attempted to set component info for non-existant component %i", child);
-					return false;
-				}
-
-				float grow = obj["grow"].asNumber();
-				float shrink = obj["shrink"].asNumber();
-				int basis = obj["basis"].asNumber();
-
-				auto flexLayout = dynamic_cast<FlexLayout*>(getLayout());
-				if(flexLayout)
-				{
-					flexLayout->setComponentInfo(child, grow, shrink, basis);
-					return true;
-				}
+				return setFlexComponentInfo(childId, obj["grow"].asNumber(), obj["shrink"].asNumber(),
+											obj["basis"].asNumber());
 			}
 		}
 
@@ -770,6 +898,7 @@ namespace fensterserver
 
 	bool Component::getStringProperty(fenster::ComponentProperty property, std::string& out)
 	{
+		if(property == fenster::ComponentProperty::MouseCursor) { out = mouseCursor; return true; }
 		if(property == fenster::ComponentProperty::Title)
 		{
 			if(auto titled = dynamic_cast<TitledComponent*>(this))

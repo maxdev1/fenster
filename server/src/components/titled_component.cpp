@@ -10,6 +10,7 @@ namespace fensterserver
 {
 	void TitledComponent::setTitle(std::string title)
 	{
+		if(getTitle() == title) return;
 		setTitleInternal(title);
 
 		this->callForListeners(fenster::ComponentEventType::Title, [title](EventListenerInfo& info)

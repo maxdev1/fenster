@@ -5,9 +5,99 @@
 
 #include <cstring>
 #include <utility>
+#include <memory>
+#include <limits>
 
 namespace fenster
 {
+	static SYS_MUTEX_T idLock = platformInitializeMutex(false);
+	static std::vector<ComponentIdRange> idRanges;
+
+	bool ComponentUpdateBatch::addIdRange(ComponentIdRange range)
+	{
+		if(range.first <= 0 || !range.count || range.count > G_UI_COMPONENT_ID_RESERVATION_SIZE ||
+		   uint64_t(range.first) + range.count - 1 > std::numeric_limits<ComponentId>::max())
+			return false;
+		platformAcquireMutex(idLock);
+		idRanges.push_back(range);
+		platformReleaseMutex(idLock);
+		return true;
+	}
+
+	ComponentId ComponentUpdateBatch::createComponent(ComponentType type)
+	{
+		if(!successful || !ApplicationInitialized || !isCreatableComponentType(type))
+		{
+			successful = false;
+			return 0;
+		}
+		for(;;)
+		{
+			platformAcquireMutex(idLock);
+			if(!idRanges.empty())
+			{
+				auto& range = idRanges.back();
+				auto id = range.first;
+				if(--range.count) ++range.first;
+				else idRanges.pop_back();
+				platformReleaseMutex(idLock);
+				CommandCreateReservedComponentRequest request{{ProtocolCommandId::CreateReservedComponent}, id, type};
+				return append(&request, sizeof(request)) ? id : 0;
+			}
+			platformReleaseMutex(idLock);
+			// No ID-pool lock is held while flushing or waiting for another block.
+			MessageHeader request{ProtocolCommandId::ReserveComponentIds};
+			auto tx = platformCreateMessageTransaction();
+			uint8_t buffer[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandReserveComponentIdsResponse)];
+			if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx) ||
+			   platformReceiveMessage(buffer, sizeof(buffer), tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
+			{
+				successful = false;
+				return 0;
+			}
+			auto response = reinterpret_cast<CommandReserveComponentIdsResponse*>(SYS_MESSAGE_CONTENT(buffer));
+			if(response->status != ProtocolStatus::Success || !addIdRange(response->component_ids))
+			{
+				successful = false;
+				return 0;
+			}
+		}
+	}
+
+	// Ghost places shared-library TLS immediately after executable TLS. Preserve
+	// its 16-byte alignment for libraries such as Pixman that use aligned SIMD loads.
+	alignas(16) thread_local ComponentUpdateBatch* ComponentUpdateBatch::activeBatch = nullptr;
+
+	ComponentUpdateBatch::Scope::Scope(ComponentUpdateBatch& batch): batch(batch), previous(activeBatch)
+	{
+		if(previous && !previous->commit())
+			batch.successful = false;
+		activeBatch = &batch;
+	}
+
+	ComponentUpdateBatch::Scope::~Scope()
+	{
+		if(!batch.commit() && previous)
+			previous->successful = false;
+		activeBatch = previous;
+	}
+
+	bool sendUiMessage(SYS_TID_T tid, void* bytes, size_t length, SYS_TX_T transaction)
+	{
+		auto batch = ComponentUpdateBatch::current();
+		return (!batch || batch->commit()) && platformSendMessage(tid, bytes, length, transaction);
+	}
+
+	bool sendUiMutation(void* bytes, size_t length)
+	{
+		if(auto batch = ComponentUpdateBatch::current()) return batch->append(bytes, length);
+		auto tx = platformCreateMessageTransaction();
+		uint8_t response[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse)];
+		return ApplicationInitialized && sendUiMessage(DelegateTaskId, bytes, length, tx) &&
+			   platformReceiveMessage(response, sizeof(response), tx) == SYS_MESSAGE_RECEIVE_SUCCESS &&
+			   reinterpret_cast<CommandSimpleResponse*>(SYS_MESSAGE_CONTENT(response))->status == ProtocolStatus::Success;
+	}
+
 	ComponentUpdateBatch::ComponentUpdateBatch()
 	{
 		buffer.reserve(G_UI_MAXIMUM_UPDATE_SIZE);
@@ -34,6 +124,8 @@ namespace fenster
 	{
 		if(!successful || buffer.size() == sizeof(CommandUpdateComponentsRequest))
 			return successful;
+		if(activeBatch && activeBatch != this && !activeBatch->commit())
+			return successful = false;
 
 		const auto tx = platformCreateMessageTransaction();
 		if(!platformSendMessage(DelegateTaskId, buffer.data(), buffer.size(), tx))
@@ -76,7 +168,22 @@ namespace fenster
 
 	bool ComponentUpdateBatch::setMinimumSize(Component* component, const Dimension& size)
 	{
-		CommandSetSizeRequest request{{ProtocolCommandId::SetMinimumSize}, component->getId(), size};
+		return setSize(ProtocolCommandId::SetMinimumSize, component, size);
+	}
+
+	bool ComponentUpdateBatch::setMaximumSize(Component* component, const Dimension& size)
+	{
+		return setSize(ProtocolCommandId::SetMaximumSize, component, size);
+	}
+
+	bool ComponentUpdateBatch::setPreferredSize(Component* component, const Dimension& size)
+	{
+		return setSize(ProtocolCommandId::SetPreferredSize, component, size);
+	}
+
+	bool ComponentUpdateBatch::setSize(ProtocolCommandId command, Component* component, const Dimension& size)
+	{
+		CommandSetSizeRequest request{{command}, component->getId(), size};
 		return append(&request, sizeof(request));
 	}
 
@@ -88,14 +195,29 @@ namespace fenster
 
 	bool ComponentUpdateBatch::addMouseListener(Component* component, MouseListenerFunc listener)
 	{
+		return addListener(component, ComponentEventType::Mouse, new MouseListenerDispatcher(std::move(listener)));
+	}
+
+	bool ComponentUpdateBatch::addKeyListener(Component* component, KeyListenerFunc listener)
+	{
+		return addListener(component, ComponentEventType::Key, new KeyListenerDispatcher(std::move(listener)));
+	}
+
+	bool ComponentUpdateBatch::registerListener(ComponentId component, ComponentEventType type)
+	{
 		if(!successful || !ApplicationInitialized)
 			return successful = false;
-		CommandAddListenerRequest request{{ProtocolCommandId::AddListener}, component->getId(),
-		                                 ComponentEventType::Mouse, EventDispatcherTaskId};
-		if(!append(&request, sizeof(request)))
+		CommandAddListenerRequest request{{ProtocolCommandId::AddListener}, component, type, EventDispatcherTaskId};
+		return append(&request, sizeof(request));
+	}
+
+	bool ComponentUpdateBatch::addListener(Component* component, ComponentEventType type, Listener* listener)
+	{
+		std::unique_ptr<Listener> owned(listener);
+		if(!registerListener(component->getId(), type))
 			return false;
 		platformAcquireMutex(component->listenersLock);
-		component->listeners[ComponentEventType::Mouse].push_back(new MouseListenerDispatcher(std::move(listener)));
+		component->listeners[type].push_back(owned.release());
 		platformReleaseMutex(component->listenersLock);
 		return true;
 	}

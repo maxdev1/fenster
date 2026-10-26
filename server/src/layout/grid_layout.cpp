@@ -4,81 +4,48 @@
 
 #include "components/component.hpp"
 #include "layout/grid_layout.hpp"
-
 #include <vector>
 
-#include "components/scrollpane.hpp"
-
-namespace fensterserver {
-	void GridLayout::layout() {
-		if (component == nullptr || columns <= 0)
-			return;
-
-		auto& children = component->acquireChildren();
-		auto bounds = component->getBounds();
-
-		// Compute available area
-		int availableWidth = bounds.width - (padding.left + padding.right);
-		int availableHeight = bounds.height - (padding.top + padding.bottom);
-
-		// Compute cell dimensions
-		int actualRows = (int) children.size() / columns;
-		if ((int) children.size() % columns != 0)
-			actualRows++;
-
-		// Calculate preferred cell sizes if not filling
-		int largestPrefWidth = 0;
-		int largestPrefHeight = 0;
-		for (auto& ref: children) {
-			auto childSize = ref.component->getEffectivePreferredSize();
-			largestPrefWidth = std::max(largestPrefWidth, childSize.width);
-			largestPrefHeight = std::max(largestPrefHeight, childSize.height);
-		}
-
-		int cellWidth;
-		if (component->layoutPolicyHorizontal == LayoutingPolicy::Stretch || largestPrefWidth == 0) {
-			cellWidth = (availableWidth - (verticalSpace * (columns - 1))) / columns;
-		} else {
-			cellWidth = largestPrefWidth;
-		}
-		int cellHeight;
-		if (component->layoutPolicyVertical == LayoutingPolicy::Stretch || largestPrefHeight == 0) {
-			cellHeight = (availableHeight - (horizontalSpace * (actualRows - 1))) / actualRows;
-		} else {
-			cellHeight = largestPrefHeight;
-		}
-
-		// Place each child into the grid
-		int currentRow = 0;
-		int currentColumn = 0;
-		int endX = 0;
-		int endY = 0;
-
-		for (auto& childRef: children) {
-			Component* child = childRef.component;
-			if (!child->isVisible())
-				continue;
-
-			int x = padding.left + currentColumn * (cellWidth + verticalSpace);
-			int y = padding.top + currentRow * (cellHeight + horizontalSpace);
-
-			fenster::Rectangle childBounds(x, y, cellWidth, cellHeight);
-			child->setBounds(childBounds);
-
-			auto childBoundsEnd = childBounds.getEnd();
-			endX = std::max(childBoundsEnd.x - padding.left, endX);
-			endY = std::max(childBoundsEnd.y - padding.top, endY);
-
-			// Advance column
-			currentColumn++;
-			if (currentColumn >= columns) {
-				currentColumn = 0;
-				currentRow++;
-			}
-		}
-
-		component->releaseChildren();
-
-		component->setPreferredSize(fenster::Dimension(endX, endY));
-	}
+namespace fensterserver
+{
+void GridLayout::layout()
+{
+    if(!component || columns <= 0) return;
+    auto& children = component->acquireChildren();
+    std::vector<Component*> visible;
+    int prefWidth = 0, prefHeight = 0;
+    for(auto& ref : children)
+    {
+        if(!ref.component->isVisible()) continue;
+        visible.push_back(ref.component);
+        auto size = ref.component->getEffectivePreferredSize();
+        prefWidth = std::max(prefWidth, size.width); prefHeight = std::max(prefHeight, size.height);
+    }
+    if(visible.empty())
+    {
+        component->releaseChildren();
+        component->setPreferredSize({padding.left + padding.right, padding.top + padding.bottom});
+        return;
+    }
+    auto bounds = component->getBounds();
+    int rowCount = std::max(rows, (int(visible.size()) + columns - 1) / columns);
+    int width = std::max(0, bounds.width - padding.left - padding.right - horizontalSpace * (columns - 1));
+    int height = std::max(0, bounds.height - padding.top - padding.bottom - verticalSpace * (rowCount - 1));
+    bool stretchX = component->layoutPolicyHorizontal == LayoutingPolicy::Stretch || prefWidth == 0;
+    bool stretchY = component->layoutPolicyVertical == LayoutingPolicy::Stretch || prefHeight == 0;
+    for(size_t i = 0; i < visible.size(); ++i)
+    {
+        int col = i % columns, row = i / columns;
+        // Distribute remainder pixels instead of leaving gaps at the right/bottom.
+        int x = stretchX ? col * width / columns : col * prefWidth;
+        int y = stretchY ? row * height / rowCount : row * prefHeight;
+        int w = stretchX ? (col + 1) * width / columns - x : prefWidth;
+        int h = stretchY ? (row + 1) * height / rowCount - y : prefHeight;
+        visible[i]->setBounds({padding.left + x + col * horizontalSpace, padding.top + y + row * verticalSpace, w, h});
+    }
+    component->releaseChildren();
+    int usedColumns = std::min(columns, int(visible.size()));
+    component->setPreferredSize({padding.left + padding.right + usedColumns * prefWidth + (usedColumns - 1) * horizontalSpace,
+        padding.top + padding.bottom + rowCount * prefHeight + (rowCount - 1) * verticalSpace});
+}
 }

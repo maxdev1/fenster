@@ -1,6 +1,6 @@
 include ../platform.mk
 
-LIB := libfenster.a
+LIB := obj/$(target)/libfenster.a
 CXXFLAGS := $(CXXFLAGS) -Iinc -std=c++17
 
 SRC := $(shell find src -name '*.cpp')

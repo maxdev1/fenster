@@ -5,9 +5,11 @@
 #ifndef LIBFENSTER_INTERFACE
 #define LIBFENSTER_INTERFACE
 
+#include <cstddef>
 #include "properties.hpp"
 #include "platform/platform.hpp"
 #include "metrics/dimension.hpp"
+#include "metrics/insets.hpp"
 #include "metrics/rectangle.hpp"
 #include "input/key_info.hpp"
 
@@ -26,6 +28,10 @@
 
 namespace fenster
 {
+	// Client requests flush deferred component updates before crossing an RPC boundary.
+	bool sendUiMessage(SYS_TID_T tid, void* bytes, size_t length, SYS_TX_T transaction);
+	bool sendUiMutation(void* bytes, size_t length);
+
 	/**
 	 * Declared in the UI unit
 	 */
@@ -68,6 +74,12 @@ namespace fenster
 		SetMaximumSize = 23,
 		CreateComponents = 24,
 		UpdateComponents = 25,
+		SetMouseGrab = 26,
+		ReserveComponentIds = 27,
+		CreateReservedComponent = 28,
+		SetLayoutPadding = 29,
+		SetFlexComponentInfo = 30,
+		PrepareComponent = 31,
 	};
 
 	/**
@@ -114,6 +126,8 @@ namespace fenster
 		Title = 8,
 		Visible = 9,
 		Checked = 10,
+		RelativeMouse = 11,
+		MouseGrab = 12,
 	};
 
 	/**
@@ -125,6 +139,7 @@ namespace fenster
 		Flow = 1,
 		Flex = 2,
 		Stack = 3,
+		Fill = 4,
 	};
 
 	/**
@@ -146,6 +161,13 @@ namespace fenster
 		SYS_TID_T event_dispatcher;
 	} __attribute__((packed)) CommandApplicationInitializeRequest;
 
+	constexpr uint16_t G_UI_COMPONENT_ID_RESERVATION_SIZE = 1024;
+	struct ComponentIdRange
+	{
+		ComponentId first;
+		uint16_t count;
+	} __attribute__((packed));
+
 	/**
 	 * Response for initializing interface communications.
 	 *
@@ -159,7 +181,15 @@ namespace fenster
 		MessageHeader header;
 		ProtocolStatus status;
 		SYS_TID_T window_server_delegate;
+		ComponentIdRange component_ids;
 	} __attribute__((packed)) CommandApplicationInitializeResponse;
+
+	struct CommandReserveComponentIdsResponse
+	{
+		MessageHeader header;
+		ProtocolStatus status;
+		ComponentIdRange component_ids;
+	} __attribute__((packed));
 
 	/**
 	 * Generic response
@@ -178,6 +208,35 @@ namespace fenster
 		MessageHeader header;
 		ComponentType type;
 	} __attribute__((packed)) CommandCreateComponentRequest;
+
+	struct CommandCreateReservedComponentRequest
+	{
+		MessageHeader header;
+		ComponentId id;
+		ComponentType type;
+	} __attribute__((packed));
+
+	struct CommandSetLayoutPaddingRequest
+	{
+		MessageHeader header;
+		ComponentId id;
+		Insets padding;
+	} __attribute__((packed));
+
+	struct CommandSetFlexComponentInfoRequest
+	{
+		MessageHeader header;
+		ComponentId id;
+		ComponentId child;
+		float grow;
+		float shrink;
+		int32_t basis;
+	} __attribute__((packed));
+
+	constexpr bool isCreatableComponentType(ComponentType type)
+	{
+		return type >= ComponentType::Window && type <= ComponentType::Checkbox;
+	}
 
 	/**
 	 * Response when creating a component.
@@ -232,6 +291,13 @@ namespace fenster
 		MessageHeader header;
 		ComponentId id;
 	} __attribute__((packed)) CommandDestroyComponentRequest;
+
+	// Resolve layout and paint a hidden subtree before making it visible.
+	struct CommandPrepareComponentRequest
+	{
+		MessageHeader header;
+		ComponentId id;
+	} __attribute__((packed));
 
 	/**
 	 * Request/response to focus
@@ -406,6 +472,14 @@ namespace fenster
 		ProtocolStatus status;
 	} __attribute__((packed)) CommandAddListenerResponse;
 
+	// Only a visible, focused component owned by the caller may grab.
+	typedef struct
+	{
+		MessageHeader header;
+		ComponentId id;
+		bool grabbed;
+	} __attribute__((packed)) CommandSetMouseGrabRequest;
+
 	/**
 	 * Retrieve screen size
 	 */
@@ -570,7 +644,22 @@ namespace fenster
 		MouseButton buttons;
 		int clickCount;
 		int scroll;
+		bool ctrl = false;
 	} __attribute__((packed)) ComponentMouseEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		Point movement;
+		MouseButton buttons;
+		int scroll;
+	} __attribute__((packed)) ComponentRelativeMouseEvent;
+
+	typedef struct
+	{
+		ComponentEventHeader header;
+		bool grabbed;
+	} __attribute__((packed)) ComponentMouseGrabEvent;
 }
 
 #endif

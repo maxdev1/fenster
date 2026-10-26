@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "components/menu_item.hpp"
+#include "component_registry.hpp"
 
 #include <server.hpp>
 #include <libfenster/properties.hpp>
@@ -17,6 +18,12 @@ namespace fensterserver
 		background(ARGB(50, 250, 250, 250)), insets(5, 10, 5, 10)
 	{
 		Component::addChild(&label, COMPONENT_CHILD_REFERENCE_TYPE_INTERNAL);
+	}
+
+	MenuItem::~MenuItem()
+	{
+		if(subMenu)
+			ComponentRegistry::destroy(subMenu);
 	}
 
 	void MenuItem::paint()

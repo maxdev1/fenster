@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "test.hpp"
+#include "controls_preview.hpp"
+#include <cstdlib>
 
 #include <components/radio_button.hpp>
 #include <components/radio_group.hpp>
@@ -703,6 +705,7 @@ namespace fensterserver {
 
 	void Test::createTestComponents() {
 #ifndef _GHOST_
+		if(std::getenv("FENSTER_DEMO")) { createControlsPreview(); return; }
 		createSingleLabelWindow();
 		createTestMenu();
 		createTestWindow();

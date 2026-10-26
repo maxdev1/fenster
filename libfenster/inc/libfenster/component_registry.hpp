@@ -17,6 +17,7 @@ namespace fenster
 	public:
 		static void add(Component *component);
 		static Component *get(ComponentId id);
+		static void remove(Component* component);
 	};
 }
 

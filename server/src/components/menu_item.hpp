@@ -43,6 +43,7 @@ namespace fensterserver
 
     public:
         MenuItem();
+        ~MenuItem() override;
 
         void paint() override;
 

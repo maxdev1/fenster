@@ -15,6 +15,15 @@ namespace fensterserver
 
 	SYS_MUTEX_T Cursor::inputLock = fenster::platformInitializeMutex(false);
 	SYS_MUTEX_T Cursor::configurationLock = fenster::platformInitializeMutex(true);
+	bool Cursor::hidden = false;
+
+	void Cursor::setHidden(bool value)
+	{
+		fenster::platformAcquireMutex(configurationLock);
+		hidden = value;
+		fenster::platformReleaseMutex(configurationLock);
+		Server::instance()->requestPointerUpdate();
+	}
 
 	fenster::Point Cursor::position;
 	fenster::Point Cursor::nextPosition;
@@ -32,6 +41,7 @@ namespace fensterserver
 	{
 		fenster::platformAcquireMutex(configurationLock);
 		bool found = true;
+		auto previousConfiguration = currentConfiguration;
 
 		if(cursorConfigurations.count(name) > 0)
 		{
@@ -45,11 +55,13 @@ namespace fensterserver
 		{
 			found = false;
 		}
+		const bool changed = currentConfiguration != previousConfiguration;
 		fenster::platformReleaseMutex(configurationLock);
 		if(!found)
 			fenster::platformLog("could neither load '%s' cursor nor 'default' cursor", name.c_str());
 
-		Server::instance()->requestPointerUpdate();
+		if(changed)
+			Server::instance()->requestPointerUpdate();
 	}
 
 	std::string Cursor::get()
@@ -172,12 +184,12 @@ namespace fensterserver
 			image.surface = cairo_surface_reference(currentConfiguration->surface);
 			image.hitpoint = currentConfiguration->hitpoint;
 			image.size = currentConfiguration->size;
-			image.visible = true;
+			image.visible = !hidden;
 		}
 		else
 		{
 			image.size = {FALLBACK_CURSOR_SIZE, FALLBACK_CURSOR_SIZE};
-			image.visible = !cursorConfigurations.empty();
+			image.visible = !hidden && !cursorConfigurations.empty();
 		}
 		fenster::platformReleaseMutex(configurationLock);
 		return image;

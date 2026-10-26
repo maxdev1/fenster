@@ -16,12 +16,26 @@ namespace fensterserver
     class Screen : virtual public Component
     {
         fenster::Rectangle invalid;
+        Component* desktopCanvas = nullptr;
+        Component* taskbar = nullptr;
+        Component* desktopPopup = nullptr;
+        fenster::ComponentId popupPreviousFocus = -1;
 
         bool pressing = false;
         fenster::Point pressPoint;
 
     public:
         ~Screen() override = default;
+
+        void setDesktopCanvas(Component* canvas) { desktopCanvas = canvas; }
+        bool setTaskbar(Component* component, bool enabled);
+        bool isTaskbar(const Component* component) const { return taskbar == component; }
+        bool setDesktopPopup(Component* component, bool visible);
+        void dismissDesktopPopup(bool restoreFocus);
+        Component* getDesktopPopup() const { return desktopPopup && desktopPopup->isVisible() ? desktopPopup : nullptr; }
+        Component* handleMouseEvent(MouseEvent& event) override;
+        fenster::Rectangle getWindowArea();
+        void layout() override;
 
         void addChild(Component* comp,
                       ComponentChildReferenceType type = COMPONENT_CHILD_REFERENCE_TYPE_DEFAULT) override;

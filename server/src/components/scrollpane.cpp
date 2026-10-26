@@ -111,6 +111,19 @@ namespace fensterserver
 		return viewportSize;
 	}
 
+	bool ScrollPane::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
+	{
+		if(property != fenster::ComponentProperty::ScrollOffsetY) return Component::setNumericProperty(property, value);
+		verticalScrollbar.setModelPosition(std::min(value, uint32_t(0x7fffffff)));
+		handleScroll(&verticalScrollbar); return true;
+	}
+
+	bool ScrollPane::getNumericProperty(fenster::ComponentProperty property, uint32_t* value)
+	{
+		if(property != fenster::ComponentProperty::ScrollOffsetY) return Component::getNumericProperty(property, value);
+		*value = std::max(0, -scrollPosition.y); return true;
+	}
+
 	void ScrollPane::layout()
 	{
 		if(!content)

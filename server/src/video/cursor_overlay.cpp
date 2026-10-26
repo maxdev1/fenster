@@ -44,6 +44,12 @@ namespace fensterserver
 
         // Retain one immutable image without holding its configuration lock while painting.
         auto image = Cursor::snapshot();
+		if(!image.visible)
+		{
+			cursorArea = {};
+			savedPixels.clear();
+			return;
+		}
         cursorArea = image.getAreaAt(position).clip(bounds);
         savedPixels.resize(cursorArea.width * cursorArea.height);
         auto surface = presentation.getSurface();

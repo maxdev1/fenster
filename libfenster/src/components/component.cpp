@@ -3,30 +3,101 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "libfenster/components/component.hpp"
+#include "libfenster/component_update_batch.hpp"
 #include "libfenster/properties.hpp"
 
-#include <utility>
 #include <algorithm>
 #include <cstring>
 #include <stdlib.h>
+#include <utility>
 
 namespace fenster
 {
+	bool Component::prepareForDisplay()
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		CommandPrepareComponentRequest request{{ProtocolCommandId::PrepareComponent}, id};
+		auto tx = platformCreateMessageTransaction();
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
+			return false;
+		uint8_t response[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse)];
+		return platformReceiveMessage(response, sizeof(response), tx) == SYS_MESSAGE_RECEIVE_SUCCESS &&
+			   reinterpret_cast<CommandSimpleResponse*>(SYS_MESSAGE_CONTENT(response))->status ==
+					   ProtocolStatus::Success;
+	}
+
+	bool Component::setMouseGrabbed(bool grabbed)
+	{
+		if(!ApplicationInitialized)
+			return false;
+
+		auto tx = platformCreateMessageTransaction();
+		CommandSetMouseGrabRequest request{{ProtocolCommandId::SetMouseGrab}, id, grabbed};
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
+			return false;
+
+		uint8_t buffer[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse)];
+		if(platformReceiveMessage(buffer, sizeof(buffer), tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
+			return false;
+
+		return reinterpret_cast<CommandSimpleResponse*>(SYS_MESSAGE_CONTENT(buffer))->status == ProtocolStatus::Success;
+	}
+
+	bool Component::addRelativeMouseListener(RelativeMouseListenerFunc listener)
+	{
+		return addListener(ComponentEventType::RelativeMouse, new RelativeMouseListenerDispatcher(std::move(listener)));
+	}
+
+	bool Component::addMouseGrabListener(MouseGrabListenerFunc listener)
+	{
+		return addListener(ComponentEventType::MouseGrab, new MouseGrabListenerDispatcher(std::move(listener)));
+	}
+
+	ComponentId Component::createComponentId(ComponentType type)
+	{
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->createComponent(type);
+
+		CommandCreateComponentRequest request{{ProtocolCommandId::CreateComponent}, type};
+		auto tx = platformCreateMessageTransaction();
+		uint8_t buffer[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandCreateComponentResponse)];
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx) ||
+		   platformReceiveMessage(buffer, sizeof(buffer), tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
+			return 0;
+
+		auto response = reinterpret_cast<CommandCreateComponentResponse*>(SYS_MESSAGE_CONTENT(buffer));
+		return response->status == ProtocolStatus::Success ? response->id : 0;
+	}
+
 	std::vector<ComponentId> Component::createComponentIds(ComponentType type, size_t count)
 	{
 		std::vector<ComponentId> result;
 		if(!ApplicationInitialized)
 			return result;
+		if(auto batch = ComponentUpdateBatch::current())
+		{
+			result.reserve(count);
+			while(result.size() < count)
+			{
+				auto id = batch->createComponent(type);
+				if(!id)
+					break;
+				result.push_back(id);
+			}
+			return result;
+		}
 		while(result.size() < count)
 		{
 			const auto chunk = static_cast<uint16_t>(std::min(count - result.size(), G_UI_CREATE_COMPONENTS_MAXIMUM));
 			CommandCreateComponentsRequest request{{ProtocolCommandId::CreateComponents}, type, chunk};
 			const auto tx = platformCreateMessageTransaction();
-			if(!platformSendMessage(DelegateTaskId, &request, sizeof(request), tx))
+			if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
 				break;
 			platformYieldTo(DelegateTaskId);
 			uint8_t buffer[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandCreateComponentsResponse) +
-			               G_UI_CREATE_COMPONENTS_MAXIMUM * sizeof(ComponentId)];
+						   G_UI_CREATE_COMPONENTS_MAXIMUM * sizeof(ComponentId)];
 			if(platformReceiveMessage(buffer, sizeof(buffer), tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
 				break;
 			auto response = reinterpret_cast<CommandCreateComponentsResponse*>(SYS_MESSAGE_CONTENT(buffer));
@@ -40,7 +111,19 @@ namespace fenster
 
 	Component::~Component()
 	{
+		ComponentRegistry::remove(this);
 		destroy();
+		for(auto& group: listeners)
+			for(auto listener: group.second)
+				delete listener;
+		platformDestroyMutex(listenersLock);
+	}
+
+	void Component::disposeLocal()
+	{
+		// Attached proxies borrow the server object. All local users must have stopped.
+		destroyed = true;
+		delete this;
 	}
 
 	void Component::destroy()
@@ -52,7 +135,7 @@ namespace fenster
 		CommandDestroyComponentRequest request;
 		request.header.id = fenster::ProtocolCommandId::DestroyComponent;
 		request.id = this->id;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandDestroyComponentRequest), SYS_TX_NONE);
+		sendUiMessage(DelegateTaskId, &request, sizeof(CommandDestroyComponentRequest), SYS_TX_NONE);
 		platformYieldTo(DelegateTaskId);
 	}
 
@@ -60,6 +143,8 @@ namespace fenster
 	{
 		if(!ApplicationInitialized)
 			return false;
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->addChild(this, child);
 
 		// send initialization request
 		SYS_TX_T tx = platformCreateMessageTransaction();
@@ -68,7 +153,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::AddComponent;
 		request.parent = this->id;
 		request.child = child->id;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandAddChildRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandAddChildRequest), tx))
+			return false;
 
 		// read response
 		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandAddChildResponse);
@@ -90,6 +176,8 @@ namespace fenster
 	{
 		if(!ApplicationInitialized)
 			return false;
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->setBounds(this, rect);
 
 		// send initialization request
 		SYS_TX_T tx = platformCreateMessageTransaction();
@@ -98,7 +186,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::SetBounds;
 		request.id = this->id;
 		request.bounds = rect;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandSetBoundsRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandSetBoundsRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		// read response
@@ -123,7 +212,8 @@ namespace fenster
 		CommandGetBoundsRequest request;
 		request.header.id = fenster::ProtocolCommandId::GetBounds;
 		request.id = this->id;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetBoundsRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandGetBoundsRequest), tx))
+			return Rectangle();
 		platformYieldTo(DelegateTaskId);
 
 		// read response
@@ -145,6 +235,8 @@ namespace fenster
 	{
 		if(!ApplicationInitialized)
 			return false;
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->setNumericProperty(this, property, value);
 
 		// send initialization request
 		SYS_TX_T tx = platformCreateMessageTransaction();
@@ -154,7 +246,8 @@ namespace fenster
 		request.id = this->id;
 		request.property = property;
 		request.value = value;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandSetNumericPropertyRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandSetNumericPropertyRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		// read response
@@ -164,8 +257,7 @@ namespace fenster
 		bool success = false;
 		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
-			auto response = (CommandSetStringPropertyResponse*)
-					SYS_MESSAGE_CONTENT(buffer);
+			auto response = (CommandSetStringPropertyResponse*) SYS_MESSAGE_CONTENT(buffer);
 			success = (response->status == ProtocolStatus::Success);
 		}
 
@@ -184,7 +276,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::GetNumericProperty;
 		request.id = this->id;
 		request.property = property;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetNumericPropertyRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandGetNumericPropertyRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		// read response
@@ -194,8 +287,7 @@ namespace fenster
 		bool success = false;
 		if(platformReceiveMessage(buffer, bufferSize, tx) == SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
-			auto response = (CommandGetNumericPropertyResponse*)
-					SYS_MESSAGE_CONTENT(buffer);
+			auto response = (CommandGetNumericPropertyResponse*) SYS_MESSAGE_CONTENT(buffer);
 
 			if(response->status == ProtocolStatus::Success)
 			{
@@ -212,19 +304,24 @@ namespace fenster
 	{
 		if(!ApplicationInitialized)
 			return false;
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->setStringProperty(this, property, value);
 
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		auto requestSize = sizeof(CommandSetStringPropertyRequest) + value.length() + 1;
-		auto request = static_cast<CommandSetStringPropertyRequest*>(
-			operator new(sizeof(CommandSetStringPropertyRequest) + value.length() + 1)
-		);
+		auto request = static_cast<CommandSetStringPropertyRequest*>(operator new(
+				sizeof(CommandSetStringPropertyRequest) + value.length() + 1));
 		request->header.id = fenster::ProtocolCommandId::SetStringProperty;
 		request->id = this->id;
 		request->property = property;
 		strcpy(request->value, value.c_str());
 
-		platformSendMessage(DelegateTaskId, request, requestSize, tx);
+		if(!sendUiMessage(DelegateTaskId, request, requestSize, tx))
+		{
+			operator delete(request);
+			return false;
+		}
 		platformYieldTo(DelegateTaskId);
 
 		size_t responseBufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
@@ -251,7 +348,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::GetStringProperty;
 		request.id = this->id;
 		request.property = property;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetStringPropertyRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandGetStringPropertyRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		bool success = false;
@@ -322,10 +420,7 @@ namespace fenster
 		return addListener(ComponentEventType::Mouse, new MouseListenerDispatcher(std::move(func)));
 	}
 
-	bool Component::addKeyListener(KeyListener* listener)
-	{
-		return addListener(ComponentEventType::Key, listener);
-	}
+	bool Component::addKeyListener(KeyListener* listener) { return addListener(ComponentEventType::Key, listener); }
 
 	bool Component::addKeyListener(KeyListenerFunc func)
 	{
@@ -342,10 +437,7 @@ namespace fenster
 		return addListener(ComponentEventType::Visible, new VisibleListenerDispatcher(std::move(func)));
 	}
 
-	bool Component::setBackground(ColorArgb argb)
-	{
-		return setNumericProperty(ComponentProperty::Background, argb);
-	}
+	bool Component::setBackground(ColorArgb argb) { return setNumericProperty(ComponentProperty::Background, argb); }
 
 	bool Component::isVisible()
 	{
@@ -357,10 +449,7 @@ namespace fenster
 		return false;
 	}
 
-	bool Component::setVisible(bool visible)
-	{
-		return setNumericProperty(ComponentProperty::Visible, visible ? 1 : 0);
-	}
+	bool Component::setVisible(bool visible) { return setNumericProperty(ComponentProperty::Visible, visible ? 1 : 0); }
 
 
 	bool Component::isFocusable()
@@ -413,6 +502,18 @@ namespace fenster
 	{
 		if(!ApplicationInitialized)
 			return false;
+		if(auto batch = ComponentUpdateBatch::current())
+			switch(command)
+			{
+				case ProtocolCommandId::SetMinimumSize:
+					return batch->setMinimumSize(this, size);
+				case ProtocolCommandId::SetMaximumSize:
+					return batch->setMaximumSize(this, size);
+				case ProtocolCommandId::SetPreferredSize:
+					return batch->setPreferredSize(this, size);
+				default:
+					return false;
+			}
 
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
@@ -420,7 +521,8 @@ namespace fenster
 		request.header.id = command;
 		request.id = this->id;
 		request.size = size;
-		platformSendMessage(DelegateTaskId, &request, sizeof(request), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(request), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse);
@@ -438,4 +540,4 @@ namespace fenster
 		return setNumericProperty(ComponentProperty::Layout, (uint32_t) layout->getType());
 	}
 
-}
+} // namespace fenster

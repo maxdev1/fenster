@@ -46,24 +46,38 @@ namespace fensterserver
         int cornerSize;
         fenster::ColorArgb backgroundColor;
         bool resizable;
+        bool showInTaskbar = true;
+        bool minimizeButtonVisible = true;
+        bool maximizeButtonVisible = true;
 
         Label label;
         Panel panel;
         MenuBar* menuBar = nullptr;
 
-        bool crossPressed;
-        bool crossHovered;
+        enum class Control { None, Minimize, Fullscreen, Close };
+        Control pressedControl = Control::None;
+        Control hoveredControl = Control::None;
+        bool fullscreen = false;
+        fenster::Rectangle restoreBounds;
 
         fenster::Point pressPoint;
+        fenster::Point pressScreenPoint;
         fenster::Rectangle pressBounds;
         WindowResizeMode resizeMode;
 
         int titleHeight;
         int shadowSize;
         fenster::Rectangle crossBounds;
+        fenster::Rectangle minimizeBounds;
+        fenster::Rectangle fullscreenBounds;
 
+        Control getControlAt(const fenster::Point& position) const;
+        fenster::Rectangle getFullscreenBounds();
+        void toggleFullscreen();
+        void minimize();
         void dragOrResize(MouseEvent& me);
         void startDragOrResize(MouseEvent& me);
+        WindowResizeMode getResizeModeAt(const fenster::Point& position) const;
 
     public:
         Window();
@@ -101,6 +115,7 @@ namespace fensterserver
         void paint() override;
 
         Component* handleMouseEvent(MouseEvent& e) override;
+        std::string getCursorAt(const fenster::Point& position) const override;
 
         bool isFocusableDefault() const override
         {

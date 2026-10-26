@@ -20,7 +20,7 @@ namespace fensterserver
 		asyncInfo->alive = true;
 		asyncInfo->lock = fenster::platformInitializeMutex(false);
 		asyncInfo->checkAtom = fenster::platformInitializeMutex(false);
-		fenster::platformCreateThreadWithData((void*) Canvas::asyncBufferResizer, asyncInfo);
+		resizeTask = fenster::platformCreateThreadWithData((void*) Canvas::asyncBufferResizer, asyncInfo);
 	}
 
 	/**
@@ -32,6 +32,17 @@ namespace fensterserver
 		fenster::platformAcquireMutex(asyncInfo->lock);
 		asyncInfo->alive = false;
 		fenster::platformReleaseMutex(asyncInfo->lock);
+		fenster::platformReleaseMutex(asyncInfo->checkAtom);
+		if(resizeTask != SYS_TID_NONE)
+			fenster::platformJoin(resizeTask);
+		fenster::platformDestroyMutex(asyncInfo->checkAtom);
+		fenster::platformDestroyMutex(asyncInfo->lock);
+		delete asyncInfo;
+		if(buffer.surface)
+			cairo_surface_destroy(buffer.surface);
+		if(buffer.localMapping)
+			fenster::platformUnmapSharedMemory(buffer.localMapping);
+		fenster::platformDestroyMutex(bufferLock);
 	}
 
 	void Canvas::asyncBufferResizer(async_resizer_info_t* asyncInfo)
@@ -42,11 +53,13 @@ namespace fensterserver
 
 			fenster::platformAcquireMutex(asyncInfo->lock);
 			if(!asyncInfo->alive)
+			{
+				fenster::platformReleaseMutex(asyncInfo->lock);
 				break;
+			}
 			asyncInfo->canvas->checkBuffer();
 			fenster::platformReleaseMutex(asyncInfo->lock);
 		}
-		delete asyncInfo;
 	}
 
 	/**
@@ -134,6 +147,7 @@ namespace fensterserver
 				if(status != CAIRO_STATUS_SUCCESS)
 				{
 					fenster::platformLog("failed to create surface: %i", status);
+					cairo_surface_destroy(buffer.surface);
 					buffer.surface = nullptr;
 				}
 			}

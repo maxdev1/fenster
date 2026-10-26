@@ -6,6 +6,7 @@
 #define LIBFENSTER_BUTTON
 
 #include "action_component.hpp"
+#include "libfenster/icons.hpp"
 #include "component.hpp"
 #include "titled_component.hpp"
 
@@ -26,6 +27,10 @@ namespace fenster
 		}
 
 		static Button* create();
+
+		void setIcon(Icon icon) { setNumericProperty(ComponentProperty::Icon, static_cast<uint32_t>(icon)); }
+		void setSelected(bool selected) { setNumericProperty(ComponentProperty::Selected, selected); }
+		void setTooltip(const std::string& text) { setStringProperty(ComponentProperty::Tooltip, text); }
 
 		void setEnabled(bool enabled);
 		bool isEnabled();

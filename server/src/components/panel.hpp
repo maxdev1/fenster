@@ -14,11 +14,15 @@ namespace fensterserver
     class Panel : virtual public Component
     {
         fenster::ColorArgb background;
+        fenster::ColorArgb border = 0, hoverBackground = 0, selectedBackground = 0;
+        int cornerRadius = 0;
+        bool hovered = false, selected = false;
+        bool keyboardFocusable = false;
 
     protected:
         bool hasGraphics() const override
         {
-            return background != ARGB(0, 0, 0, 0);
+            return background || border || hoverBackground || selectedBackground;
         }
 
     public:
@@ -27,6 +31,8 @@ namespace fensterserver
         }
 
         void paint() override;
+        bool isFocusableDefault() const override { return keyboardFocusable; }
+        Component* handleMouseEvent(MouseEvent& event) override;
 
         void setBackground(fenster::ColorArgb color);
         fenster::ColorArgb getBackground();

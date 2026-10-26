@@ -53,6 +53,8 @@ namespace fensterserver
     public:
         static SYS_MUTEX_T inputLock;
         static SYS_MUTEX_T configurationLock;
+		static bool hidden;
+		static void setHidden(bool hidden);
         static fenster::Point position;
         static fenster::Point nextPosition;
         static fenster::MouseButton pressedButtons;

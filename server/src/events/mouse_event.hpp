@@ -25,7 +25,10 @@ namespace fensterserver
         fenster::MouseEventType type;
         fenster::MouseButton buttons;
         int clickCount;
-        int scroll;
+        int scroll = 0;
+        bool ctrl = false;
+        // Layout hit testing must not synthesize client motion notifications.
+        bool synthetic = false;
 
         virtual Component* visit(Component* component);
     };

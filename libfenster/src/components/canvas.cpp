@@ -119,7 +119,7 @@ namespace fenster
 		request.id = this->id;
 		request.area = rect;
 		request.bufferAddress = (uintptr_t) currentBuffer.buffer;
-		if(platformSendMessage(DelegateTaskId, &request, sizeof(CommandCanvasBlitRequest), tx))
+		if(sendUiMessage(DelegateTaskId, &request, sizeof(CommandCanvasBlitRequest), tx))
 		{
 			// Keep the shared pixels stable until the server has saved its own image.
 			uint8_t response[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandSimpleResponse)];

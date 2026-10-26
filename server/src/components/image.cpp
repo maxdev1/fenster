@@ -60,6 +60,13 @@ namespace fensterserver
 		return false;
 	}
 
+	bool Image::setNumericProperty(fenster::ComponentProperty property, uint32_t value)
+	{
+		if(property != fenster::ComponentProperty::Icon) return Component::setNumericProperty(property, value);
+		if(icon == static_cast<fenster::Icon>(value)) return true;
+		icon = static_cast<fenster::Icon>(value); markFor(COMPONENT_REQUIREMENT_PAINT); return true;
+	}
+
 	void Image::paint()
 	{
 		auto cr = graphics.acquireContext();
@@ -72,7 +79,10 @@ namespace fensterserver
 		cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
 		cairo_paint(cr);
 		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-		if(image)
+		if(icon != fenster::Icon::None) {
+			int size = std::min(bounds.width, bounds.height);
+			fenster::paintIcon(cr, icon, (bounds.width - size) / 2., (bounds.height - size) / 2., size, _RGB(95, 112, 210));
+		} else if(image)
 		{
 			int imageWidth = cairo_image_surface_get_width(image);
 			int imageX = bounds.width / 2 - imageWidth / 2;

@@ -7,6 +7,7 @@
 #include "libfenster/components/canvas.hpp"
 #include "libfenster/components/component.hpp"
 #include "libfenster/application.hpp"
+#include "libfenster/component_update_batch.hpp"
 #include "libfenster/platform/platform.hpp"
 
 namespace fenster
@@ -54,13 +55,13 @@ namespace fenster
 		CommandApplicationInitializeRequest request;
 		request.header.id = fenster::ProtocolCommandId::Initialization;
 		request.event_dispatcher = EventDispatcherTaskId;
-		platformSendMessage(windowserverRegistryTask, &request, sizeof(CommandApplicationInitializeRequest), init_tx);
+		if(!sendUiMessage(windowserverRegistryTask, &request, sizeof(CommandApplicationInitializeRequest), init_tx))
+			return ApplicationOpenStatus::CommunicationFailed;
 		platformYieldTo(DelegateTaskId);
 
 		// receive initialization response
-		size_t buflen = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandApplicationInitializeResponse);
-		uint8_t* buf[buflen];
-		if(platformReceiveMessage(buf, buflen, init_tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
+		uint8_t buf[SYS_MESSAGE_HEADER_SIZE + sizeof(CommandApplicationInitializeResponse)];
+		if(platformReceiveMessage(buf, sizeof(buf), init_tx) != SYS_MESSAGE_RECEIVE_SUCCESS)
 		{
 			platformLog("failed to communicate with the window server");
 			return ApplicationOpenStatus::CommunicationFailed;
@@ -68,7 +69,7 @@ namespace fenster
 
 		// check response
 		auto response = (CommandApplicationInitializeResponse*) SYS_MESSAGE_CONTENT(buf);
-		if(response->status != ProtocolStatus::Success)
+		if(response->status != ProtocolStatus::Success || !ComponentUpdateBatch::addIdRange(response->component_ids))
 		{
 			platformLog("failed to open UI");
 			return ApplicationOpenStatus::Error;
@@ -85,6 +86,8 @@ namespace fenster
 	 */
 	bool Application::addListener(ComponentId id, ComponentEventType eventType)
 	{
+		if(auto batch = ComponentUpdateBatch::current())
+			return batch->registerListener(id, eventType);
 		SYS_TX_T tx = platformCreateMessageTransaction();
 
 		CommandAddListenerRequest request;
@@ -92,7 +95,8 @@ namespace fenster
 		request.id = id;
 		request.target_thread = EventDispatcherTaskId;
 		request.event_type = eventType;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandAddListenerRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandAddListenerRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		size_t bufferSize = SYS_MESSAGE_HEADER_SIZE + sizeof(CommandAddListenerResponse);
@@ -156,7 +160,8 @@ namespace fenster
 		request.header.id = fenster::ProtocolCommandId::RegisterDesktopCanvas;
 		request.canvas_id = c->getId();
 		request.target_thread = EventDispatcherTaskId;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandRegisterDesktopCanvasRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandRegisterDesktopCanvasRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		// read response
@@ -187,7 +192,8 @@ namespace fenster
 		// send request
 		CommandGetScreenDimensionRequest request;
 		request.header.id = fenster::ProtocolCommandId::GetScreenDimension;
-		platformSendMessage(DelegateTaskId, &request, sizeof(CommandGetScreenDimensionRequest), tx);
+		if(!sendUiMessage(DelegateTaskId, &request, sizeof(CommandGetScreenDimensionRequest), tx))
+			return false;
 		platformYieldTo(DelegateTaskId);
 
 		// read response
